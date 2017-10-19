@@ -1,0 +1,201 @@
+What I learned about scheme so far
+
+- put everything into brackets
+- prefix language -> first one is the operator, can use as many arguments as you want:  (+ 2 4 6)
+- correspondingly (f x y) correspondes to f(x,y)
+- if I want to just print digits, I need to quote: (quote(2 3 4)), short '(2 3 4)
+
+Lists:
+- my list is '(1 2 3)
+- I can access single elements from it like this:
+    (car '(1 2 3)) -> first element = 1
+    (cdr '(1 2 3)) -> tail (all but first) = 2 3
+- if I want elements that are further behind, I can just stack the comands, i.e.: (car (cdr ( '(1 2 3))) = 2 -> (cadr '(1 2 3))
+    Third element: (caddr( '(1 2 3)) = 3
+- Add single element to ffront of list: cons (tail needs to be empty list '() if it is the first element
+    (cons 1 (cons 2 '()) -> ( 1 2)
+- Faster: (define lst '( 1 2 3 4))
+- Also possible: (list 1 2 3 4) -> but then there are restrictions on what you can put after the list keyword) -> no nested definition possible at that moment.
+
+
+recursion
+
+
+
+Lambdas
+(define incr(lambda (x) (+ x 1)))
+(define incr(lambda (x) x 3(+ x 1))) -> its the same. Ignores all the useless stuff and only takes the last statement for evaluation.
+Scheme: recursion!
+
+
+Whitespaces:
+New tokens start with a whitespace
+So you can put pretty weird stuff in a name
+(define a+b (lambda (a b) (+ a b))) 
+thus you also usually don't capitalize, but rather use - (list-length rather than listLength)
+
+Comments
+Commenting character ;
+Multiline comments with #| ... |#
+Commenting a whole expression: ;# (def...)
+
+
+
+
+
+
+
+######## And on the metalevel
+From the Scheme Wiki: 
+http://wiki.call-cc.org/man/4/Getting%20started
+- R5RS = The Revised⁵ Report on Scheme -> standard definitions. There are newer revisions, but they are not as widely accepted.
+- SRFI = Scheme Requests for Implementation -> Define new language features.
+- Scheme is supposed to be a very minimalist language, so above extensions add the hopefully most useful features
+- http://www.schemers.org -> recommended starting point for scheme knowledge icluding resources, reports, SRFIs,...
+
+CHICKEN
+- an implementation of scheme that supports almost all important SRFIs
+- compiles to portable C code that supports a lot of stuff and offers a handy interface to and from C libraries. Also allows embedded C code.
+- also includes and interpreter for interactive use
+- framework for language extensions
+- eggs = language extensions, include interfaces to other languages (Python included), GUIs, ...
+
+Links
+- http://www.call-cc.org -> Master chicken website
+- http://wiki.call-cc.org/egg-index -> list of eggs
+- http://api.call-cc.org -> questions about chicken
+- http://bugs.call-cc.org -> bugs and issue tracker
+- IRC channel (#chicken) on Freenode
+- http://code.call-cc.org/ -> codebase, including installation instructions.
+
+Interpreter:
+- start with csi
+- load files using (load "bla.scm")
+- REPL = read eval print loop
+- can be customized (http://wiki.call-cc.org/man/4/Using%20the%20interpreter) and used for debugging, e.g. by starting lines with a ,
+
+Compiler:
+- faster and more portable
+- chicken is the command for the chicken compiler, but csc is preferred
+    - it compiles Scheme -> C, C-> object code => link results in executable file.
+- file.so (shared object) after compilation
+
+
+More on the compilation
+- separate compilation of modules is possible
+- all three statical, dynamical linking and dynamic loading are supported
+- unit = single compiled object module containing toplevel expressions
+- Evaluation when the unit is the main unit or it is used (e.g. by the main unit)
+- In order that a unit can be used it has to be declared by 
+(declare (uses UNITNAME))
+- compile file as unit: (declare (unit UNITNAME))
+- Other option: (include "FILENAME") -> the code will just be inserted, thus not be compiled before the include statement
+- macros (general mappings of long code blocks to short statements) thus ave to be processed by include or import
+
+
+
+###### Other insights
+
+hoc files:
+- based on the floating point calculator developed in 1984 'he Unix Programming Environment'
+- C like syntax , very similar to the 'bc' calculator
+- object oriented syntax addition -> implement abstract data types, data encapsulations, polymorphisms (no inheritance)
+- neuron3 version of the interpreter is called oc
+- $NEURONHOME/lib/help/oc.help contains synopsis of each command and function, ivoc.help  for graphical interface, nrnoc.help and rniv.help contain neuron specific syntax/functions
+- HOC interpreter has served as general I/O module in dierse applications -> exec under different names
+- the later the neuron version the more custom syntax available.
+- In NEURON all hoc files can be accessed from python
+
+NEURON GUI tools
+- Channel Builder
+- CellBuilder -> build mudels from scratch, modify existing models without writing any code
+- Import3D can convert morphometric data from various formats into model cells
+- Linear Circuit Builder -> set up models that involve gap juncions, ephaptic interactions, different clamp techniques, ...
+- Network Builder, can be used to prototype small networks
+
+Model Analysis and Optimization Tools:
+- ModelView: discovers and represents model properties -> cann emit and import model specifications in XML, helps users understand each other's models -> facilitates codesharing. 
+- Impedance Tool: electrotonic analyses of a model cell
+- Multiple Run Fitter -> helps settinng up optimization protocols for automated tuning of model parameters
+
+
+runtime = collection of software and hardware resources that are needed to execute a software program on a computer system
+
+
+
+###### Cluster insights
+
+edited the .ssh/config file
+ssh sango -> connect to cluster
+scp <file> sango: -> copy file ... to sango (default = homedir)
+scp -r <dir> sango -> copy folder to sango
+sftp sango -> can be used to browse sango. Usual commands such as ls, cd, .. possible. 
+    put (upload file), get (download file) are additional options, didn't work with folders straight by just adding -r
+    
+
+In file browser, ctrl + l gets you the pwd :)
+
+
+
+SLURM = Simple Linux Utility for Resource Management
+- allocates access to 
+
+
+cluster computers: 
+- more or less tightly connected computers that work together
+- each node performs the same task, controlled and scheduled by software
+    -> vs grid computers: workload is not shared, each node may perform a different task, often the heterogeneity is higher
+- node = computer used as a server, has own instance of operating system
+- often all nodes use the same hardware, connection by fast local area network, but ther are ways to connect different hardware and/or operating systems (OSCAR = Open Source Cluster Application Resources)
+- Load-Balancing: workload distribution among the nodes in order to optimize overall performance and response time
+- High availability (failover, HA-clusters): redundant nodes and other components are used to back-up failure of others
+- Message passing: so that the cluster nodes can communicate
+    - PVM = Parallel Virtual Machine (older) -> concrete implementation
+    - MPI = Message Passing Interface since 1990s -> specification, is implemented in MPICH or Open MPI
+    
+    
+
+####### MPI insights
+- uses LIS = language-independent specification 
+- shared memory: not supported since always, but now there are usually concepts available
+- 
+
+
+
+
+
+####### Ivan's mail: insights
+
+Places to find code:
+- check out granular mode repo
+- should be called something like PFprojection.scm
+- Ivan's home directory on the OIST cluster (if still existent) -> src subdirectory
+
+Hope on the deploy dilemma:
+- http://wiki.call-cc.org/nemo
+- check out the old deploy script
+
+Conceptual summary:
+- construct lines that represent the PFs and GoC dendrites
+- sample lines and obtian point clouds
+- put it all in a KD- tree
+- do parallel KD tree queries to determine the distances between PF points and GoC points (probably this part might be the conceptually hardest, MPI involved)
+
+-the bspline library needs the Fortran code.
+- Ivan uses openMPI 1.10.2
+mpirun -np 8 $HOME/bin/brep/brep
+--rng-seeds=""73,79,83,89,97,101,103,107,109,113""
+--gc-points=GCcoordinates.sorted.dat
+--gct-points=GCTcoordinates.sorted.dat
+--goc-points=GoCcoordinates.sorted.dat --config-file=Parameters.hoc
+-:hm16000M
+
+
+
+
+
+
+
+
+
+

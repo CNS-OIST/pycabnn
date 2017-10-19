@@ -1,0 +1,421 @@
+List of all the functions we imported. (Make it easier searchable...)
+
+
+SRFI1: https://srfi.schemers.org/srfi-1/srfi-1.html
+		 Constructors
+
+		    cons list
+		    xcons cons* make-list list-tabulate 
+		    list-copy circular-list iota
+
+		Predicates
+
+		    pair? null?
+		    proper-list? circular-list? dotted-list? 
+		    not-pair? null-list?
+		    list=
+
+		Selectors
+
+		    car cdr ... cddadr cddddr list-ref
+		    first second third fourth fifth sixth seventh eighth ninth tenth
+		    car+cdr
+		    take       drop
+		    take-right drop-right
+		    take!      drop-right! 
+		    split-at   split-at! 
+		    last last-pair
+
+		Miscellaneous: length, append, concatenate, reverse, zip & count
+
+		    length length+
+		    append  concatenate  reverse
+		    append! concatenate! reverse!
+		    append-reverse append-reverse!
+		    zip unzip1 unzip2 unzip3 unzip4 unzip5
+		    count
+
+		Fold, unfold & map
+
+		    map for-each
+		    fold       unfold       pair-fold       reduce 
+		    fold-right unfold-right pair-fold-right reduce-right 
+		    append-map append-map!
+		    map! pair-for-each filter-map map-in-order
+
+		Filtering & partitioning
+
+		    filter  partition  remove
+		    filter! partition! remove! 
+
+		Searching
+
+		    member memq memv
+		    find find-tail 
+		    any every
+		    list-index
+		    take-while drop-while take-while!
+		    span break span! break!
+
+		Deleting
+
+		    delete  delete-duplicates 
+		    delete! delete-duplicates!
+
+		Association lists
+
+		    assoc assq assv
+		    alist-cons alist-copy
+		    alist-delete alist-delete!
+
+		Set operations on lists
+
+		    lset<= lset= lset-adjoin
+		    lset-union			lset-union!
+		    lset-intersection		lset-intersection!
+		    lset-difference		        lset-difference!
+		    lset-xor			lset-xor!
+		    lset-diff+intersection	        lset-diff+intersection!
+
+
+SRFI 4: https://srfi.schemers.org/srfi-4/srfi-4.html
+
+		TAG = u/s/f + 2, e.g. u8, s32, datatypes are TAGvector
+
+
+	    (TAGvector? obj)
+	    (make-TAGvector n [ TAGvalue ])
+	    (TAGvector TAGvalue...)
+	    (TAGvector-length TAGvect)
+	    (TAGvector-ref TAGvect i)
+	    (TAGvector-set! TAGvect i TAGvalue)
+	    (TAGvector->list TAGvect)
+	    (list->TAGvector TAGlist) 
+			
+
+
+srfi-13: https://srfi.schemers.org/srfi-13/srfi-13.html 
+		String library -> allows searching, various kinds of accessing, ... Strings. Most commands either include the keyword string or substring.
+
+
+		Predicates
+
+		    string? string-null? 
+		    string-every string-any
+
+		Constructors
+
+		    make-string string string-tabulate
+
+		List & string conversion
+
+		    string->list list->string
+		    reverse-list->string string-join
+
+		Selection
+
+		    string-length
+		    string-ref
+		    string-copy
+		    substring/shared
+		    string-copy! 
+		    string-take string-take-right
+		    string-drop string-drop-right
+		    string-pad  string-pad-right 
+		    string-trim string-trim-right string-trim-both 
+
+		Modification
+
+		    string-set! string-fill!
+
+		Comparison
+
+		    string-compare string-compare-ci
+		    string<>     string=    string<    string>    string<=    string>=
+		    string-ci<>  string-ci= string-ci< string-ci> string-ci<= string-ci>=
+		    string-hash  string-hash-ci
+
+		Prefixes & suffixes
+
+		    string-prefix-length    string-suffix-length
+		    string-prefix-length-ci string-suffix-length-ci
+
+		    string-prefix?    string-suffix?    
+		    string-prefix-ci? string-suffix-ci? 
+
+		Searching
+
+		    string-index string-index-right
+		    string-skip  string-skip-right 
+		    string-count 
+		    string-contains string-contains-ci
+
+		Alphabetic case mapping
+
+		    string-titlecase  string-upcase  string-downcase
+		    string-titlecase! string-upcase! string-downcase!
+
+		Reverse & append
+
+		    string-reverse string-reverse!
+		    string-append
+		    string-concatenate
+		    string-concatenate/shared string-append/shared
+		    string-concatenate-reverse string-concatenate-reverse/shared
+
+		Fold, unfold & map
+
+		    string-map      string-map!
+		    string-fold     string-fold-right
+		    string-unfold   string-unfold-right
+		    string-for-each string-for-each-index
+
+		Replicate & rotate
+
+		    xsubstring string-xcopy!
+
+		Miscellaneous: insertion, parsing
+
+		    string-replace string-tokenize
+
+		Filtering & deleting
+
+		    string-filter string-delete 
+
+		Low-level procedures
+
+		    string-parse-start+end
+		    string-parse-final-start+end
+		    let-string-start+end
+
+		    check-substring-spec
+		    substring-spec-ok?
+
+		    make-kmp-restart-vector kmp-step string-kmp-partial-search
+
+
+srfi-63: https://srfi.schemers.org/srfi-63/srfi-63.html
+Homogeneous and Heterogeneouss Arrays
+
+		Function: array? obj
+
+		    Returns #t if the obj is an array, and #f if not. 
+
+		Note: Arrays are not disjoint from other Scheme types. Vectors and possibly strings also satisfy array?. A disjoint array predicate can be written:
+
+		(define (strict-array? obj)
+		  (and (array? obj) (not (string? obj)) (not (vector? obj))))
+
+		Function: equal? obj1 obj2
+
+		    Returns #t if obj1 and obj2 have the same rank and dimensions and the corresponding elements of obj1 and obj2 are equal?.
+
+		    equal? recursively compares the contents of pairs, vectors, strings, and arrays, applying eqv? on other objects such as numbers and symbols. A rule of thumb is that objects are generally equal? if they print the same. equal? may fail to terminate if its arguments are circular data structures.
+
+		    (equal? 'a 'a)                             =>  #t
+		    (equal? '(a) '(a))                         =>  #t
+		    (equal? '(a (b) c)
+		            '(a (b) c))                        =>  #t
+		    (equal? "abc" "abc")                       =>  #t
+		    (equal? 2 2)                               =>  #t
+		    (equal? (make-vector 5 'a)
+		            (make-vector 5 'a))                =>  #t
+		    (equal? (make-array (A:fixN32b 4) 5 3)
+		            (make-array (A:fixN32b 4) 5 3))    =>  #t
+		    (equal? (make-array '#(foo) 3 3)
+		            (make-array '#(foo) 3 3))          =>  #t
+		    (equal? (lambda (x) x)
+		            (lambda (y) y))                    =>  unspecified
+
+		Function: array-rank obj
+
+		    Returns the number of dimensions of obj. If obj is not an array, 0 is returned. 
+
+		Function: array-dimensions array
+
+		    Returns a list of dimensions.
+
+		    (array-dimensions (make-array '#() 3 5))
+		       => (3 5)
+
+		Function: make-array prototype k1 ...
+
+		    Creates and returns an array of type prototype with dimensions k1, ... and filled with elements from prototype. prototype must be an array, vector, or string. The implementation-dependent type of the returned array will be the same as the type of prototype; except if that would be a vector or string with rank not equal to one, in which case some variety of array will be returned.
+
+		    If the prototype has no elements, then the initial contents of the returned array are unspecified. Otherwise, the returned array will be filled with the element at the origin of prototype. 
+
+		Function: make-shared-array array mapper k1 ...
+
+		    make-shared-array can be used to create shared subarrays of other arrays. The mapper is a function that translates coordinates in the new array into coordinates in the old array. A mapper must be linear, and its range must stay within the bounds of the old array, but it can be otherwise arbitrary. A simple example:
+
+		    (define fred (make-array '#(#f) 8 8))
+		    (define freds-diagonal
+		      (make-shared-array fred (lambda (i) (list i i)) 8))
+		    (array-set! freds-diagonal 'foo 3)
+		    (array-ref fred 3 3)
+		       => FOO
+		    (define freds-center
+		      (make-shared-array fred (lambda (i j) (list (+ 3 i) (+ 3 j)))
+		                         2 2))
+		    (array-ref freds-center 0 0)
+		       => FOO
+
+		Function: list->array rank proto list
+
+		    list must be a rank-nested list consisting of all the elements, in row-major order, of the array to be created.
+
+		    list->array returns an array of rank rank and type proto consisting of all the elements, in row-major order, of list. When rank is 0, list is the lone array element; not necessarily a list.
+
+		    (list->array 2 '#() '((1 2) (3 4)))
+		                    => #2A((1 2) (3 4))
+		    (list->array 0 '#() 3)
+		                    => #0A 3
+
+		Function: array->list array
+
+		    Returns a rank-nested list consisting of all the elements, in row-major order, of array. In the case of a rank-0 array, array->list returns the single element.
+
+		    (array->list #2A((ho ho ho) (ho oh oh)))
+		                    => ((ho ho ho) (ho oh oh))
+		    (array->list #0A ho)
+		                    => ho
+
+		Function: vector->array vect proto dim1 ...
+
+		    vect must be a vector of length equal to the product of exact nonnegative integers dim1, ....
+
+		    vector->array returns an array of type proto consisting of all the elements, in row-major order, of vect. In the case of a rank-0 array, vect has a single element.
+
+		    (vector->array #(1 2 3 4) #() 2 2)
+		                    => #2A((1 2) (3 4))
+		    (vector->array '#(3) '#())
+		                    => #0A 3
+
+		Function: array->vector array
+
+		    Returns a new vector consisting of all the elements of array in row-major order.
+
+		    (array->vector #2A ((1 2)( 3 4)))
+		                    => #(1 2 3 4)
+		    (array->vector #0A ho)
+		                    => #(ho)
+
+		Function: array-in-bounds? array index1 ...
+
+		    Returns #t if its arguments would be acceptable to array-ref. 
+
+		Function: array-ref array k1 ...
+
+		    Returns the (k1, ...) element of array. 
+
+		Procedure: array-set! array obj k1 ...
+
+		    Stores obj in the (k1, ...) element of array. The value returned by array-set! is unspecified. 
+
+		These functions return a prototypical uniform-array enclosing the optional argument (which must be of the correct type). If the uniform-array type is supported by the implementation, then it is returned; defaulting to the next larger precision type; resorting finally to vector.
+
+		Function: a:floc128b z
+
+		Function: a:floc128b
+		    Returns an inexact 128.bit flonum complex uniform-array prototype. 
+
+		Function: a:floc64b z
+
+		Function: a:floc64b
+		    Returns an inexact 64.bit flonum complex uniform-array prototype. 
+
+		Function: a:floc32b z
+
+		Function: a:floc32b
+		    Returns an inexact 32.bit flonum complex uniform-array prototype. 
+
+		Function: a:floc16b z
+
+		Function: a:floc16b
+		    Returns an inexact 16.bit flonum complex uniform-array prototype. 
+
+		Function: a:flor128b z
+
+		Function: a:flor128b
+		    Returns an inexact 128.bit flonum real uniform-array prototype. 
+
+		Function: a:flor64b z
+
+		Function: a:flor64b
+		    Returns an inexact 64.bit flonum real uniform-array prototype. 
+
+		Function: a:flor32b z
+
+		Function: a:flor32b
+		    Returns an inexact 32.bit flonum real uniform-array prototype. 
+
+		Function: a:flor16b z
+
+		Function: a:flor16b
+		    Returns an inexact 16.bit flonum real uniform-array prototype. 
+
+		Function: a:flor128b z
+
+		Function: a:flor128b
+		    Returns an exact 128.bit decimal flonum rational uniform-array prototype. 
+
+		Function: a:flor64b z
+
+		Function: a:flor64b
+		    Returns an exact 64.bit decimal flonum rational uniform-array prototype. 
+
+		Function: a:flor32b z
+
+		Function: a:flor32b
+		    Returns an exact 32.bit decimal flonum rational uniform-array prototype. 
+
+		Function: a:fixz64b n
+
+		Function: a:fixz64b
+		    Returns an exact binary fixnum uniform-array prototype with at least 64 bits of precision. 
+
+		Function: a:fixz32b n
+
+		Function: a:fixz32b
+		    Returns an exact binary fixnum uniform-array prototype with at least 32 bits of precision. 
+
+		Function: a:fixz16b n
+
+		Function: a:fixz16b
+		    Returns an exact binary fixnum uniform-array prototype with at least 16 bits of precision. 
+
+		Function: a:fixz8b n
+
+		Function: a:fixz8b
+		    Returns an exact binary fixnum uniform-array prototype with at least 8 bits of precision. 
+
+		Function: a:fixn64b k
+
+		Function: a:fixn64b
+		    Returns an exact non-negative binary fixnum uniform-array prototype with at least 64 bits of precision. 
+
+		Function: a:fixn32b k
+
+		Function: a:fixn32b
+		    Returns an exact non-negative binary fixnum uniform-array prototype with at least 32 bits of precision. 
+
+		Function: a:fixn16b k
+
+		Function: a:fixn16b
+		    Returns an exact non-negative binary fixnum uniform-array prototype with at least 16 bits of precision. 
+
+		Function: a:fixn8b k
+
+		Function: a:fixn8b
+		    Returns an exact non-negative binary fixnum uniform-array prototype with at least 8 bits of precision. 
+
+		Function: a:bool bool
+
+		Function: a:bool
+		    Returns a boolean uniform-array prototype. 
+
+
+
+
+
+
