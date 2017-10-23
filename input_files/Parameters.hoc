@@ -237,7 +237,7 @@ GoC_PhysBasolateralDendR = 60 // dendritic cone radius used for geometric connec
 
 GoC_Ad_nseg          = int((GoC_ApicalDendL/(GoC_d_lambda*GoC_d_lambda_f)+0.9)/2)*2 + 1
 GoC_Bd_nseg          = int((GoC_BasolateralDendL/(GoC_d_lambda*GoC_d_lambda_f)+0.9)/2)*2 + 1
-printf("Nseg for APical is %d and Basal is %d\n",GoC_Ad_nseg,GoC_Bd_nseg)
+// printf("Nseg for APical is %d and Basal is %d\n",GoC_Ad_nseg,GoC_Bd_nseg)
 GoC_Ad_nsegpts       = 5
 GoC_Bd_nsegpts       = 4
 GoC_Atheta_min       = 30
