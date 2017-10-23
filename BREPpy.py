@@ -12,7 +12,7 @@ class Brep (object):
     def __init__(self):
         
         self.parser = argparse.ArgumentParser(prog='BREP for py ', conflict_handler='resolve')
-        self.parser.add_argument("--config_file",   type = str, default = '', help ="use the given hoc configuration file to obtain parameters")
+        self.parser.add_argument("--config_fn",   type = str, default = '', help ="use the given hoc configuration file to obtain parameters")
         self.parser.add_argument("--gc_points_fn",  type = str, default = '', help ="load originating points for granule cells from given file, default is randomly generated")
         self.parser.add_argument("--gct_points_fn", type = str, default = '', help ="load junction points for parallel fibers from given file, default is offset from GC soma points")
         self.parser.add_argument("--goc_points_fn", type = str, default = '' , help ="load originating points for Golgi cells from given file, default is randomly generated") #!!
