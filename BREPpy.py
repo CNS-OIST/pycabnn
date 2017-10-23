@@ -1,9 +1,10 @@
 import argparse
 import numpy as np
 import datetime
+import neuron
 
 # On the naming conventions: I tried to keep variable names similar as the ones in the brep.scm file
-# However, all - had to bee transformed to _ , and sometimes a postfix like _fn (filename) or _num (number) was added for clarification.
+# However, all _ had to bee transformed to _ , and sometimes a postfix like _fn (filename) or _num (number) was added for clarification.
 
 class Brep (object):
     
@@ -75,43 +76,43 @@ class Brep (object):
         self.parser.add_argument("--output",  type = str,  default = '',    help ="specify output file prefix, default is a timestemp.") # we should set a default here that puts in a timeprint in order to prevent unvoluntary overwrite
         self.parser.add_argument("--verbose", type = bool, default = False, help ="verbose model")
         self.config_dict = {
-        'y-extent' : 'GoCyrange', 
-        'goc-apical-nsegpts' : 'GoC_Ad_nsegpts', 
-        'goc-theta-basolateral-min' : 'GoC_Btheta_min', 
-        'goc-basolateral-nseg' : 'GoC_Bd_nseg', 
-        'goc-basolateral-nsegpts' : 'GoC_Bd_nsegpts', 
-        'goc-axon-z-min' : 'GoC_Axon_Zmin', 
-        'goc-axon-y-max' : 'GoC_Axon_Ymax', 
-        'num-gc' : 'numGC', 
-        'goc-basolateral-dendheight' : 'GoC_PhysBasolateralDendH', 
-        'aa-goc-zone' : 'AAtoGoCzone', 
-        'mean-goc-distance' : 'meanGoCdistance', 
-        'goc-theta-apical-min' : 'GoC_Atheta_min', 
-        'goc-dendrites' : 'numDendGolgi', 
-        'goc-axon-x-min' : 'GoC_Axon_Xmin', 
-        'goc-theta-basolateral-stdev' : 'GoC_Btheta_stdev', 
-        'goc-theta-apical-stdev' : 'GoC_Atheta_stdev', 
-        'goc-theta-apical-max' : 'GoC_Atheta_max', 
-        'goc-axonsegs' : 'GoC_Axon_nseg', 
-        'num-goc' : 'numGoC', 
-        'goc-axonpts' : 'GoC_Axon_npts', 
-        'z-extent' : 'GoCzrange', 
-        'goc-axons' : 'numAxonGolgi', 
-        'goc-theta-basolateral-max' : 'GoC_Btheta_max', 
-        'pf-step' : 'PFstep', 
-        'aa-step' : 'AAstep', 
-        'x-extent' : 'GoCxrange', 
-        'goc-apical-radius' : 'GoC_PhysApicalDendR', 
-        'goc-axon-x-max' : 'GoC_Axon_Xmax', 
-        'goc-basolateral-radius' : 'GoC_PhysBasolateralDendR', 
-        'goc-goc-gap-zone' : 'GoCtoGoCgapzone', 
-        'goc-apical-nseg' : 'GoC_Ad_nseg', 
-        'goc-axon-y-min' : 'GoC_Axon_Ymin', 
-        'goc-axon-z-max' : 'GoC_Axon_Zmax', 
-        'goc-apical-dendheight' : 'GoC_PhysApicalDendH', 
-        'goc-goc-zone' : 'GoCtoGoCzone', 
-        'pf-goc-zone' : 'PFtoGoCzone', 
-        'pf-length' : 'PFlength' }
+        'y_extent' : 'GoCyrange', 
+        'goc_apical_nsegpts' : 'GoC_Ad_nsegpts', 
+        'goc_theta_basolateral_min' : 'GoC_Btheta_min', 
+        'goc_basolateral_nseg' : 'GoC_Bd_nseg', 
+        'goc_basolateral_nsegpts' : 'GoC_Bd_nsegpts', 
+        'goc_axon_z_min' : 'GoC_Axon_Zmin', 
+        'goc_axon_y_max' : 'GoC_Axon_Ymax', 
+        'num_gc' : 'numGC', 
+        'goc_basolateral_dendheight' : 'GoC_PhysBasolateralDendH', 
+        'aa_goc_zone' : 'AAtoGoCzone', 
+        'mean_goc_distance' : 'meanGoCdistance', 
+        'goc_theta_apical_min' : 'GoC_Atheta_min', 
+        'goc_dendrites' : 'numDendGolgi', 
+        'goc_axon_x_min' : 'GoC_Axon_Xmin', 
+        'goc_theta_basolateral_stdev' : 'GoC_Btheta_stdev', 
+        'goc_theta_apical_stdev' : 'GoC_Atheta_stdev', 
+        'goc_theta_apical_max' : 'GoC_Atheta_max', 
+        'goc_axonsegs' : 'GoC_Axon_nseg', 
+        'num_goc' : 'numGoC', 
+        'goc_axonpts' : 'GoC_Axon_npts', 
+        'z_extent' : 'GoCzrange', 
+        'goc_axons' : 'numAxonGolgi', 
+        'goc_theta_basolateral_max' : 'GoC_Btheta_max', 
+        'pf_step' : 'PFstep', 
+        'aa_step' : 'AAstep', 
+        'x_extent' : 'GoCxrange', 
+        'goc_apical_radius' : 'GoC_PhysApicalDendR', 
+        'goc_axon_x_max' : 'GoC_Axon_Xmax', 
+        'goc_basolateral_radius' : 'GoC_PhysBasolateralDendR', 
+        'goc_goc_gap_zone' : 'GoCtoGoCgapzone', 
+        'goc_apical_nseg' : 'GoC_Ad_nseg', 
+        'goc_axon_y_min' : 'GoC_Axon_Ymin', 
+        'goc_axon_z_max' : 'GoC_Axon_Zmax', 
+        'goc_apical_dendheight' : 'GoC_PhysApicalDendH', 
+        'goc_goc_zone' : 'GoCtoGoCzone', 
+        'pf_goc_zone' : 'PFtoGoCzone', 
+        'pf_length' : 'PFlength' }
 
         
     def init_from_script (self, cml_str = ['']):
@@ -134,37 +135,70 @@ class Brep (object):
         for k, v in ((k.lstrip('-'), v) for k,v in (a.split('=') for a in sys.argv[1:])):
             d[k].append(v)
         setattr (self, 'cl_args', d)
-        #https://stackoverflow.com/questions/12807539/how-do-you-convert-command-line-args-in-python-to-a-dictionary
+        #https://stackoverflow.com/questions/12807539/how_do_you_convert_command_line_args_in_python_to_a_dictionary
         
     def check_output_prefix(self):
         '''checks if there is a specified output prefix.
         If not, will generate one from the timestampe'''
         if self.args.output == '':
-            #! mkdir 'Res_{:%Y-%m-%d_%H-%M-%S}'.format(datetime.datetime.now())
-            self.args.output = 'Res_{:%Y-%m-%d_%H-%M-%S}/'.format(datetime.datetime.now())
+            #! mkdir 'Res_{:%Y_%m_%d_%H_%M_%S}'.format(datetime.datetime.now())
+            self.args.output = 'Res_{:%Y_%m_%d_%H_%M_%S}/'.format(datetime.datetime.now())
             
-    def read_in_config(self):
-        '''checks if a config file has been specified, and if so, updates the args
-        Warns if the file cannot be found, opened or properly read in (e.g. unkown parameter) '''
-        if self.args.config == '':
+    def read_in_config(self, overwrite_config = True):
+        '''checks if a config file has been specified, and if so, updates the args.
+        If overwrite_config is set True, command line arguments that specify a parameter that also exists
+        in the config file will have priority.'''
+        if self.args.config_fn == '':
             warnings.warn('Cannot find config file!')
+        else:  #read in config file using neurons h object
+            self.p_verb('Reading config file')
+            neuron.h.xopen(self.args.config_fn)
+            d_l = dir(neuron.h) #get set attributes from the config file
+            c_d = dict((v,k) for k,v in self.config_dict.items()) #exchange key and value
+
+            for h_k in d_l: #check for relevant attributes that are set in the config file and update them
+                if h_k in c_d.keys() and h_k not in self.cl_args.keys():
+                    if hasattr (self.args, c_d[h_k]):
+                        setattr (self.args, c_d[h_k], getattr (neuron.h, h_k))
+                        self.p_verb('Read in parameter {}: Was {}, now is {}'.format(c_d[h_k], getattr (self.args, c_d[h_k]), getattr (neuron.h, h_k)))
+                    else:
+                        print ('Did not find {}'.format(c_d[h_k]))
+                #deal with parameters that are defined double
+                elif h_k in c_d.keys() and h_k in self.cl_args.keys():
+                    if hasattr (self.args, c_d[h_k]):
+                        if overwrite_config:
+                            warnings.warn('Parameter {} was set both by command line and in config, will use value from command line'.format(c_d[h_k]))
+                        else:
+                            warnings.warn('Parameter {} was set both by command line and in config, will use value from config file'.format(c_d[h_k]))
+                            setattr (self.args, c_d[h_k], getattr (neuron.h, h_k))
+                
+            # The following two parameters are an exception:
+            if 'GLdepth' in d_l and 'PCLdepth' in d_l and not 'aa-length' in self.cl_args.keys():
+                setattr (self.args, 'aa-length', getattr(neuron.h, 'GLdepth')+getattr(neuron.h,'PCLdepth'))
+    
+
+
+
+
             
     
     def p_verb (stat, *args):
         '''prints statement only if the print mode is on.
         Prints args in some smart ways'''
-        pass
+        if self.args.verbose:
+            print (stat)
+
     
     def get_GC_Points():
         ''' 
-        corresponds to GC-Points statement in brep.csm file.
-        Read in the GC-Points provided in a file or render some randomly. (UniformRandomProcess)
+        corresponds to GC_Points statement in brep.csm file.
+        Read in the GC_Points provided in a file or render some randomly. (UniformRandomProcess)
         '''
         pass
         
     def get_GCT_Points():
         '''
-        corresponds to the GCT-Points statement from the 
+        corresponds to the GCT_Points statement from the 
         '''
     
     def get_GOC_Points():
