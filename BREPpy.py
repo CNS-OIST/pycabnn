@@ -1,8 +1,6 @@
 import argparse
 import numpy as np
 import datetime
-import pickle
-
 
 # On the naming conventions: I tried to keep variable names similar as the ones in the brep.scm file
 # However, all - had to bee transformed to _ , and sometimes a postfix like _fn (filename) or _num (number) was added for clarification.
@@ -115,20 +113,62 @@ class Brep (object):
         'pf-goc-zone' : 'PFtoGoCzone', 
         'pf-length' : 'PFlength' }
 
+        
+    def init_from_script (self, cml_str = ['']):
+        self.args = self.parser.parse_args(cml_str)
+        d  =  {}
+        for k_c in range(len(cml_str)-1):
+            if len(str(cml_str[k_c])) > 2:
+                if cml_str[k_c][:2] == '--':
+                    d[cml_str[k_c][2:]] = cml_str[k_c+1]
+        setattr (self, 'cl_args', d)
+                
+            
 
-
-    def initialize_and_dump (self):
-        print ('I')
+        
+    def init_from_cl(self):
         self.args = self.parser.parse_args()
-        self.cl_args = self.parser.convert_arg_line_to_args()
-        print ('yoo I parsed it')
-        self.parser = 0
-        with open ('./tmp.pkl', 'wb') as my_f:
-        	pickle.dump (self, my_f)
-        print ('yoo I dumped it')
-
-
-
-
-if __name__ == '__main__':
-	Brep().initialize_and_dump()
+        from collections import defaultdict
+        # to do: Check!!
+        d=defaultdict(list)
+        for k, v in ((k.lstrip('-'), v) for k,v in (a.split('=') for a in sys.argv[1:])):
+            d[k].append(v)
+        setattr (self, 'cl_args', d)
+        #https://stackoverflow.com/questions/12807539/how-do-you-convert-command-line-args-in-python-to-a-dictionary
+        
+    def check_output_prefix(self):
+        '''checks if there is a specified output prefix.
+        If not, will generate one from the timestampe'''
+        if self.args.output == '':
+            #! mkdir 'Res_{:%Y-%m-%d_%H-%M-%S}'.format(datetime.datetime.now())
+            self.args.output = 'Res_{:%Y-%m-%d_%H-%M-%S}/'.format(datetime.datetime.now())
+            
+    def read_in_config(self):
+        '''checks if a config file has been specified, and if so, updates the args
+        Warns if the file cannot be found, opened or properly read in (e.g. unkown parameter) '''
+        if self.args.config == '':
+            warnings.warn('Cannot find config file!')
+            
+    
+    def p_verb (stat, *args):
+        '''prints statement only if the print mode is on.
+        Prints args in some smart ways'''
+        pass
+    
+    def get_GC_Points():
+        ''' 
+        corresponds to GC-Points statement in brep.csm file.
+        Read in the GC-Points provided in a file or render some randomly. (UniformRandomProcess)
+        '''
+        pass
+        
+    def get_GCT_Points():
+        '''
+        corresponds to the GCT-Points statement from the 
+        '''
+    
+    def get_GOC_Points():
+        '''
+        get GOC Points from file or render them
+        '''
+        
