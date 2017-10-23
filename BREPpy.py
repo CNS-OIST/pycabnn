@@ -159,9 +159,8 @@ class Brep (object):
             for h_k in d_l: #check for relevant attributes that are set in the config file and update them
                 if h_k in c_d.keys() and h_k not in self.cl_args.keys():
                     if hasattr (self.args, c_d[h_k]):
-                        self.p_verb('Read in parameter {}: Was {}, now is {}'.format(c_d[h_k], getattr (self.args, c_d[h_k]), getattr (neuron.h, h_k)))
+                        self.p_verb('Configurated {}: Was {}, now is {}'.format(c_d[h_k], getattr (self.args, c_d[h_k]), getattr (neuron.h, h_k)))
                         setattr (self.args, c_d[h_k], getattr (neuron.h, h_k))
-     
                     else:
                         print ('Did not find {}'.format(c_d[h_k]))
                 #deal with parameters that are defined double
