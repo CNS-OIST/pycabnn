@@ -18,8 +18,7 @@ read ans
 
 if echo "$ans" | grep -iq '^y' ;then 
 	#./brep_deploy/brep_deploy 
-	mpirun $BREP/brep_deploy --rng-seeds="$RNG_SEEDS" --gct-points=$INP/GCT_smallsmall.dat --config-file=$INP/Parameters.hoc --verbose  \
-	> terminal_output.txt
+	mpirun $BREP/brep_deploy --rng-seeds="$RNG_SEEDS" --gct-points=$INP/GCT_tiny.dat --config-file=$INP/Parameters_tiny.hoc --verbose  
 else 
 	echo 'Okay, whatever. Bye!'
 fi
