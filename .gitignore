@@ -8,6 +8,7 @@ __pycache__/
 tmp.pkl
 parser.scm
 brep.yy.scm
+*.dat
 
 Other_nogit
 input_files/*.dat

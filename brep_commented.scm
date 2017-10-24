@@ -54,10 +54,12 @@
 ; Exchanging low and high as arguments should be no problem.
 ; st is the state vector, can be generated using (random-mtzig:init seed)
 (define (random-uniform low high st)
-  (let ((rlo (if (< low high) low high)) ;rlo gives back the real lower one,
-	(rhi (if (< low high) high low))) ;rhi gives the real higher one.  
-    (let ((delta (+ 1 (- rhi rlo))) ;delta = rhi- rlo + 1
-	  (v (random-mtzig:randu! st)))random-seed ; randu! gives a sample frm a uniform distribution in interval (0,1)
+  (let (
+    (rlo (if (< low high) low high)) ;rlo gives back the real lower one,
+	  (rhi (if (< low high) high low))) ;rhi gives the real higher one.  
+    (let (
+      (delta (+ 1 (- rhi rlo))) ;delta = rhi- rlo + 1
+	    (v (random-mtzig:randu! st))) ;random-seed ; randu! gives a sample frm a uniform distribution in interval (0,1)
       (+ rlo (floor (* delta v))) ; rlo* floor(v * delta)
       ))
   )
@@ -1114,25 +1116,29 @@
 
 
 (define (GoC-GoC-distances GoC-Somas my-comm myrank size prefix goc-start)
+
+
     (let ((my-results
-      (let recur ((gxs GoC-Somas) (my-results '()))  ; gxs consists of GoC-Somas at the beginning, my-results is an empty list.
-        (if (null? gxs)   ; when all elements of gxs have been processed, my_results is returned in reversed order
-		    (reverse my-results)
-		    (let* (
-          (gx (car gxs)) ; gx = first element of gxs and apparently the GoC-goC distances
-          (_  (d "GoC-GoC distances: gx = ~A~%" gx)) ; if verbose, print those distances
-          (gx-distances 
-              (filter-map
-                  (lambda (gy) 
-                      (let ((py (cadr gy)))
-                        (d  "GoC-GoC distances: px = ~A py = ~A~%" px py)
-                        (and (not (= (car gx) (car gy))) 
-                             (cons (car gy) (sqrt (dist2 px py)))
-                             )))
-                  GoC-Somas)))
-        (recur (cdr gxs) (cons (list (car gx) gx-distances) my-results)))
-        ))
-     ))
+     (let recur ((gxs GoC-Somas) (my-results '()))   ; gxs consists of GoC-Somas at the beginning, my-results is an empty list.
+       (if (null? gxs)  ; when all elements of gxs have been processed, my_results is returned in reversed order
+     (reverse my-results)
+     (let* (
+                        (gx (car gxs))  ; gx = first element of gxs and apparently the GoC-goC distances
+                        (_ (d "GoC-GoC distances: gx = ~A~%" gx)) ; if verbose, print those distances
+                        (px (cadr gx))
+                        (gx-distances 
+                         (filter-map
+                          (lambda (gy) 
+                            (let ((py (cadr gy)))
+                              (d "GoC-GoC distances: px = ~A py = ~A~%" px py)
+                              (and (not (= (car gx) (car gy))) 
+                                   (cons (car gy) (sqrt (dist2 px py)))))
+                              )
+                          GoC-Somas))
+                        )
+                   (recur (cdr gxs) (cons (list (car gx) gx-distances) my-results)))
+                 )))
+          )
                  
 
       (call-with-output-file (sprintf "~Adistances~A.dat"  prefix (if (> size 1) myrank ""))
@@ -1823,7 +1829,7 @@
 ))
 
 (width 30)
-; (main opt (opt '@))
+(main opt (opt '@))
 
 ;  the '@ key comes from the getopt-long grammar and specifies a list of arguments that are not options or option values
 
