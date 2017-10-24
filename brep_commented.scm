@@ -1544,9 +1544,9 @@
                               (or (config 'GoC_Btheta_max) (options 'goc-theta-basolateral-max) (defopt 'goc-theta-basolateral-max))))
                        (Atheta-stdev
                         (or (config 'GoC_Atheta_stdev) (options 'goc-theta-apical-stdev) (defopt 'goc-theta-apical-stdev)))
-                       (Btheta-range
-                        (cons (or (config 'GoC_Btheta_min) (options 'goc-theta-basolateral-min) (defopt 'goc-theta-basolateral-min))
-                              (or (config 'GoC_Btheta_max) (options 'goc-theta-basolateral-max) (defopt 'goc-theta-basolateral-max))))
+;                       (Btheta-range
+;                        (cons (or (config 'GoC_Btheta_min) (options 'goc-theta-basolateral-min) (defopt 'goc-theta-basolateral-min))
+;                              (or (config 'GoC_Btheta_max) (options 'goc-theta-basolateral-max) (defopt 'goc-theta-basolateral-max))))
                        (Btheta-stdev
                         (or (config 'GoC_Btheta_stdev) (options 'goc-theta-basolateral-stdev) (defopt 'goc-theta-basolateral-stdev)))
                        (axon-x-range
