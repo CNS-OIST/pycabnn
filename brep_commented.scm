@@ -37,9 +37,17 @@
 ; In this case, the input would kinda translate to *args in python.
 (define (d fstr . args)
   (let ([port (current-error-port)])
-    (if (positive? (brep-verbose)) 
-	(begin (apply fprintf port fstr args)
-	       (flush-output port) ) )))
+    (if (positive? (brep-verbose))
+      (cons q 1)
+    ))) 
+;	(begin (apply fprintf port fstr args)
+;	       (flush-output port) ) )))
+
+;(let(
+;  (a .  2)
+;  (begin((fprintf a)
+;    (fprintf "String " a ))
+;    ))
 
 ; Check if this vector is empty
 (define (f64vector-empty? x) (zero? (f64vector-length x)))
@@ -1520,7 +1528,7 @@
           (f64vector 0. (/ x-extent 2.) x-extent)
           (f64vector z-extent z-extent z-extent)
           (Bounds (make-bounds y-extent 0. 0. x-extent))))
-
+      ;(printf "ClusteredRandomPointProcess with args ~A ~A ~A ~A ~A ~A"
  	    (GoC-Soma-Points 
 	        (if (options 'goc-points)
 		          (car (load-points-from-file (options 'goc-points)))
@@ -1833,3 +1841,4 @@
 
 ;  the '@ key comes from the getopt-long grammar and specifies a list of arguments that are not options or option values
 
+(printf "Test ~%")
