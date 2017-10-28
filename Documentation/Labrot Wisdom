@@ -204,7 +204,9 @@ runtime = collection of software and hardware resources that are needed to execu
 
 In file browser, ctrl + l gets you the pwd :)
 
+tar -czvf name-of-archive.tar.gz /path/to/directory-or-file
 
+ps -eo pcpu,pid,user,args | sort -r -k1 | less -> see current PCU processes and how much they use
 
 ####### NEURON
 
@@ -287,11 +289,10 @@ cluster computers:
 - MPI uses specific datatypes in order to better allocate resources. MPI_xx 
 
 
-
-
-
 - uses LIS = language-independent specification 
 - shared memory: not supported since always, but now there are usually concepts available
+
+
 
 Words that should be understood (MPI Vocab)
 - communicator: object that is used to define how processes communicate with each other -> it is used to send messages between all running MPI processes.
@@ -303,6 +304,9 @@ Words that should be understood (MPI Vocab)
 MPI:comm-split: http://mpitutorial.com/tutorials/introduction-to-groups-and-communicators/
 When you only want to talk to a subset of processes, you might want to have more communicators. This function allows you to create one by splitting you communicators
 
+
+
+#Investigation of the MPI part of our program
 
 In the functions before the main function, we have the following MPI calls:
 
@@ -369,7 +373,14 @@ mpirun -np 8 $HOME/bin/brep/brep
 
 
 
+###### Chicken Scheme Profiler
+http://www.more-magic.net/posts/statistical-profiling.html
+insights on the way
+- call history of a scheme error: Shows a trace of the execution flow that led to the error.
+ It shows you the line in which the function was called, i.e. if there are different lines, the function was called in different lines (independent from where the function was defined)
+ - Usually, scheme supports first-class continuation, and stores trace points that can tell you which function was invoked when. However, if you add -d0 or -no-trace to the compiling process, this trace will be omitted.
 
 
-tar -czvf name-of-archive.tar.gz /path/to/directory-or-filee
+Reification: turn an idea about a computer program into an explicit data model or other in a programming language and make it thus available for formal manipulation. 
 
+Continuation: abstract representation of the control state of a computer program. -> with first-class continuation, the execution state of the program is saved with it. 

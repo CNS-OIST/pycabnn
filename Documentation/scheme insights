@@ -155,15 +155,6 @@ cluster computers:
     
     
 
-####### MPI insights
-- uses LIS = language-independent specification 
-- shared memory: not supported since always, but now there are usually concepts available
-- 
-
-
-
-
-
 ####### Ivan's mail: insights
 
 Places to find code:

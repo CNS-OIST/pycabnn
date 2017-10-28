@@ -43,11 +43,13 @@
 ;	(begin (apply fprintf port fstr args)
 ;	       (flush-output port) ) )))
 
-;(let(
-;  (a .  2)
-;  (begin((fprintf a)
-;    (fprintf "String " a ))
-;    ))
+
+(define (prf fstr . args)
+  (let ([port (current-error-port)])
+    (if (positive? -1) 
+  (begin (apply fprintf port fstr args)
+         (flush-output port) ) )))
+
 
 ; Check if this vector is empty
 (define (f64vector-empty? x) (zero? (f64vector-length x)))
@@ -994,6 +996,7 @@
 
 (define (GC-GoC-connections GoC-Dendrites Fibers my-comm myrank size prefix goc-zone pf-start goc-start)
 
+    ;(prf "Called GC-GoC-connections with parameters ~A ~A ~A ~A ~A ~A ~A ~A ~A" GoC-Dendrites Fibers my-comm myrank size prefix goc-zone pf-start goc-start)
     (MPI:barrier my-comm)
 	  
     (let ((my-results
@@ -1048,6 +1051,7 @@
                              prefix goc-zone goc-start
 			     #!key (nn-filter (lambda (x nn) nn)))
 
+
     
     (MPI:barrier my-comm)
 	  
@@ -1089,6 +1093,8 @@
                     #!key 
                     (nn-filter (lambda (x nn) nn)))
 
+
+
   (MPI:barrier my-comm)
 	  
   (let ((my-results (point-projection prefix my-comm myrank size GoC-Somas my-GoC-Soma-tree goc-zone goc-start nn-filter)))
@@ -1107,15 +1113,14 @@
 			    (my-data-len (/ (f64vector-length my-data) my-entry-len)))
 		       (d "~A: rank ~A: length my-data = ~A~%" prefix myrank my-data-len)
 		       (let recur ((m 0))
-			 (if (< m my-data-len)
-			     (let ((source (inexact->exact (f64vector-ref my-data (* m my-entry-len))))
-				   (target (inexact->exact (f64vector-ref my-data (+ 1 (* m my-entry-len)))))
-				   (distance (f64vector-ref my-data (+ 2 (* m my-entry-len)))))
-			       (fprintf out-sources "~A~%" source)
-			       (fprintf out-targets "~A~%" target)
-			       (fprintf out-distances "~A~%" distance)
-			       (recur (+ 1 m)))))
-		       ))
+    			 (if (< m my-data-len)
+    			     (let ((source (inexact->exact (f64vector-ref my-data (* m my-entry-len))))
+    				   (target (inexact->exact (f64vector-ref my-data (+ 1 (* m my-entry-len)))))
+    				   (distance (f64vector-ref my-data (+ 2 (* m my-entry-len)))))
+    			       (fprintf out-sources "~A~%" source)
+    			       (fprintf out-targets "~A~%" target)
+    			       (fprintf out-distances "~A~%" distance)
+    			   (recur (+ 1 m)))))		       ))
 		   my-results)
 		  ))
 	      ))
@@ -1124,26 +1129,25 @@
 
 
 (define (GoC-GoC-distances GoC-Somas my-comm myrank size prefix goc-start)
-
+  ;(prf "Called GooC-GoC-distances with parameters ~A ~A ~A ~A ~A ~A" GoC-Somas my-comm myrank size prefix goc-start)
 
     (let ((my-results
      (let recur ((gxs GoC-Somas) (my-results '()))   ; gxs consists of GoC-Somas at the beginning, my-results is an empty list.
        (if (null? gxs)  ; when all elements of gxs have been processed, my_results is returned in reversed order
      (reverse my-results)
      (let* (
-                        (gx (car gxs))  ; gx = first element of gxs and apparently the GoC-goC distances
-                        (_ (d "GoC-GoC distances: gx = ~A~%" gx)) ; if verbose, print those distances
-                        (px (cadr gx))
-                        (gx-distances 
-                         (filter-map
-                          (lambda (gy) 
-                            (let ((py (cadr gy)))
-                              (d "GoC-GoC distances: px = ~A py = ~A~%" px py)
-                              (and (not (= (car gx) (car gy))) 
-                                   (cons (car gy) (sqrt (dist2 px py)))))
-                              )
-                          GoC-Somas))
-                        )
+            (gx (car gxs))  ; gx = first element of gxs and apparently the GoC-goC distances
+            (_ (d "GoC-GoC distances: gx = ~A~%" gx)) ; if verbose, print those distances
+            (px (cadr gx))
+            (gx-distances 
+             (filter-map
+              (lambda (gy) 
+                (let ((py (cadr gy)))
+                  (d "GoC-GoC distances: px = ~A py = ~A~%" px py)
+                  (and (not (= (car gx) (car gy))) 
+                       (cons (car gy) (sqrt (dist2 px py)))))
+                  )
+                GoC-Somas)))
                    (recur (cdr gxs) (cons (list (car gx) gx-distances) my-results)))
                  )))
           )
