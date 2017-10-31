@@ -22,7 +22,7 @@ if echo "$ans" | grep -iq '^y' ;then
 	#./brep_deploy/brep_deploy 
 	#mpirun $BREP/brep_deploy --rng-seeds="$RNG_SEEDS" --gct-points=$INP/GCT_tiny.dat --config-file=$INP/Parameters_tiny.hoc 
 	mpirun $BREP/brep_deploy --rng-seeds="$RNG_SEEDS" --gct-points=$INP/GCT_tiny.dat \
-	--gc-points=$INP/GC_tiny.dat --num-goc=5 --config-file=$INP/Parameters_tiny.hoc 
+	--gc-points=$INP/GC_tiny.dat --num-goc=5 --prefix=./output_4/ --config-file=$INP/Parameters_tiny.hoc 
 else 
 	echo 'Okay, whatever. Bye!'
 fi
