@@ -1174,11 +1174,11 @@
     (pf-step   . 30)
     (aa-length . 200)
     (aa-step   . 100)
-    (z-extent . 150.)
-    (y-extent . 300.)
-    (x-extent . 1200.)
-    (num-gc . 10000)
-    (num-goc . 200)
+    (z-extent . 200.)
+    (y-extent . 350.)
+    (x-extent . 175.)
+    (num-gc . 32000)
+    (num-goc . 80)
     (mean-goc-distance . 50)
     (goc-grid-xstep . 200)
     (goc-grid-ystep . 500)
@@ -1208,8 +1208,8 @@
     (goc-theta-apical-max . 60)
     (goc-theta-basolateral-min . 30)
     (goc-theta-basolateral-max . 60)
-    (goc-theta-apical-stdev . 1)
-    (goc-theta-basolateral-stdev . 1)
+    (goc-theta-apical-stdev . 10)
+    (goc-theta-basolateral-stdev . 10)
     ))
 
 
@@ -1562,7 +1562,8 @@
                               (or (config 'GoC_Btheta_max) (options 'goc-theta-basolateral-max) (defopt 'goc-theta-basolateral-max))))
                        (Atheta-stdev
                         (or (config 'GoC_Atheta_stdev) (options 'goc-theta-apical-stdev) (defopt 'goc-theta-apical-stdev)))
-;                       (Btheta-range
+;            ls
+ ;          (Btheta-range
 ;                        (cons (or (config 'GoC_Btheta_min) (options 'goc-theta-basolateral-min) (defopt 'goc-theta-basolateral-min))
 ;                              (or (config 'GoC_Btheta_max) (options 'goc-theta-basolateral-max) (defopt 'goc-theta-basolateral-max))))
                        (Btheta-stdev
