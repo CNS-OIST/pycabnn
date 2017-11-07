@@ -384,3 +384,24 @@ insights on the way
 Reification: turn an idea about a computer program into an explicit data model or other in a programming language and make it thus available for formal manipulation. 
 
 Continuation: abstract representation of the control state of a computer program. -> with first-class continuation, the execution state of the program is saved with it. 
+
+
+
+###### Jupyter notebook cool shortcuts
+
+Scratchpad:     Ctrl + B
+Fold/Unfold Code: Ctrl + F
+2 to 3 converter: Ctrl + M
+
+Interesting extensions that were not yet enabled: Snippets
+/
+
+
+
+
+I had a few first insights about GPU computing and I played around a little bit with PyOpenCL, however that is a while ago and did not lead to any real results. I have little experience with C++ and even less with C, but I know Python and MATLAB. 
+
+
+I think GPU computing is highly relevant for anyone who works on big simulations or certain ML tasks (like me), and I am thinking about attempting to get my current project to run on a GPU.
+
+If you think my lack of C++/C skills will be a big problem and I might not be able to follow the course, please let me know!
