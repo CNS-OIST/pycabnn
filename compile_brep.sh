@@ -15,6 +15,8 @@ sudo csc -deploy -O3 -d0 -o $BREP -include-path $BREP brep_commented.scm
 #sudo csc -deploy -O3 -d0 -o ./brep_deploy -include-path ./brep_deploy brep.scm -o ./brep_exec
 # found out that -d0 just omits all traces. 
 
+start=`date +%s`
+
 echo -n 'Compiled. Run now? (y/n): '
 read ans
 
@@ -26,6 +28,9 @@ if echo "$ans" | grep -iq '^y' ;then
 	#--gc-points=$INP/GC_tiny.dat --num-goc=5 --prefix=./output_4/ --config-file=$INP/Parameters_tiny.hoc 
 	mpirun $BREP/brep_deploy
 
+	end=`date +%s`
+	runtime=$((end-start))
+	echo $runtime
 else 
 	echo 'Okay, whatever. Bye!'
 fi
