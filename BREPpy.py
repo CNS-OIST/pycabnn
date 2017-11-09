@@ -216,20 +216,105 @@ class Cell_pop (object):
     def __init__(self, my_args):
         self.args = my_args
 
+    def read_in_file (fn, parse_ignore = True):
+        ''' Reads in files such as the ones that BREP returns.
+        Represents lines as rows, nth element in each line as column.
+        fn = Filename
+        parse_ignore: If something cannot be parsed, it will be ignored. If this parameter is set false, it will complain
+        returns: 2d-array of floats'''
+        res = []
+        with open (fn, newline = '') as f:
+            rr = csv.reader(f, delimiter = ' ')
+            err = [] # list of elements that could not be read in
+            for line in rr: # lines -> rows
+                ar = []
+                for j in range(len(line)): 
+                    try: ar.append(float(line[j]))
+                    except: err.append(line[j])
+                res.append(np.asarray(ar))
+        if len(err)> 0 and not parse_ignore: print ('Could not parse on {} instances: {}'.format(len(err), set(err)))
+        return np.asarray(res)
+
+
+    def coord_reshape (dat, n_dim = 3):
+        ''' Reshapes coordinate files with several points in one line by adding an extra axis.
+        Thus, converts from an array with shape (#cells x (#pts*ndim)) to one with shape (#cells x #pts x ndim)'''
+        dat = dat.reshape([dat.shape[0], int(dat.shape[1]/n_dim),n_dim])
+        return dat
+
+
+    def plot_somata (self, new_fig = True):
+        if new_fig:
+            plt.figure()
+
+    def gen_random_cell_loc (n_cell, Gc_x, Gc_y, Gc_z):
+        '''Random generation for cell somatas
+        n_cell (int) = number of cells
+        Gc_x, Gc_y, Gc_z (float) = dimensions of volume in which cells shall be distributed
+        Algorithm will first make a grid that definitely has more elements than n_cell
+        Each grid field is populated by a cell, then those cells are displaced randomly
+        Last step is to prune the volume, i.e. remove the most outlying cells until the goal number of cells is left
+        Returns: cell coordinates'''
+        # get spacing for grid:
+        vol_c = Gc_x*Gc_y*Gc_z/n_cell
+        sp_def = vol_c**(1/3)/2
+        
+        #Get grid with a few too many elements
+        gr = np.asarray([[i,j,k] 
+                         for i in np.arange(0, Gc_x, 2*sp_def)   
+                         for j in np.arange(0, Gc_y, 2*sp_def) 
+                         for k in np.arange(0, Gc_z, 2*sp_def)])
+        #random displacement
+        grc = gr + np.random.randn(*gr.shape)*sp_def
+        
+        #then remove the ones that lie most outside to get the correct number of cells:
+        #First find the strongest outliers
+        lower = grc.T.ravel()
+        upper = -(grc-[Gc_x, Gc_y, Gc_z]).T.ravel()
+        most_out_idx = np.mod(np.argsort(np.concatenate((lower,upper))), len(grc))
+        #In order to find the right number, must iterate a bit as IDs may occur twice (edges)
+        del_el = len(grc) - n_cell # number of elements to be deleted
+        n_del = del_el
+        while len(np.unique(most_out_idx[:n_del])) < del_el:
+            n_del = n_del + del_el - len(np.unique(most_out_idx[:n_del]))
+        #Deletion step
+        grc = grc[np.setdiff1d(np.arange(len(grc)), most_out_idx[:n_del]),:]
+        return grc
+
+
+
+
     # Should have:
     # Points
     # Cell numbers
     # Segments
-    
+
 
 
 class Golgi_pop (Cell_pop):
     def __init__(self, my_args):
         Cell_pop.__init__(self,my_args)
 
+    def load_somata(self):
+        try:
+            self.som = self.read_in_file(self.args.goc_points_fn)
+        except Exception as e:
+
+            raise
+        else:
+            pass
+        finally:
+            pass
+        
+
+
+
+
 
 class Granule_pop (Cell_pop):
-    def __init__(self):
-        super(Cell_pop, self).__init__(args)
+    def __init__(self, my_args):
+        Cell_pop.__init__(self,my_args)
+
+
 
 
