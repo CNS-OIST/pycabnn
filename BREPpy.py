@@ -3,10 +3,13 @@ import numpy as np
 import datetime
 import neuron
 
+
+
+
 # On the naming conventions: I tried to keep variable names similar as the ones in the brep.scm file
 # However, all _ had to bee transformed to _ , and sometimes a postfix like _fn (filename) or _num (number) was added for clarification.
 
-class Brep (object):
+class Connector (object):
     
     def __init__(self):
         
@@ -125,8 +128,7 @@ class Brep (object):
         setattr (self, 'cl_args', d)
                 
             
-
-        
+  
     def init_from_cl(self):
         self.args = self.parser.parse_args()
         from collections import defaultdict
@@ -136,7 +138,8 @@ class Brep (object):
             d[k].append(v)
         setattr (self, 'cl_args', d)
         #https://stackoverflow.com/questions/12807539/how_do_you_convert_command_line_args_in_python_to_a_dictionary
-        
+    
+    @classmethod    
     def check_output_prefix(self):
         '''checks if there is a specified output prefix.
         If not, will generate one from the timestampe'''
@@ -180,6 +183,7 @@ class Brep (object):
 
 
 
+
             
     
     def p_verb (self, stat, *args):
@@ -206,3 +210,26 @@ class Brep (object):
         get GOC Points from file or render them
         '''
         
+
+class Cell_pop (object):
+
+    def __init__(self, my_args):
+        self.args = my_args
+
+    # Should have:
+    # Points
+    # Cell numbers
+    # Segments
+    
+
+
+class Golgi_pop (Cell_pop):
+    def __init__(self, my_args):
+        Cell_pop.__init__(self,my_args)
+
+
+class Granule_pop (Cell_pop):
+    def __init__(self):
+        super(Cell_pop, self).__init__(args)
+
+
