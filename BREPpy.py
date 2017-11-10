@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 import datetime
 import neuron
-
+import csv
 
 
 
@@ -216,14 +216,14 @@ class Cell_pop (object):
     def __init__(self, my_args):
         self.args = my_args
 
-    def read_in_file (fn, parse_ignore = True):
+    def read_in_file (self, fn, parse_ignore = True):
         ''' Reads in files such as the ones that BREP returns.
         Represents lines as rows, nth element in each line as column.
         fn = Filename
         parse_ignore: If something cannot be parsed, it will be ignored. If this parameter is set false, it will complain
         returns: 2d-array of floats'''
         res = []
-        with open (fn, newline = '') as f:
+        with open (fn, 'r', newline = '') as f:
             rr = csv.reader(f, delimiter = ' ')
             err = [] # list of elements that could not be read in
             for line in rr: # lines -> rows
@@ -233,7 +233,7 @@ class Cell_pop (object):
                     except: err.append(line[j])
                 res.append(np.asarray(ar))
         if len(err)> 0 and not parse_ignore: print ('Could not parse on {} instances: {}'.format(len(err), set(err)))
-        return np.asarray(res)
+        self.som = np.asarray(res)
 
 
     def coord_reshape (dat, n_dim = 3):
@@ -247,7 +247,7 @@ class Cell_pop (object):
         if new_fig:
             plt.figure()
 
-    def gen_random_cell_loc (n_cell, Gc_x, Gc_y, Gc_z):
+    def gen_random_cell_loc (self, n_cell):
         '''Random generation for cell somatas
         n_cell (int) = number of cells
         Gc_x, Gc_y, Gc_z (float) = dimensions of volume in which cells shall be distributed
@@ -284,10 +284,34 @@ class Cell_pop (object):
 
 
 
+
     # Should have:
     # Points
     # Cell numbers
     # Segments
+class Query_points (object):
+    def __init__ (self, coord, IDs = [], segs = []):
+        self.coo = coord
+        self.idx = IDs
+        self.seg = segs
+        self.npts = len(coord)
+
+
+
+
+
+class Connect_2Dr(object):
+    def __init__(self, qpts1, spts2, c_rad):
+        self.pts1 = qpts1
+        self.pts2 = qpts2
+        self.c_rad = c_rad
+
+
+
+
+    def construct_tree(self):
+        pass
+
 
 
 
@@ -296,16 +320,78 @@ class Golgi_pop (Cell_pop):
         Cell_pop.__init__(self,my_args)
 
     def load_somata(self):
-        try:
-            self.som = self.read_in_file(self.args.goc_points_fn)
-        except Exception as e:
+        self.read_in_file(self.args.goc_points_fn)
 
-            raise
-        else:
-            pass
-        finally:
-            pass
-        
+    def add_dendrites(self):
+        a_sp = (self.args.goc_apical_radius**2+self.args.goc_apical_dendheight**2)**0.5/self.args.goc_apical_nsegpts
+        b_sp = (self.args.goc_basolateral_radius**2+self.args.goc_basolateral_dendheight**2)**0.5/self.args.goc_basolateral_nsegpts
+        a_dend, a_idx, a_sgts = self.gen_dendrite(
+                self.args.goc_apical_radius, 
+                self.args.goc_apical_dendheight,
+                [self.args.goc_theta_apical_min, self.args.goc_theta_apical_max],
+                self.args.goc_theta_apical_stdev,
+                a_sp)
+
+        b_dend, b_idx, b_sgts = self.gen_dendrite(
+                self.args.goc_basolateral_radius, 
+                self.args.goc_basolateral_dendheight,
+                [self.args.goc_theta_basolateral_min, self.args.goc_theta_basolateral_max],
+                self.args.goc_theta_basolateral_stdev,
+                b_sp)
+
+        self.a_dend = a_dend
+        self.b_dend = b_dend
+
+        def conc_ab (a, b):
+            def flatten_cells (dat):
+                return dat.reshape(dat.shape[0]*dat.shape[1],dat.shape[2])
+            return np.concatenate((flatten_cells(a), flatten_cells(b)))
+
+        #print (a_dend)
+
+        all_dends = conc_ab (a_dend, b_dend)
+        #print (all_dends.shape)
+        #all_idx =
+
+        #all_idx = np.concatenate((flatten_cells(np.expand_dims(a_ind, axis = 2)), flatten_cells(np.expand_dims(b_ind, axis = 2)))).astype('int')
+
+    def dend_to_qpts(self):
+        pass
+
+    def save_dend_coords(self):
+        pass
+
+    def gen_dendrite (self, c_r, c_h, c_m, c_std, c_sp):
+        '''Generates dendrites as described in the paper:
+        c_r = maximal radius of cone
+        c_h = height of cone
+        c_m = mean angle for each dendrite (number of elements = number of dendrites per cell)
+        c_std = standard deviation (degree) for the angle of the dendrite
+        c_sp = spacing between the points
+        Returns a list of lists containing arrays with the coordinates of the dendrites
+        '''
+        c_n = int(np.linalg.norm([c_r, c_h])/c_sp) #number of points per dendrite
+        c_gr = np.linspace(0,1,c_n)*np.ones((3, c_n)) #linspace grid between 0 and 1 with c_n elements
+        b_res = []
+        idx = []  #cell indices
+        segs = [] #segment number
+        for i in range(len(self.som)): #each cell
+            som_c = self.som[i,:]
+            d_res = []
+            d_segs = []
+            for cc_m in c_m: #each dendrite
+                ep_ang = (np.random.randn()*c_std + cc_m)*np.pi/180 #angle
+                pt = ([np.sin(ep_ang)*c_r, np.cos(ep_ang)*c_r, c_h])*c_gr.T #coordinates of the dendrite = endpoint*grid 
+                d_res.append(pt+som_c) 
+                d_segs = d_segs + list(np.arange(c_n))
+            b_res.append(d_res)
+            segs.append(d_segs)
+            idx.append(np.ones(sum([len(d_res[k]) for k in range (len(d_res))]))*i)
+            print (d_res)
+            d_res = np.asarray([np.concatenate((d_res[i][0], d_res[i][1])) for i in range(len(d_res))])
+            print (d_res.shape)
+
+        return d_res, np.array(idx), np.array(segs)
 
 
 
