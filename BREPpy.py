@@ -342,6 +342,14 @@ class Golgi_pop (Cell_pop):
         self.a_dend = a_dend
         self.b_dend = b_dend
 
+        print (a_dend.shape)
+        print (a_idx.shape)
+        print (a_sgts.shape)
+
+        print (a_idx)
+        print (a_sgts)
+
+
         def conc_ab (a, b):
             def flatten_cells (dat):
                 return dat.reshape(dat.shape[0]*dat.shape[1],dat.shape[2])
@@ -382,16 +390,16 @@ class Golgi_pop (Cell_pop):
             for cc_m in c_m: #each dendrite
                 ep_ang = (np.random.randn()*c_std + cc_m)*np.pi/180 #angle
                 pt = ([np.sin(ep_ang)*c_r, np.cos(ep_ang)*c_r, c_h])*c_gr.T #coordinates of the dendrite = endpoint*grid 
-                d_res.append(pt+som_c) 
+                #d_res.append(pt+som_c) 
+                d_res = d_res + list(pt+som_c)
                 d_segs = d_segs + list(np.arange(c_n))
-            b_res.append(d_res)
+            b_res.append(np.array(d_res))
             segs.append(d_segs)
-            idx.append(np.ones(sum([len(d_res[k]) for k in range (len(d_res))]))*i)
-            print (d_res)
-            d_res = np.asarray([np.concatenate((d_res[i][0], d_res[i][1])) for i in range(len(d_res))])
-            print (d_res.shape)
+            #idx.append(np.ones(sum([len(d_res[k]) for k in range (len(d_res))]))*i)
+            idx.append((np.ones(len(d_res))*i).astype('int'))
+            #d_res = np.asarray([np.concatenate((d_res[i][0], d_res[i][1])) for i in range(len(d_res))])
 
-        return d_res, np.array(idx), np.array(segs)
+        return np.array(b_res), np.array(idx), np.array(segs)
 
 
 
