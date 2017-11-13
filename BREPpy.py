@@ -1,4 +1,4 @@
-import argparse
+import argparse 
 import numpy as np
 import datetime
 import neuron
@@ -12,7 +12,6 @@ import csv
 class Connector (object):
     
     def __init__(self):
-        
         self.parser = argparse.ArgumentParser(prog='BREP for py ', conflict_handler='resolve')
         self.parser.add_argument("--config_fn",   type = str, default = '', help ="use the given hoc configuration file to obtain parameters")
         self.parser.add_argument("--gc_points_fn",  type = str, default = '', help ="load originating points for granule cells from given file, default is randomly generated")
@@ -289,19 +288,22 @@ class Cell_pop (object):
     # Points
     # Cell numbers
     # Segments
-class Query_points (object):
+class Query_point (object):
     def __init__ (self, coord, IDs = [], segs = []):
         self.coo = coord
         self.idx = IDs
         self.seg = segs
         self.npts = len(coord)
 
+#class Query_point_lin (Query_point):
+
+
 
 
 
 
 class Connect_2Dr(object):
-    def __init__(self, qpts1, spts2, c_rad):
+    def __init__(self, qpts1, qpts2, c_rad):
         self.pts1 = qpts1
         self.pts2 = qpts2
         self.c_rad = c_rad
@@ -339,25 +341,22 @@ class Golgi_pop (Cell_pop):
                 self.args.goc_theta_basolateral_stdev,
                 b_sp)
 
-        self.a_dend = a_dend
-        self.b_dend = b_dend
-
-        print (a_dend.shape)
-        print (a_idx.shape)
-        print (a_sgts.shape)
-
-        print (a_idx)
-        print (a_sgts)
-
 
         def conc_ab (a, b):
             def flatten_cells (dat):
+                if len(dat.shape) == 2: dat = np.expand_dims(dat, axis = 2)
                 return dat.reshape(dat.shape[0]*dat.shape[1],dat.shape[2])
             return np.concatenate((flatten_cells(a), flatten_cells(b)))
 
-        #print (a_dend)
-
         all_dends = conc_ab (a_dend, b_dend)
+        all_idx = conc_ab (a_idx, b_idx)
+        all_sgts = conc_ab (a_idx, b_idx)
+
+        self.a_dend = a_dend
+        self.b_dend = b_dend
+        self.qpts = Query_point (all_dends, all_idx, all_sgts)
+
+
         #print (all_dends.shape)
         #all_idx =
 
@@ -376,7 +375,11 @@ class Golgi_pop (Cell_pop):
         c_m = mean angle for each dendrite (number of elements = number of dendrites per cell)
         c_std = standard deviation (degree) for the angle of the dendrite
         c_sp = spacing between the points
-        Returns a list of lists containing arrays with the coordinates of the dendrites
+        Returns three arrays:
+        res: shape is #cells x #pts x 3 (coords) -> coordinates of the points
+        idx: shape is #cells x #pts -> cell ids of the points (starting at 0)
+        sgts: shape is #cells x #pts -> segment for each point, starts at 0
+        where #pts = #segment per dendrite x# dendrites generated with this function
         '''
         c_n = int(np.linalg.norm([c_r, c_h])/c_sp) #number of points per dendrite
         c_gr = np.linspace(0,1,c_n)*np.ones((3, c_n)) #linspace grid between 0 and 1 with c_n elements
@@ -390,15 +393,11 @@ class Golgi_pop (Cell_pop):
             for cc_m in c_m: #each dendrite
                 ep_ang = (np.random.randn()*c_std + cc_m)*np.pi/180 #angle
                 pt = ([np.sin(ep_ang)*c_r, np.cos(ep_ang)*c_r, c_h])*c_gr.T #coordinates of the dendrite = endpoint*grid 
-                #d_res.append(pt+som_c) 
                 d_res = d_res + list(pt+som_c)
                 d_segs = d_segs + list(np.arange(c_n))
             b_res.append(np.array(d_res))
             segs.append(d_segs)
-            #idx.append(np.ones(sum([len(d_res[k]) for k in range (len(d_res))]))*i)
             idx.append((np.ones(len(d_res))*i).astype('int'))
-            #d_res = np.asarray([np.concatenate((d_res[i][0], d_res[i][1])) for i in range(len(d_res))])
-
         return np.array(b_res), np.array(idx), np.array(segs)
 
 
