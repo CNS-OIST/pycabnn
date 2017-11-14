@@ -3,8 +3,10 @@ import numpy as np
 import datetime
 import neuron
 import csv
+import warnings
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from sklearn.neighbors import KDTree 
 from neuron import hoc, h
 
 
@@ -181,11 +183,6 @@ class Connector (object):
             # The following two parameters are an exception:
             if 'GLdepth' in d_l and 'PCLdepth' in d_l and not 'aa-length' in self.cl_args.keys():
                 setattr (self.args, 'aa-length', getattr(neuron.h, 'GLdepth')+getattr(neuron.h,'PCLdepth'))
-    
-
-
-
-
 
 
             
@@ -196,24 +193,7 @@ class Connector (object):
         if self.args.verbose:
             print (stat)
 
-    
-    def get_GC_Points():
-        ''' 
-        corresponds to GC_Points statement in brep.csm file.
-        Read in the GC_Points provided in a file or render some randomly. (UniformRandomProcess)
-        '''
-        pass
-        
-    def get_GCT_Points():
-        '''
-        corresponds to the GCT_Points statement from the 
-        '''
-    
-    def get_GOC_Points():
-        '''
-        get GOC Points from file or render them
-        '''
-        
+ 
 
 class Cell_pop (object):
 
@@ -303,50 +283,79 @@ class Cell_pop (object):
 
 
 
-
-
-    # Should have:
-    # Points
-    # Cell numbers
-    # Segments
 class Query_point (object):
     def __init__ (self, coord, IDs = [], segs = []):
         self.coo = coord
-        self.idx = IDs
         self.seg = segs
         self.npts = len(coord)
+        if not IDs == []: self.idx = IDs
+        else: self.idx = np.arange(len(coord)) 
+        self.lin = self.lin_check()
 
     def lin_check (self):
-        print ('0')
         if len(self.coo.shape) == 3:
-            print (1)
             if self.coo.shape[1] == 2 and self.coo.shape[2] == 3:
-                print (2)
                 sm = sum(abs(self.coo[:,0,:] - self.coo[:,1,:]))
                 no_dif = [np.isclose(sm[i],0) for i in range(len(sm))]
                 if sum(no_dif) == 2: # 2 coordinates are the same, one is not
-                    print (3)
-                    self.lin_axis = no_dif.index(False) #this one is the axis that cn be linearized
+                    self.lin_axis = np.invert(no_dif) #this one is the axis that cn be linearized
                     return True
         return False
+
+
+    def linearize (self):
+        pass
+        #this function should linearize points when they are in a higher structure than nx3, and the IDs and 
 #class Query_point_lin (Query_point):
 
 
 
 
-
-
 class Connect_2D(object):
+
     def __init__(self, qpts1, qpts2, c_rad):
-        self.pts1 = qpts1
-        self.pts2 = qpts2
+        if qpts1.lin and not qpts2.lin:
+            self.lpts = qpts1
+            self.pts = qpts2
+            self.lin_axis = qpts1.lin_axis
+        elif qpts2.lin and not qpts1.lin:
+            self.lpts = qpts2
+            self.pts = qpts1
+            self.lin_axis = qpts2.lin_axis
+        else: 
+            print ('Failure to initialize connector, there is not one linearized and one regular point set')
         self.c_rad = c_rad
 
 
+    def search_connections(self):
+        if self.lpts.npts >= self.pts.npts:
+            tr_pts = self.lpts.coo[:,0,np.invert(self.lin_axis)]
+            q_pts = self.pts.coo[:, np.invert(self.lin_axis)]
+            lin_in_tree = True
+        else: 
+            tr_pts  = self.pts.coo [:,np.invert(self.lin_axis)]
+            q_pts = self.lpts.coo [:,0, np.invert(self.lin_axis)]
+            lin_in_tree = False
+        lax_c = self.pts.coo[:,self.lin_axis]
+        lax_range = self.lpts.coo[:,:,self.lin_axis]
+        lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
+        print (lax_range.shape)
 
+        #The actual KDTree search
+        kdt = KDTree(tr_pts) #construct KDTree
+        tr_q = [set() for i in range(len(tr_pts))] #This set structure is somewhat redundant, but can speed up further processing steps
+        q_tr = [set() for i in range(len(q_pts))]
+        for i, pt in enumerate(q_pts): #iterate through the query points
+            warnings.simplefilter('ignore')
+            ind, = kdt.query_radius(pt, r = self.c_rad)
+            if lin_in_tree: ind = ind[np.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
+            else: ind = ind[np.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind])]
+            q_tr[i].update(ind.astype('int'))
+            for k in ind:
+                tr_q[k].add(i)
 
-    def construct_tree(self):
-        pass
+        return tr_q, q_tr
+
 
 
 
