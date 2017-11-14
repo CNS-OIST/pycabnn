@@ -220,7 +220,19 @@ class Cell_pop (object):
     def __init__(self, my_args):
         self.args = my_args
 
-    def read_in_file (self, fn, parse_ignore = True):
+
+    def load_somata(self, fn_or_ar):
+        if type(fn_or_ar) == str:
+            try: self.read_in_soma_file(fn_or_ar)
+            except: print ('Tried to read in ', fn_or_ar, ', failed.')
+        else:
+            try:
+                if fn_or_ar.shape[len(fn_or_ar.shape)-1] == 3:
+                    self.som = fn_or_ar
+                else: print ('Cannot recognize array as coordinates')
+            except: print ('Could not read in soma points')
+
+    def read_in_soma_file (self, fn, parse_ignore = True):
         ''' Reads in files such as the ones that BREP returns.
         Represents lines as rows, nth element in each line as column.
         fn = Filename
@@ -238,6 +250,7 @@ class Cell_pop (object):
                 res.append(np.asarray(ar))
         if len(err)> 0 and not parse_ignore: print ('Could not parse on {} instances: {}'.format(len(err), set(err)))
         self.som = np.asarray(res)
+        self.n_cell = len(self.som)
 
 
     def coord_reshape (dat, n_dim = 3):
@@ -303,6 +316,8 @@ class Query_point (object):
         self.seg = segs
         self.npts = len(coord)
 
+    def lin_check (self):
+        pass
 #class Query_point_lin (Query_point):
 
 
@@ -310,7 +325,7 @@ class Query_point (object):
 
 
 
-class Connect_2Dr(object):
+class Connect_2D(object):
     def __init__(self, qpts1, qpts2, c_rad):
         self.pts1 = qpts1
         self.pts2 = qpts2
@@ -329,25 +344,23 @@ class Golgi_pop (Cell_pop):
     def __init__(self, my_args):
         Cell_pop.__init__(self,my_args)
 
-    def load_somata(self):
-        self.read_in_file(self.args.goc_points_fn)
+
 
     def add_dendrites(self):
-        a_sp = (self.args.goc_apical_radius**2+self.args.goc_apical_dendheight**2)**0.5/self.args.goc_apical_nsegpts
-        b_sp = (self.args.goc_basolateral_radius**2+self.args.goc_basolateral_dendheight**2)**0.5/self.args.goc_basolateral_nsegpts
-        a_dend, a_idx, a_sgts = self.gen_dendrite(
-                self.args.goc_apical_radius, 
-                self.args.goc_apical_dendheight,
-                [self.args.goc_theta_apical_min, self.args.goc_theta_apical_max],
-                self.args.goc_theta_apical_stdev,
-                a_sp)
+        a_rad = self.args.GoC_PhysApicalDendR
+        a_h = self.args.GoC_PhysApicalDendH
+        a_ang = [self.args.GoC_Atheta_min, self.args.GoC_Atheta_max]
+        a_std = self.args.GoC_Atheta_stdev
+        a_n = int(self.args.GoC_Ad_nseg * self.args.GoC_Ad_nsegpts) # numbr of points per dencrite
 
-        b_dend, b_idx, b_sgts = self.gen_dendrite(
-                self.args.goc_basolateral_radius, 
-                self.args.goc_basolateral_dendheight,
-                [self.args.goc_theta_basolateral_min, self.args.goc_theta_basolateral_max],
-                self.args.goc_theta_basolateral_stdev,
-                b_sp)
+        b_rad = self.args.GoC_PhysBasolateralDendR
+        b_h = self.args.GoC_PhysBasolateralDendH
+        b_ang = [self.args.GoC_Btheta_min, self.args.GoC_Btheta_max]
+        b_std = self.args.GoC_Btheta_stdev
+        b_n = int(self.args.GoC_Bd_nseg * self.args.GoC_Bd_nsegpts)
+
+        a_dend, a_idx, a_sgts = self.gen_dendrite(a_rad, a_h, a_ang, a_std, a_n)
+        b_dend, b_idx, b_sgts = self.gen_dendrite(b_rad, b_h, b_ang, b_std, b_n)
 
         def conc_ab (a, b):
             def flatten_cells (dat):
@@ -364,26 +377,22 @@ class Golgi_pop (Cell_pop):
         self.qpts = Query_point (all_dends, all_idx, all_sgts)
 
 
-
-
-
     def save_dend_coords(self):
         pass
 
-    def gen_dendrite (self, c_r, c_h, c_m, c_std, c_sp):
+    def gen_dendrite (self, c_r, c_h, c_m, c_std, c_n):
         '''Generates dendrites as described in the paper:
         c_r = maximal radius of cone
         c_h = height of cone
         c_m = mean angle for each dendrite (number of elements = number of dendrites per cell)
         c_std = standard deviation (degree) for the angle of the dendrite
-        c_sp = spacing between the points
+        c_n = number of points
         Returns three arrays:
         res: shape is #cells x #pts x 3 (coords) -> coordinates of the points
         idx: shape is #cells x #pts -> cell ids of the points (starting at 0)
         sgts: shape is #cells x #pts -> segment for each point, starts at 0
         where #pts = #segment per dendrite x# dendrites generated with this function
         '''
-        c_n = int(np.linalg.norm([c_r, c_h])/c_sp) #number of points per dendrite
         c_gr = np.linspace(0,1,c_n)*np.ones((3, c_n)) #linspace grid between 0 and 1 with c_n elements
         b_res = []
         idx = []  #cell indices
@@ -407,14 +416,9 @@ class Golgi_pop (Cell_pop):
 
 
 class Granule_pop (Cell_pop):
-    def __init__(self, fn, my_args):
+    def __init__(self, my_args):
         Cell_pop.__init__(self, my_args)
-        self.fn = fn
         self.aa_length = self.args.PCLdepth+ self.args.GLdepth
-
-
-    def load_somata (self):
-        self.read_in_file(self.fn)
 
 
     def add_aa_endpoints_random (self):
@@ -438,6 +442,7 @@ class Granule_pop (Cell_pop):
             self.pf_dots[:,0,2] = self.pf_dots[:,1,2] #z axis shall be the same
             self.pf_dots[:,0,0] = self.pf_dots[:,0,0] - pf_length/2
             self.pf_dots[:,1,0] = self.pf_dots[:,1,0] + pf_length/2
+            self.qpts_pf = Query_point(self.pf_dots)
         except Exception as e:
             #raise e
             print ('I need ascending axon points to calculate the parallel fibers')
