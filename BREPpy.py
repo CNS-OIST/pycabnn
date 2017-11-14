@@ -313,17 +313,20 @@ class Query_point (object):
 
 class Connect_2D(object):
 
-    def __init__(self, qpts1, qpts2, c_rad):
-        if qpts1.lin and not qpts2.lin:
-            self.lpts = qpts1
-            self.pts = qpts2
-            self.lin_axis = qpts1.lin_axis
-        elif qpts2.lin and not qpts1.lin:
-            self.lpts = qpts2
-            self.pts = qpts1
-            self.lin_axis = qpts2.lin_axis
+    def __init__(self, qpts_src, qpts_tar, c_rad):
+
+        #find out which of the pointsets is the linear one and assign accordingly
+        if qpts_src.lin and not qpts_tar.lin:
+            self.lpts = qpts_src
+            self.pts = qpts_tar
+            self.lin_axis = qpts_src.lin_axis
+        elif qpts_tar.lin and not qpts_src.lin:
+            self.lpts = qpts_tar
+            self.pts = qpts_src
+            self.lin_axis = qpts_tar.lin_axis
         else: 
             print ('Failure to initialize connector, there is not one linearized and one regular point set')
+        self.src_lin = qpts_src.lin
         self.c_rad = c_rad
 
 
@@ -343,20 +346,25 @@ class Connect_2D(object):
 
         #The actual KDTree search
         kdt = KDTree(tr_pts) #construct KDTree
-        tr_q = [set() for i in range(len(tr_pts))] #This set structure is somewhat redundant, but can speed up further processing steps
-        q_tr = [set() for i in range(len(q_pts))]
+        #tr_q = [set() for i in range(len(tr_pts))] #This set structure is somewhat redundant, but can speed up further processing steps
+        #q_tr = [set() for i in range(len(q_pts))]
+        
+        src_in_tr = (self.qpts_src.lin == lin_in_tree) 
+        res_src_pid = []
+        res_tar_pid = []
+        if 
+
         for i, pt in enumerate(q_pts): #iterate through the query points
             warnings.simplefilter('ignore')
             ind, = kdt.query_radius(pt, r = self.c_rad)
             if lin_in_tree: ind = ind[np.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
             else: ind = ind[np.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind])]
             q_tr[i].update(ind.astype('int'))
-            for k in ind:
+            if src_in_tr:
+                for k in ind:
                 tr_q[k].add(i)
 
         return tr_q, q_tr
-
-
 
 
 
