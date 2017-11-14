@@ -3,6 +3,10 @@ import numpy as np
 import datetime
 import neuron
 import csv
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from neuron import hoc, h
+
 
 
 
@@ -183,6 +187,7 @@ class Connector (object):
 
 
 
+
             
     
     def p_verb (self, stat, *args):
@@ -242,9 +247,12 @@ class Cell_pop (object):
         return dat
 
 
-    def plot_somata (self, new_fig = True):
+    def plot_somata (self, new_fig = True, *args, **kwargs):
         if new_fig:
             plt.figure()
+        ax = plt.gcf().gca(projection='3d')
+        ax.plot(self.som[:,0], self.som[:,1], self.som[:,2], *args, **kwargs)
+
 
     def gen_random_cell_loc (self, n_cell):
         '''Random generation for cell somatas
@@ -341,7 +349,6 @@ class Golgi_pop (Cell_pop):
                 self.args.goc_theta_basolateral_stdev,
                 b_sp)
 
-
         def conc_ab (a, b):
             def flatten_cells (dat):
                 if len(dat.shape) == 2: dat = np.expand_dims(dat, axis = 2)
@@ -357,13 +364,8 @@ class Golgi_pop (Cell_pop):
         self.qpts = Query_point (all_dends, all_idx, all_sgts)
 
 
-        #print (all_dends.shape)
-        #all_idx =
 
-        #all_idx = np.concatenate((flatten_cells(np.expand_dims(a_ind, axis = 2)), flatten_cells(np.expand_dims(b_ind, axis = 2)))).astype('int')
 
-    def dend_to_qpts(self):
-        pass
 
     def save_dend_coords(self):
         pass
@@ -405,9 +407,67 @@ class Golgi_pop (Cell_pop):
 
 
 class Granule_pop (Cell_pop):
-    def __init__(self, my_args):
-        Cell_pop.__init__(self,my_args)
+    def __init__(self, fn, my_args):
+        Cell_pop.__init__(self, my_args)
+        self.fn = fn
+        self.aa_length = self.args.PCLdepth+ self.args.GLdepth
 
+
+    def load_somata (self):
+        self.read_in_file(self.fn)
+
+
+    def add_aa_endpoints_random (self):
+        '''Generate aa endpoints with a random aa length (end point will be somewhere in mol_range)'''
+        mol_range = [self.aa_length, self.aa_length+self.args.MLdepth]
+        self.aa_dots = np.array([np.array([self.som[i], self.som[i]]) for i in range(len(self.som))]) 
+        self.aa_dots[:,1,2] = np.random.uniform(mol_range[0], mol_range[1], len(self.aa_dots[:,1,2]))
+        self.qpts_aa = Query_point(self.aa_dots)
+
+    def add_aa_endpoints_fixed(self):
+        '''Generate aa endpoints with a random aa length (end point will be somewhere in mol_range)'''
+        #aa_length = self.args.PFzoffset   #NOTE: This value exists, but in the BREP original file it is replaced by the other definition
+        self.aa_dots = np.array([np.array([self.som[i], self.som[i]]) for i in range(len(self.som))]) 
+        self.aa_dots[:,1,2] = self.aa_dots[:,1,2] + self.aa_length
+        self.qpts_aa = Query_point(self.aa_dots)
+
+    def add_pf_endpoints (self):
+        pf_length = self.args.PFlength
+        try:
+            self.pf_dots = self.aa_dots.copy()
+            self.pf_dots[:,0,2] = self.pf_dots[:,1,2] #z axis shall be the same
+            self.pf_dots[:,0,0] = self.pf_dots[:,0,0] - pf_length/2
+            self.pf_dots[:,1,0] = self.pf_dots[:,1,0] + pf_length/2
+        except Exception as e:
+            #raise e
+            print ('I need ascending axon points to calculate the parallel fibers')
+
+    def add_3D_aa_and_pf(self):
+        aa_length = self.args.PCLdepth+ self.args.GLdepth
+        aa_nd = int(self.aa_length / self.args.AAstep) #number of dots for the aa
+        aa_sp = np.linspace(0, self.aa_length, aa_nd)
+
+        pf_nd = int(self.args.PFlength/self.args.PFstep) # number of dots for the pf
+        pf_sp = np.linspace(-self.args.PFlength/2, self.args.PFlength/2)
+
+        self.aa_dots = np.zeros((len(coo), aa_nd, 3))
+        self.pf_dots = np.zeros((len(coo), pf_nd, 3))
+        aa_idx = np.zeros((len(coo), aa_nd))
+        aa_sgts= np.zeros((len(coo), aa_nd))
+        pf_idx = np.zeros((len(coo), pf_nd))
+        pf_sgts= np.zeros((len(coo), pf_nd))
+        for i, som in enumerate(coo):
+            self.aa_dots[i] = np.ones((aa_nd, 3))*som
+            self.aa_dots[i,:,2] = aa_dots[i,:,2] + aa_sp
+            aa_idx[i,:] = i
+            aa_sgts[i,:] = np.arange(aa_nd)
+            self.pf_dots[i] = np.ones((pf_nd,3))*aa_dots[i,-1, :]
+            self.pf_dots[i,:,0] = pf_dots[i,:,0] + pf_sp
+            pf_idx[i,:]  = i
+            pf_sgts[i,:] = np.arange(pf_nd) #! Not necessarily nice
+
+        self.qpts_aa = Query_point(self.aa_dots, aa_idx, aa_sgts)
+        self.qpts_pf = Query_point(self.pf_dots, pf_idx, pf_sgts)
 
 
 
