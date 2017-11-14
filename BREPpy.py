@@ -317,7 +317,18 @@ class Query_point (object):
         self.npts = len(coord)
 
     def lin_check (self):
-        pass
+        print ('0')
+        if len(self.coo.shape) == 3:
+            print (1)
+            if self.coo.shape[1] == 2 and self.coo.shape[2] == 3:
+                print (2)
+                sm = sum(abs(self.coo[:,0,:] - self.coo[:,1,:]))
+                no_dif = [np.isclose(sm[i],0) for i in range(len(sm))]
+                if sum(no_dif) == 2: # 2 coordinates are the same, one is not
+                    print (3)
+                    self.lin_axis = no_dif.index(False) #this one is the axis that cn be linearized
+                    return True
+        return False
 #class Query_point_lin (Query_point):
 
 
