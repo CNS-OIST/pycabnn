@@ -350,6 +350,44 @@ class Connect_2D(object):
 
 
 
+    def save_results (self, res, res_l, prefix, query_is_tar = True, query_is_lin = False):
+
+        fn_tar = prefix + '_target.dat'
+        fn_src = prefix + '_source.dat'
+        fn_segs = prefix + '_segments.dat'
+        fn_dis = prefix + '_distance.dat'
+
+        with open (fn_tar, 'w') as f_tar, open (fn_src, 'w') as f_src, open (fn_dis, 'w') as f_dis, open (fn_segs, 'w') as f_segs: 
+
+            wr_tar = csv.writer(f_tar)
+            wr_src = csv.writer(f_src)
+            wr_dis = csv.writer(f_dis)
+            wr_segs = csv.writer(f_segs)
+
+            for l, (cl, cl_l) in enumerate(zip(res, res_l)):
+                wr_dis.writerow(s for s in cl_l)
+                if query_is_lin: 
+                    wr_segs.writerow(self.pts.seg[s] for s in cl)
+                else:
+                    wr_segs.writerow(self.pts.seg[l] for s in cl)
+    '''
+                for (el, el_l) in zip(cl, cl_l):
+                    
+                    if query_is_lin: 
+                        wr_segs.writerow(self.pts.seg[el])
+                        el = self.pts.idx[el]
+                    else: 
+                        wr_segs.writerow(self.pts.seg[l])
+                        l = self.pts.idx[l]
+
+                    if query_is_tar:
+                        wr_src.writerow(el)
+                        wr_tar.writerow(l)
+                    else:
+                        wr_src.writerow(l)
+                        wr_tar.writerow(el)
+    '''
+
 
     def query_pts_in_lin (self):
 
@@ -464,6 +502,8 @@ class Connect_2D(object):
             res.append(ind.astype('int'))
             l_res.append(lax_c[ind] - lax_range[i,0])
         return res, l_res
+
+
 
 
 
