@@ -13,7 +13,7 @@ from neuron import hoc, h
 
 
 # On the naming conventions: I tried to keep variable names similar as the ones in the brep.scm file
-# However, all _ had to bee transformed to _ , and sometimes a postfix like _fn (filename) or _num (number) was added for clarification.
+# However, all _ had. to bee transformed to _ , and sometimes a postfix like _fn (filename) or _num (number) was added for clarification.
 
 class Connector (object):
     
@@ -330,7 +330,148 @@ class Connect_2D(object):
         self.c_rad = c_rad
 
 
-    def search_connections(self):
+
+
+    def get_tree_setup (self):
+        if self.lpts.npts >= self.pts.npts:
+            tr_pts = self.lpts.coo[:,0,np.invert(self.lin_axis)]
+            q_pts = self.pts.coo[:, np.invert(self.lin_axis)]
+            lin_in_tree = True
+        else: 
+            tr_pts  = self.pts.coo [:,np.invert(self.lin_axis)]
+            q_pts = self.lpts.coo [:,0, np.invert(self.lin_axis)]
+            lin_in_tree = False
+        lax_c = self.pts.coo[:,self.lin_axis]
+        lax_range = self.lpts.coo[:,:,self.lin_axis]
+        lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
+        kdt = KDTree(tr_pts) #construct KDTree
+
+        return kdt, q_pts, lax_c, lax_range, lin_in_tree
+
+
+
+
+    def query_pts_in_lin (self):
+
+        #print ('in')
+
+        tr_pts = self.lpts.coo[:,0,np.invert(self.lin_axis)]
+        q_pts = self.pts.coo[:, np.invert(self.lin_axis)]
+
+        #print ('tr_pts', tr_pts.shape)
+        #print ('q_pts', q_pts.shape)
+
+        lax_c = self.pts.coo[:,self.lin_axis]
+        lax_range = self.lpts.coo[:,:,self.lin_axis]
+        lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
+
+        #print ('lax_range', lax_range.shape)
+        #print ('lax_c', lax_c.shape)
+
+
+        
+
+        kdt = KDTree(tr_pts)
+
+        #print ('made_tree')
+        #stophere()
+
+        #lin_dis = [[] for i in range(self.lpts.npts)] #distance from the lower end for the linear population
+        #pts_pid = [[] for i in range(self.lpts.npts)]
+        pts_cid = [] #cell ID for the (nonlinear) points population
+        pts_seg = [] #segment for the points population
+
+        res = []
+        l_res = []
+
+        for i, pt in enumerate(q_pts): #iterate through the query points
+
+            #if i%1000 == 0: print (i) 
+            warnings.simplefilter('ignore')
+            ind, = kdt.query_radius(pt, r = self.c_rad)
+            ind = ind[np.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
+            res.append(ind.astype('int'))
+            l_res.append(lax_c[i] - lax_range[ind,0])
+            #print (ind.shape)
+            #for k in ind:
+                #lin_dis[k] = lin_dis[k] + [lax_c[i] - lax_range [ind,0]]
+                #pts_pid[k] = pts_pid[k] + [i]
+                #lin_dis[k].append(lax_c[i] - lax_range [ind,0])
+                #pts_pid[k].append(i)
+
+
+        #print ('jere now')
+        #print (len(pts_id))
+
+
+        #for pta in pts_pid:
+        #    pts_cid.append(self.pts.idx[pta])
+        #    pts_seg.append(self.pts.seg[pta])
+
+            #pts_pid [i] = list(np.ones(len(ind))*i)
+            #pts_cid [i] = list(np.ones(len(ind))*self.pts.idx[i])
+            #pts_seg [i] = list(np.ones(len(ind))*self.pts.seg[i])
+
+        #resdict = {
+        #        'source': 'lin points', 
+        #        'lin dis':lin_dis, 
+        #        'target point IDs': pts_pid,
+        ##        'target cell IDs' : pts_cid,
+        ##       'target segments' : pts_seg}
+
+        return res, l_res
+
+
+    def query_lin_in_pts (self):
+
+        #print ('in')
+
+        q_pts = self.lpts.coo[:,0,np.invert(self.lin_axis)]
+        tr_pts = self.pts.coo[:, np.invert(self.lin_axis)]
+
+        #print ('tr_pts', tr_pts.shape)
+        #print ('q_pts', q_pts.shape)
+
+        lax_c = self.pts.coo[:,self.lin_axis]
+        lax_range = self.lpts.coo[:,:,self.lin_axis]
+        lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
+
+        #print ('lax_range', lax_range.shape)
+        #print ('lax_c', lax_c.shape)
+
+
+        
+
+        kdt = KDTree(tr_pts)
+
+        #print ('made_tree')
+        #stophere()
+
+        #lin_dis = [[] for i in range(self.lpts.npts)] #distance from the lower end for the linear population
+        #pts_pid = [[] for i in range(self.lpts.npts)]
+        pts_cid = [] #cell ID for the (nonlinear) points population
+        pts_seg = [] #segment for the points population
+
+        res = []
+        l_res = []
+
+        for i, pt in enumerate(q_pts): #iterate through the query points
+
+            #if i%1000 == 0: print (i) 
+            warnings.simplefilter('ignore')
+            ind, = kdt.query_radius(pt, r = self.c_rad)
+            ind = ind[np.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind]).ravel()]
+            res.append(ind.astype('int'))
+            l_res.append(lax_c[ind] - lax_range[i,0])
+        return res, l_res
+
+
+
+
+
+
+
+    '''def search_connections(self):
         if self.lpts.npts >= self.pts.npts:
             tr_pts = self.lpts.coo[:,0,np.invert(self.lin_axis)]
             q_pts = self.pts.coo[:, np.invert(self.lin_axis)]
@@ -348,23 +489,70 @@ class Connect_2D(object):
         kdt = KDTree(tr_pts) #construct KDTree
         #tr_q = [set() for i in range(len(tr_pts))] #This set structure is somewhat redundant, but can speed up further processing steps
         #q_tr = [set() for i in range(len(q_pts))]
+
+
+        res = []
+        lin_l = []
+
+        for i, pt in enumerate(q_pts): #iterate through the query points
+            warnings.simplefilter('ignore')
+            ind, = kdt.query_radius(pt, r = self.c_rad)
+            if lin_in_tree: 
+                ind = ind[np.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
+                lin_l.append(lax_c[i] - lax_range [ind,0])
+            else: 
+                ind = ind[np.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind])]
+                lin_l.append(lax_c[ind] - lax_range[i,0])
+            res.append (ind.astype('int'))
+
+        print ('now we just do weird stuff with the results to format')
+
+        lin_pid = [[] for i in range(self.lpts.npts)]
+        lin_dis = [[] for i in range(self.lpts.npts)] #distance from the lower end for the linear population
+
+        pts_pid = [[] for i in range(self.lpts.npts)]
+        pts_cid = [[] for i in range(self.lpts.npts)] #cell ID for the (nonlinear) points population
+        pts_seg = [[] for i in range(self.lpts.npts)] #segment for the points population
+
+        lin_is_src = self.qpts_src.lin
+
+
+
+
         
         src_in_tr = (self.qpts_src.lin == lin_in_tree) 
-        res_src_pid = []
-        res_tar_pid = []
-        if 
+
+        lin_is_src = self.qpts_src.lin
+
+        print ('src_in_tr',src_in_tr)
+
+
 
         for i, pt in enumerate(q_pts): #iterate through the query points
             warnings.simplefilter('ignore')
             ind, = kdt.query_radius(pt, r = self.c_rad)
             if lin_in_tree: ind = ind[np.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
+                if src_in_tr: # case linear ones are in the tree and source pop
+                    lin_pid.append(np.ones(len(ind))*i)
+                    pts_pid.append(ind.astype('int'))
+                else:  # case linear ones are in the tree, regular ones are source pop
+                    srt = []
+                    trt = []
+                    for k in ind:
+                        srt[]
+                    pts_pid.append(np.ones(len(ind))*i)
+                    lin_pid.append(ind.astype('int'))
             else: ind = ind[np.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind])]
+            
+
             q_tr[i].update(ind.astype('int'))
             if src_in_tr:
                 for k in ind:
                 tr_q[k].add(i)
 
         return tr_q, q_tr
+
+        return kdt, q_pts'''
 
 
 
