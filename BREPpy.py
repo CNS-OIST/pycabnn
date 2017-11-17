@@ -351,7 +351,17 @@ class Connect_2D(object):
 
 
     def save_results (self, res, res_l, prefix, query_is_tar = True, query_is_lin = False):
+        '''Saves the results as produced by the query_x_in_y method similarly as BREP.
+        res = result (containing a list of arrays/lists with the found IDs 
+            -> first index = query point ID
+            -> numbers within the 2nd level arrays/lists -> tree point IDs
+        res_l = for the linear point species, distance from the first outer boder
+        prefix = prefix for the result file -> path, output specifier
+        query_is_tar = if True, the query points are the target points
+        query_is_lin = if True, the query points are from the linearized structure.
+        With the two last bools different 4 different modes can be created to have flexibility.'''
 
+        # file names
         fn_tar = prefix + '_target.dat'
         fn_src = prefix + '_source.dat'
         fn_segs = prefix + '_segments.dat'
@@ -359,52 +369,41 @@ class Connect_2D(object):
 
         with open (fn_tar, 'w') as f_tar, open (fn_src, 'w') as f_src, open (fn_dis, 'w') as f_dis, open (fn_segs, 'w') as f_segs: 
 
-            #wr_tar = csv.writer(f_tar)
-            #wr_src = csv.writer(f_src)
-            #wr_dis = csv.writer(f_dis)
-            #wr_segs = csv.writer(f_segs)
-
             for l, (cl, cl_l) in enumerate(zip(res, res_l)):
+                
                 if not len(cl) == len(cl_l): print ('Gaaaaah this should not be printed!!')
+                
                 if len(cl_l)>0:
-
+                    
                     f_dis.write("\n".join(map(str, cl_l)))
                     
+                    #first, get the cell IDS of the query and tree points (for the linear points, that is just the point ID, 
+                    #for the other points this information has to be extracted from the corresponding Query_points object.
+                    #Segments also corresponds to the 3D point population, right value is acquired from Query-points object.
                     if query_is_lin: 
-                        f_segs.write("\n".join(map(str,[self.pts.seg[s] for s in cl])))
-                        q_id = self.pts.idx[cl]
-                        tr_id = np.ones(len(cl))*l
+                        #f_segs.write("\n".join(map(str,[self.pts.seg[s] for s in cl])))
+                        f_segs.write("\n".join(map(str, self.pts.seg[cl].astype('int') )))
+                        q_id = self.pts.idx[cl] 
+                        tr_id = np.ones(len(cl))*l 
                     else:
-                        f_segs.write("\n".join(map(str,[self.pts.seg[l] for s in cl])))
+                        #f_segs.write("\n".join(map(str,[self.pts.seg[l] for s in cl]))) #
+                        f_segs.write("\n".join(map(str, int(self.pts.seg[l])*np.ones(len(cl))))) 
                         q_id = np.ones(len(cl))*self.pts.idx[l]
                         tr_id = cl
+
+                    #depending on which population should be source and which should be target, save cell IDs accordingly.
                     if query_is_tar:
                         f_tar.write("\n".join(map(str, q_id)))
                         f_src.write("\n".join(map(str, tr_id )))
                     else:
                         f_tar.write("\n".join(map(str, tr_id)))
                         f_src.write("\n".join(map(str, q_id)))
+
+                    #need to attach one more line here or we get two elements per line 
                     f_dis.write("\n")
                     f_src.write("\n")
                     f_tar.write("\n")
                     f_segs.write("\n")
-    '''
-                for (el, el_l) in zip(cl, cl_l):
-                    
-                    if query_is_lin: 
-                        wr_segs.writerow(self.pts.seg[el])
-                        el = self.pts.idx[el]
-                    else: 
-                        wr_segs.writerow(self.pts.seg[l])
-                        l = self.pts.idx[l]
-
-                    if query_is_tar:
-                        wr_src.writerow(el)
-                        wr_tar.writerow(l)
-                    else:
-                        wr_src.writerow(l)
-                        wr_tar.writerow(el)
-    '''
 
 
     def query_pts_in_lin (self):
