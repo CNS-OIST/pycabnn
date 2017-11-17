@@ -359,17 +359,35 @@ class Connect_2D(object):
 
         with open (fn_tar, 'w') as f_tar, open (fn_src, 'w') as f_src, open (fn_dis, 'w') as f_dis, open (fn_segs, 'w') as f_segs: 
 
-            wr_tar = csv.writer(f_tar)
-            wr_src = csv.writer(f_src)
-            wr_dis = csv.writer(f_dis)
-            wr_segs = csv.writer(f_segs)
+            #wr_tar = csv.writer(f_tar)
+            #wr_src = csv.writer(f_src)
+            #wr_dis = csv.writer(f_dis)
+            #wr_segs = csv.writer(f_segs)
 
             for l, (cl, cl_l) in enumerate(zip(res, res_l)):
-                wr_dis.writerow(s for s in cl_l)
-                if query_is_lin: 
-                    wr_segs.writerow(self.pts.seg[s] for s in cl)
-                else:
-                    wr_segs.writerow(self.pts.seg[l] for s in cl)
+                if not len(cl) == len(cl_l): print ('Gaaaaah this should not be printed!!')
+                if len(cl_l)>0:
+
+                    f_dis.write("\n".join(map(str, cl_l)))
+                    
+                    if query_is_lin: 
+                        f_segs.write("\n".join(map(str,[self.pts.seg[s] for s in cl])))
+                        q_id = self.pts.idx[cl]
+                        tr_id = np.ones(len(cl))*l
+                    else:
+                        f_segs.write("\n".join(map(str,[self.pts.seg[l] for s in cl])))
+                        q_id = np.ones(len(cl))*self.pts.idx[l]
+                        tr_id = cl
+                    if query_is_tar:
+                        f_tar.write("\n".join(map(str, q_id)))
+                        f_src.write("\n".join(map(str, tr_id )))
+                    else:
+                        f_tar.write("\n".join(map(str, tr_id)))
+                        f_src.write("\n".join(map(str, q_id)))
+                    f_dis.write("\n")
+                    f_src.write("\n")
+                    f_tar.write("\n")
+                    f_segs.write("\n")
     '''
                 for (el, el_l) in zip(cl, cl_l):
                     
