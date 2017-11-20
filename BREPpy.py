@@ -333,6 +333,8 @@ class Connect_2D(object):
 
 
     def get_tree_setup (self):
+        ''' For experiments in the ipynb
+        Returns kdt, q_pts, lax_c, lax_range, lin_in_tree  '''
         if self.lpts.npts >= self.pts.npts:
             tr_pts = self.lpts.coo[:,0,np.invert(self.lin_axis)]
             q_pts = self.pts.coo[:, np.invert(self.lin_axis)]

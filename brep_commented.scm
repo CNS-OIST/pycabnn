@@ -1177,8 +1177,8 @@
     (z-extent . 200.)
     (y-extent . 700.)
     (x-extent . 1500.)
-    (num-gc . 798000)
-    (num-goc . 1995)
+    (num-gc . 10) ;798000
+    (num-goc . 10) ;1995
     (mean-goc-distance . 50)
     (goc-grid-xstep . 200)
     (goc-grid-ystep . 500)
@@ -1187,10 +1187,12 @@
     (goc-goc-zone . 30)
     (goc-goc-gap-zone . 30)
     (goc-dendrites . 4)
-    (goc-apical-nseg . 2)
-    (goc-basolateral-nseg . 2)
-    (goc-apical-nsegpts . 4)
-    (goc-basolateral-nsegpts . 4)
+
+    (goc-apical-nseg . 1) ;2
+    (goc-basolateral-nseg . 3) ;2
+    (goc-apical-nsegpts . 7) ;4
+    (goc-basolateral-nsegpts . 4) ;4
+
     (goc-axons . 10)
     (goc-axonsegs . 1)
     (goc-axonpts . 2)
@@ -1610,6 +1612,10 @@
                                         axon-z-range))
                             ))
                           )
+                   (printf "Bnseg: ~A ~%" Bnseg) 
+                   (printf "Bnsegpts: ~A ~%" Bnsegpts) 
+                   (printf "Anseg: ~A ~%" Anseg) 
+                   (printf "Ansegpts: ~A ~%" Ansegpts) 
 
                      (reverse
                       (car 
