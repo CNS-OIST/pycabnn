@@ -221,7 +221,8 @@ class Cell_pop (object):
             except: print ('Could not read in soma points')
 
 
-    def save_somata(self, prefix, fn = 'Coords.dat'):
+    def save_somata(self, prefix = '', fn = ''):
+        if fn == '': fn = type(self).__name__ + '_coords.dat'
         '''Save the soma coordinates'''
         assert hasattr(self, 'som'), 'Cannot save soma coordinates, as apparently none have been added yet'
         with open (prefix+fn, 'w') as f_out:
@@ -373,7 +374,7 @@ class Connect_2D(object):
 
 
 
-    def save_results (self, res, res_l, prefix, query_is_tar = True, query_is_lin = False):
+    def save_results (self, res, res_l, prefix = '', query_is_tar = True, query_is_lin = False):
         '''Saves the results as produced by the query_x_in_y method similarly as BREP.
         res = result (containing a list of arrays/lists with the found IDs 
             -> first index = query point ID
@@ -426,6 +427,50 @@ class Connect_2D(object):
                     f_src.write("\n")
                     f_tar.write("\n")
                     f_segs.write("\n")
+
+
+    def find_connections (self, lin_in_tree = []):
+        
+        # if not specified which of the point population is the query point population, take the smaller one and put the bigger one in the tree.
+        if not type(lin_in_tree).__name__ == 'bool':
+            lin_in_tree = self.lpts.npts > self.pts.npts
+        self.lin_in_tree = lin_in_tree
+
+        #depending on which points shall be in the tree and which shall be the query points, assign, and project at the same time
+        if lin_in_tree:
+            tr_pts = self.lpts.coo[:,0,np.invert(self.lin_axis)]
+            q_pts = self.pts.coo[:, np.invert(self.lin_axis)]  
+        else:
+            q_pts = self.lpts.coo[:,0,np.invert(self.lin_axis)]
+            tr_pts = self.pts.coo[:, np.invert(self.lin_axis)] 
+                              
+        #get the information for the axis along which the projection is done
+        lax_c = self.pts.coo[:,self.lin_axis] 
+        lax_range = self.lpts.coo[:,:,self.lin_axis] 
+        lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
+
+        #build 2D Tree
+        kdt = KDTree(tr_pts)
+
+        res = []
+        l_res = []
+
+        for i, pt in enumerate(q_pts): #iterate through the query points
+            # find the points within the critical radius
+            warnings.simplefilter('ignore')
+            ind, = kdt.query_radius(pt, r = self.c_rad)
+            #check if the found points match along the linearized axis and if so, add distance from the beginning of the linearized axis
+            if lin_in_tree: 
+                ind = ind[np.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
+                l_res.append(lax_c[i] - lax_range[ind,0])
+            else:
+                ind = ind[np.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind]).ravel()]
+                l_res.append(lax_c[ind] - lax_range[i,0])
+
+            res.append(ind.astype('int'))
+
+        return res, l_res
+
 
 
     def query_pts_in_lin (self):
@@ -552,7 +597,7 @@ class Golgi_pop (Cell_pop):
         self.qpts = Query_point (all_dends, all_idx, all_sgts)
 
 
-    def save_dend_coords(self, prefix):
+    def save_dend_coords(self, prefix = ''):
         ''' Save the coordinates of the dendrites, BREP style 
         -> each line of the output file corresponds to one cell, and contains all its dendrites sequentially'''
         assert hasattr(self, 'a_dend') or hasattr(self, 'b_dend'), 'Could not find any added dendrites'
