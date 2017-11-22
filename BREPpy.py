@@ -223,7 +223,7 @@ class Cell_pop (object):
 
     def save_somata(self, prefix, fn = 'Coords.dat'):
         '''Save the soma coordinates'''
-        assert hasattr(self, 'som') 'Cannot save soma coordinates, as apparently none have been added yet'
+        assert hasattr(self, 'som'), 'Cannot save soma coordinates, as apparently none have been added yet'
         with open (prefix+fn, 'w') as f_out:
             f_out.write("\n".join(map(str_l, self.som)))
 
@@ -394,7 +394,7 @@ class Connect_2D(object):
 
             for l, (cl, cl_l) in enumerate(zip(res, res_l)):
                 
-                if not len(cl) == len(cl_l): print ('Gaaaaah this should not be printed!!')                
+                assert len(cl) == len(cl_l), 'Something went wrong, all corresponding lists in your input arguments should have the same length'               
                 if len(cl_l)>0:
                     f_dis.write("\n".join(map(str, cl_l)))
                     #first, get the cell IDS of the query and tree points (for the linear points, that is just the point ID, 
@@ -408,9 +408,6 @@ class Connect_2D(object):
                     else:
                         #f_segs.write("\n".join(map(str,[self.pts.seg[l] for s in cl]))) #
                         s_ar = self.pts.seg[l,:].astype('int')
-                        if l < 3: 
-                            print (s_ar.shape)
-                            print (len(cl), len (s_ar))
                         f_segs.write("\n".join(map(str_l, [s_ar for i in range (len(cl))])))#*np.ones((len(cl), len (s_ar)))))) 
 
                         q_id = np.ones(len(cl))*self.pts.idx[l]
