@@ -373,6 +373,9 @@ class Connect_2D(object):
         fn_segs = prefix + '_segments.dat'
         fn_dis = prefix + '_distance.dat'
 
+        def str_l (ar):
+            return (' '.join(str(ar[i]) for i in range(len(ar))))
+
         with open (fn_tar, 'w') as f_tar, open (fn_src, 'w') as f_src, open (fn_dis, 'w') as f_dis, open (fn_segs, 'w') as f_segs: 
 
             for l, (cl, cl_l) in enumerate(zip(res, res_l)):
@@ -380,6 +383,8 @@ class Connect_2D(object):
                 if not len(cl) == len(cl_l): print ('Gaaaaah this should not be printed!!')
                 
                 if len(cl_l)>0:
+
+
                     
                     f_dis.write("\n".join(map(str, cl_l)))
                     
@@ -388,12 +393,17 @@ class Connect_2D(object):
                     #Segments also corresponds to the 3D point population, right value is acquired from Query-points object.
                     if query_is_lin: 
                         #f_segs.write("\n".join(map(str,[self.pts.seg[s] for s in cl])))
-                        f_segs.write("\n".join(map(str, self.pts.seg[cl].astype('int') )))
+                        f_segs.write("\n".join(map(str_l, self.pts.seg[cl].astype('int') )))
                         q_id = self.pts.idx[cl] 
                         tr_id = np.ones(len(cl))*l 
                     else:
                         #f_segs.write("\n".join(map(str,[self.pts.seg[l] for s in cl]))) #
-                        f_segs.write("\n".join(map(str, int(self.pts.seg[l])*np.ones(len(cl))))) 
+                        s_ar = self.pts.seg[l,:].astype('int')
+                        if l < 3: 
+                            print (s_ar.shape)
+                            print (len(cl), len (s_ar))
+                        f_segs.write("\n".join(map(str_l, [s_ar for i in range (len(cl))])))#*np.ones((len(cl), len (s_ar)))))) 
+
                         q_id = np.ones(len(cl))*self.pts.idx[l]
                         tr_id = cl
 
@@ -648,8 +658,6 @@ class Golgi_pop (Cell_pop):
         b_sgts[:,:,0] = np.floor(b_sgts[:,:,0]/self.args.GoC_Bd_nsegpts)+1
 
 
-
-
         def conc_ab (a, b):
             def flatten_cells (dat):
                 if len(dat.shape) == 2: dat = np.expand_dims(dat, axis = 2)
@@ -694,20 +702,14 @@ class Golgi_pop (Cell_pop):
             d_segs_1 = []
             if i == 0: d_sg = []
             for n,cc_m in enumerate(c_m): #each dendrite
-                ep_ang = (np.random.randn()*c_std + cc_m)*np.pi/180 #angle
+                ep_ang = (np.random.randn()*c_std + cc_m)*np.pi/180 #individual angle
                 pt = ([np.sin(ep_ang)*c_r, np.cos(ep_ang)*c_r, c_h])*c_gr.T #coordinates of the dendrite = endpoint*grid 
                 d_res = d_res + list(pt+som_c)
-                if i == 0: d_sg = d_sg + list(np.array([np.arange(c_n), np.ones(c_n)*n]).T)
+                if i == 0: d_sg = d_sg + list(np.array([np.arange(c_n), np.ones(c_n)*(n+1)]).T)
             b_res.append(np.array(d_res))
 
-            #sgs.append(d_sg)
-
             idx.append((np.ones(len(d_res))*i).astype('int'))
-            #segs = np.concatenate((np.array(segs_0), np.array(segs_1)))
-            
-            #segs = np.array([segs_0, segs_1])
-            #segs = np.array(d_sg)
-        #rint (np.repeat(np.array(d_sg), 3, axis = 1))
+     
         segs = np.array([d_sg for k in range(i+1)])
 
         return np.array(b_res), np.array(idx), segs
