@@ -315,6 +315,10 @@ class Connect_2D(object):
 
     def __init__(self, qpts_src, qpts_tar, c_rad):
 
+        #If the arguments are np arrays, make a Query_point from it.
+        if type(qpts_src).__module__ == np.__name__ : qpts_src = Query_point(qpts_src)
+        if type(qpts_tar).__module__ == np.__name__ : qpts_tar = Query_point(qpts_tar)
+
         #find out which of the pointsets is the linear one and assign accordingly
         if qpts_src.lin and not qpts_tar.lin:
             self.lpts = qpts_src
@@ -626,7 +630,7 @@ class Golgi_pop (Cell_pop):
         a_h = self.args.GoC_PhysApicalDendH
         a_ang = [self.args.GoC_Atheta_min, self.args.GoC_Atheta_max]
         a_std = self.args.GoC_Atheta_stdev
-        a_n = int(self.args.GoC_Ad_nseg * self.args.GoC_Ad_nsegpts) # numbr of points per dencrite
+        a_n = int(self.args.GoC_Ad_nseg * self.args.GoC_Ad_nsegpts) # number of points per dencrite
 
         b_rad = self.args.GoC_PhysBasolateralDendR
         b_h = self.args.GoC_PhysBasolateralDendH
@@ -637,6 +641,15 @@ class Golgi_pop (Cell_pop):
         a_dend, a_idx, a_sgts = self.gen_dendrite(a_rad, a_h, a_ang, a_std, a_n)
         b_dend, b_idx, b_sgts = self.gen_dendrite(b_rad, b_h, b_ang, b_std, b_n)
 
+        #The apical dendrites have higher numbers than the basal ones:
+        a_sgts[:,:,1] = a_sgts[:,:,1] + len(b_ang)
+        #Taking into account that there are several points per segment and the first segment has index 1
+        a_sgts[:,:,0] = np.floor(a_sgts[:,:,0]/self.args.GoC_Ad_nsegpts)+1
+        b_sgts[:,:,0] = np.floor(b_sgts[:,:,0]/self.args.GoC_Bd_nsegpts)+1
+
+
+
+
         def conc_ab (a, b):
             def flatten_cells (dat):
                 if len(dat.shape) == 2: dat = np.expand_dims(dat, axis = 2)
@@ -645,7 +658,7 @@ class Golgi_pop (Cell_pop):
 
         all_dends = conc_ab (a_dend, b_dend)
         all_idx = conc_ab (a_idx, b_idx)
-        all_sgts = conc_ab (a_idx, b_idx)
+        all_sgts = conc_ab (a_sgts, b_sgts)
 
         self.a_dend = a_dend
         self.b_dend = b_dend
@@ -671,20 +684,34 @@ class Golgi_pop (Cell_pop):
         c_gr = np.linspace(0,1,c_n)*np.ones((3, c_n)) #linspace grid between 0 and 1 with c_n elements
         b_res = []
         idx = []  #cell indices
-        segs = [] #segment number
+        segs_0 = [] #segment number
+        segs_1 = []
+        sgs = []
         for i in range(len(self.som)): #each cell
             som_c = self.som[i,:]
             d_res = []
-            d_segs = []
-            for cc_m in c_m: #each dendrite
+            d_segs_0 = []
+            d_segs_1 = []
+            if i == 0: d_sg = []
+            for n,cc_m in enumerate(c_m): #each dendrite
                 ep_ang = (np.random.randn()*c_std + cc_m)*np.pi/180 #angle
                 pt = ([np.sin(ep_ang)*c_r, np.cos(ep_ang)*c_r, c_h])*c_gr.T #coordinates of the dendrite = endpoint*grid 
                 d_res = d_res + list(pt+som_c)
-                d_segs = d_segs + list(np.arange(c_n))
+                if i == 0: d_sg = d_sg + list(np.array([np.arange(c_n), np.ones(c_n)*n]).T)
             b_res.append(np.array(d_res))
-            segs.append(d_segs)
+
+            #sgs.append(d_sg)
+
             idx.append((np.ones(len(d_res))*i).astype('int'))
-        return np.array(b_res), np.array(idx), np.array(segs)
+            #segs = np.concatenate((np.array(segs_0), np.array(segs_1)))
+            
+            #segs = np.array([segs_0, segs_1])
+            #segs = np.array(d_sg)
+        #rint (np.repeat(np.array(d_sg), 3, axis = 1))
+        segs = np.array([d_sg for k in range(i+1)])
+
+        return np.array(b_res), np.array(idx), segs
+
 
 
 
