@@ -11,6 +11,11 @@ from neuron import hoc, h
 
 
 
+def str_l (ar): 
+    '''make a space-seperated string from all elements in a 1D-array'''
+    return (' '.join(str(ar[i]) for i in range(len(ar))))
+
+
 
 # On the naming conventions: I tried to keep variable names similar as the ones in the brep.scm file
 # However, all _ had. to bee transformed to _ , and sometimes a postfix like _fn (filename) or _num (number) was added for clarification.
@@ -202,6 +207,9 @@ class Cell_pop (object):
 
 
     def load_somata(self, fn_or_ar):
+        ''' Loads somata and adds them to the population object:
+        Either from a coordinate file (if fn_or_ar is a filename)
+        Or diectly from a numpy array (if fn_or_ar is such)'''
         if type(fn_or_ar) == str:
             try: self.read_in_soma_file(fn_or_ar)
             except: print ('Tried to read in ', fn_or_ar, ', failed.')
@@ -211,6 +219,15 @@ class Cell_pop (object):
                     self.som = fn_or_ar
                 else: print ('Cannot recognize array as coordinates')
             except: print ('Could not read in soma points')
+
+
+    def save_somata(self, prefix, fn = 'Coords.dat'):
+        '''Save the soma coordinates'''
+        assert hasattr(self, 'som') 'Cannot save soma coordinates, as apparently none have been added yet'
+        with open (prefix+fn, 'w') as f_out:
+            f_out.write("\n".join(map(str_l, self.som)))
+
+
 
     def read_in_soma_file (self, fn, parse_ignore = True):
         ''' Reads in files such as the ones that BREP returns.
@@ -373,27 +390,19 @@ class Connect_2D(object):
         fn_segs = prefix + '_segments.dat'
         fn_dis = prefix + '_distance.dat'
 
-        def str_l (ar):
-            return (' '.join(str(ar[i]) for i in range(len(ar))))
-
         with open (fn_tar, 'w') as f_tar, open (fn_src, 'w') as f_src, open (fn_dis, 'w') as f_dis, open (fn_segs, 'w') as f_segs: 
 
             for l, (cl, cl_l) in enumerate(zip(res, res_l)):
                 
-                if not len(cl) == len(cl_l): print ('Gaaaaah this should not be printed!!')
-                
+                if not len(cl) == len(cl_l): print ('Gaaaaah this should not be printed!!')                
                 if len(cl_l)>0:
-
-
-                    
                     f_dis.write("\n".join(map(str, cl_l)))
-                    
                     #first, get the cell IDS of the query and tree points (for the linear points, that is just the point ID, 
                     #for the other points this information has to be extracted from the corresponding Query_points object.
                     #Segments also corresponds to the 3D point population, right value is acquired from Query-points object.
                     if query_is_lin: 
                         #f_segs.write("\n".join(map(str,[self.pts.seg[s] for s in cl])))
-                        f_segs.write("\n".join(map(str_l, self.pts.seg[cl].astype('int') )))
+                        f_segs.write("\n".join(map(str_l, self.pts.seg[cl].astype('int'))))
                         q_id = self.pts.idx[cl] 
                         tr_id = np.ones(len(cl))*l 
                     else:
@@ -424,71 +433,31 @@ class Connect_2D(object):
 
     def query_pts_in_lin (self):
 
-        #print ('in')
-
+        #get the projected tree and query points (i.e. only 2 dimensions)
         tr_pts = self.lpts.coo[:,0,np.invert(self.lin_axis)]
         q_pts = self.pts.coo[:, np.invert(self.lin_axis)]
 
-        #print ('tr_pts', tr_pts.shape)
-        #print ('q_pts', q_pts.shape)
-
-        lax_c = self.pts.coo[:,self.lin_axis]
-        lax_range = self.lpts.coo[:,:,self.lin_axis]
+        #get the information for the axis along which the projection is done
+        lax_c = self.pts.coo[:,self.lin_axis] 
+        lax_range = self.lpts.coo[:,:,self.lin_axis] 
         lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
 
-        #print ('lax_range', lax_range.shape)
-        #print ('lax_c', lax_c.shape)
-
-
-        
-
+        #build 2D Tree
         kdt = KDTree(tr_pts)
 
-        #print ('made_tree')
-        #stophere()
-
-        #lin_dis = [[] for i in range(self.lpts.npts)] #distance from the lower end for the linear population
-        #pts_pid = [[] for i in range(self.lpts.npts)]
         pts_cid = [] #cell ID for the (nonlinear) points population
         pts_seg = [] #segment for the points population
 
-        res = []
-        l_res = []
+        res = [] # IDs of the target population
+        l_res = [] #distance from the lower end for the linear population
 
         for i, pt in enumerate(q_pts): #iterate through the query points
 
-            #if i%1000 == 0: print (i) 
             warnings.simplefilter('ignore')
             ind, = kdt.query_radius(pt, r = self.c_rad)
             ind = ind[np.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
             res.append(ind.astype('int'))
             l_res.append(lax_c[i] - lax_range[ind,0])
-            #print (ind.shape)
-            #for k in ind:
-                #lin_dis[k] = lin_dis[k] + [lax_c[i] - lax_range [ind,0]]
-                #pts_pid[k] = pts_pid[k] + [i]
-                #lin_dis[k].append(lax_c[i] - lax_range [ind,0])
-                #pts_pid[k].append(i)
-
-
-        #print ('jere now')
-        #print (len(pts_id))
-
-
-        #for pta in pts_pid:
-        #    pts_cid.append(self.pts.idx[pta])
-        #    pts_seg.append(self.pts.seg[pta])
-
-            #pts_pid [i] = list(np.ones(len(ind))*i)
-            #pts_cid [i] = list(np.ones(len(ind))*self.pts.idx[i])
-            #pts_seg [i] = list(np.ones(len(ind))*self.pts.seg[i])
-
-        #resdict = {
-        #        'source': 'lin points', 
-        #        'lin dis':lin_dis, 
-        #        'target point IDs': pts_pid,
-        ##        'target cell IDs' : pts_cid,
-        ##       'target segments' : pts_seg}
 
         return res, l_res
 
@@ -507,19 +476,12 @@ class Connect_2D(object):
         lax_range = self.lpts.coo[:,:,self.lin_axis]
         lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
 
-        #print ('lax_range', lax_range.shape)
-        #print ('lax_c', lax_c.shape)
 
 
         
 
         kdt = KDTree(tr_pts)
 
-        #print ('made_tree')
-        #stophere()
-
-        #lin_dis = [[] for i in range(self.lpts.npts)] #distance from the lower end for the linear population
-        #pts_pid = [[] for i in range(self.lpts.npts)]
         pts_cid = [] #cell ID for the (nonlinear) points population
         pts_seg = [] #segment for the points population
 
@@ -542,113 +504,32 @@ class Connect_2D(object):
 
 
 
-
-
-    '''def search_connections(self):
-        if self.lpts.npts >= self.pts.npts:
-            tr_pts = self.lpts.coo[:,0,np.invert(self.lin_axis)]
-            q_pts = self.pts.coo[:, np.invert(self.lin_axis)]
-            lin_in_tree = True
-        else: 
-            tr_pts  = self.pts.coo [:,np.invert(self.lin_axis)]
-            q_pts = self.lpts.coo [:,0, np.invert(self.lin_axis)]
-            lin_in_tree = False
-        lax_c = self.pts.coo[:,self.lin_axis]
-        lax_range = self.lpts.coo[:,:,self.lin_axis]
-        lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
-        print (lax_range.shape)
-
-        #The actual KDTree search
-        kdt = KDTree(tr_pts) #construct KDTree
-        #tr_q = [set() for i in range(len(tr_pts))] #This set structure is somewhat redundant, but can speed up further processing steps
-        #q_tr = [set() for i in range(len(q_pts))]
-
-
-        res = []
-        lin_l = []
-
-        for i, pt in enumerate(q_pts): #iterate through the query points
-            warnings.simplefilter('ignore')
-            ind, = kdt.query_radius(pt, r = self.c_rad)
-            if lin_in_tree: 
-                ind = ind[np.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
-                lin_l.append(lax_c[i] - lax_range [ind,0])
-            else: 
-                ind = ind[np.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind])]
-                lin_l.append(lax_c[ind] - lax_range[i,0])
-            res.append (ind.astype('int'))
-
-        print ('now we just do weird stuff with the results to format')
-
-        lin_pid = [[] for i in range(self.lpts.npts)]
-        lin_dis = [[] for i in range(self.lpts.npts)] #distance from the lower end for the linear population
-
-        pts_pid = [[] for i in range(self.lpts.npts)]
-        pts_cid = [[] for i in range(self.lpts.npts)] #cell ID for the (nonlinear) points population
-        pts_seg = [[] for i in range(self.lpts.npts)] #segment for the points population
-
-        lin_is_src = self.qpts_src.lin
-
-
-
-
-        
-        src_in_tr = (self.qpts_src.lin == lin_in_tree) 
-
-        lin_is_src = self.qpts_src.lin
-
-        print ('src_in_tr',src_in_tr)
-
-
-
-        for i, pt in enumerate(q_pts): #iterate through the query points
-            warnings.simplefilter('ignore')
-            ind, = kdt.query_radius(pt, r = self.c_rad)
-            if lin_in_tree: ind = ind[np.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
-                if src_in_tr: # case linear ones are in the tree and source pop
-                    lin_pid.append(np.ones(len(ind))*i)
-                    pts_pid.append(ind.astype('int'))
-                else:  # case linear ones are in the tree, regular ones are source pop
-                    srt = []
-                    trt = []
-                    for k in ind:
-                        srt[]
-                    pts_pid.append(np.ones(len(ind))*i)
-                    lin_pid.append(ind.astype('int'))
-            else: ind = ind[np.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind])]
-            
-
-            q_tr[i].update(ind.astype('int'))
-            if src_in_tr:
-                for k in ind:
-                tr_q[k].add(i)
-
-        return tr_q, q_tr
-
-        return kdt, q_pts'''
-
-
-
 class Golgi_pop (Cell_pop):
+
     def __init__(self, my_args):
         Cell_pop.__init__(self,my_args)
 
 
-
     def add_dendrites(self):
-        a_rad = self.args.GoC_PhysApicalDendR
-        a_h = self.args.GoC_PhysApicalDendH
-        a_ang = [self.args.GoC_Atheta_min, self.args.GoC_Atheta_max]
-        a_std = self.args.GoC_Atheta_stdev
-        a_n = int(self.args.GoC_Ad_nseg * self.args.GoC_Ad_nsegpts) # number of points per dencrite
+        '''Add apical and basolateral dendrites using the parameters specified in the Parameters file.
+        Will construct Query points by itself and add them to the object'''
 
+        #apical
+        a_rad = self.args.GoC_PhysApicalDendR #radius of cylinder
+        a_h = self.args.GoC_PhysApicalDendH   #height of cylinder
+        a_ang = [self.args.GoC_Atheta_min, self.args.GoC_Atheta_max] # mean angles for dendrite direction
+        a_std = self.args.GoC_Atheta_stdev  # std for dendrite diredtion
+        a_n = int(self.args.GoC_Ad_nseg * self.args.GoC_Ad_nsegpts) # number of points per dendrite
+
+        #basolateral
         b_rad = self.args.GoC_PhysBasolateralDendR
         b_h = self.args.GoC_PhysBasolateralDendH
         b_ang = [self.args.GoC_Btheta_min, self.args.GoC_Btheta_max]
         b_std = self.args.GoC_Btheta_stdev
         b_n = int(self.args.GoC_Bd_nseg * self.args.GoC_Bd_nsegpts)
 
-        a_dend, a_idx, a_sgts = self.gen_dendrite(a_rad, a_h, a_ang, a_std, a_n)
+        #generate the dendrite coordinates
+        a_dend, a_idx, a_sgts = self.gen_dendrite(a_rad, a_h, a_ang, a_std, a_n) 
         b_dend, b_idx, b_sgts = self.gen_dendrite(b_rad, b_h, b_ang, b_std, b_n)
 
         #The apical dendrites have higher numbers than the basal ones:
@@ -657,14 +538,15 @@ class Golgi_pop (Cell_pop):
         a_sgts[:,:,0] = np.floor(a_sgts[:,:,0]/self.args.GoC_Ad_nsegpts)+1
         b_sgts[:,:,0] = np.floor(b_sgts[:,:,0]/self.args.GoC_Bd_nsegpts)+1
 
-
+        # special concatenation function for apical and basal dendrite
         def conc_ab (a, b):
-            def flatten_cells (dat):
+            def flatten_cells (dat): # keep the last dimension (3, for spatial coordinates), ravel the first two (ncell*npts)
                 if len(dat.shape) == 2: dat = np.expand_dims(dat, axis = 2)
                 return dat.reshape(dat.shape[0]*dat.shape[1],dat.shape[2])
             return np.concatenate((flatten_cells(a), flatten_cells(b)))
 
-        all_dends = conc_ab (a_dend, b_dend)
+        #concatenated dendrite information (coords, cell indices, segment information)
+        all_dends = conc_ab (a_dend, b_dend) 
         all_idx = conc_ab (a_idx, b_idx)
         all_sgts = conc_ab (a_sgts, b_sgts)
 
@@ -673,8 +555,20 @@ class Golgi_pop (Cell_pop):
         self.qpts = Query_point (all_dends, all_idx, all_sgts)
 
 
-    def save_dend_coords(self):
-        pass
+    def save_dend_coords(self, prefix):
+        ''' Save the coordinates of the dendrites, BREP style 
+        -> each line of the output file corresponds to one cell, and contains all its dendrites sequentially'''
+        assert hasattr(self, 'a_dend') or hasattr(self, 'b_dend'), 'Could not find any added dendrites'
+        if hasattr(self, 'a_dend'):
+            with open(prefix +  'GoCadendcoordinates.dat', 'w') as f_out:
+                f_out.write("\n".join(map(str_l, self.a_dend)))
+        else: warnings.warn('Could not find apical dendrite')
+        if hasattr(self, 'b_dend'):
+            with open(prefix +  'GoCbdendcoordinates.dat', 'w') as f_out:
+                f_out.write("\n".join(map(str_l, self.a_dend)))
+        else: warnings.warn('Could not find basal dendrite')
+
+
 
     def gen_dendrite (self, c_r, c_h, c_m, c_std, c_n):
         '''Generates dendrites as described in the paper:
@@ -686,31 +580,25 @@ class Golgi_pop (Cell_pop):
         Returns three arrays:
         res: shape is #cells x #pts x 3 (coords) -> coordinates of the points
         idx: shape is #cells x #pts -> cell ids of the points (starting at 0)
-        sgts: shape is #cells x #pts -> segment for each point, starts at 0
+        sgts: shape is #cells x #pts x 2 -> each point consists of [# segment, # dendrite], both starting from 1
+        -> to be conform with BREP, this has to be slightly modified, see add_dendrites function.
         where #pts = #segment per dendrite x# dendrites generated with this function
         '''
         c_gr = np.linspace(0,1,c_n)*np.ones((3, c_n)) #linspace grid between 0 and 1 with c_n elements
         b_res = []
         idx = []  #cell indices
-        segs_0 = [] #segment number
-        segs_1 = []
-        sgs = []
         for i in range(len(self.som)): #each cell
             som_c = self.som[i,:]
             d_res = []
-            d_segs_0 = []
-            d_segs_1 = []
-            if i == 0: d_sg = []
+            if i == 0: d_sg = [] #segments, only have to be calculated once as they are the same for every cell
             for n,cc_m in enumerate(c_m): #each dendrite
                 ep_ang = (np.random.randn()*c_std + cc_m)*np.pi/180 #individual angle
                 pt = ([np.sin(ep_ang)*c_r, np.cos(ep_ang)*c_r, c_h])*c_gr.T #coordinates of the dendrite = endpoint*grid 
                 d_res = d_res + list(pt+som_c)
                 if i == 0: d_sg = d_sg + list(np.array([np.arange(c_n), np.ones(c_n)*(n+1)]).T)
             b_res.append(np.array(d_res))
-
             idx.append((np.ones(len(d_res))*i).astype('int'))
-     
-        segs = np.array([d_sg for k in range(i+1)])
+        segs = np.array([d_sg for k in range(i+1)]) #replicate segment information for each cell
 
         return np.array(b_res), np.array(idx), segs
 
@@ -740,24 +628,25 @@ class Granule_pop (Cell_pop):
         self.qpts_aa = Query_point(self.aa_dots)
 
     def add_pf_endpoints (self):
+        ''' Addd the endpoints of the parallel fibers [begin, end] for each cell'''
         pf_length = self.args.PFlength
-        try:
-            self.pf_dots = self.aa_dots.copy()
-            self.pf_dots[:,0,2] = self.pf_dots[:,1,2] #z axis shall be the same
-            self.pf_dots[:,0,0] = self.pf_dots[:,0,0] - pf_length/2
-            self.pf_dots[:,1,0] = self.pf_dots[:,1,0] + pf_length/2
-            self.qpts_pf = Query_point(self.pf_dots)
-        except Exception as e:
-            #raise e
-            print ('I need ascending axon points to calculate the parallel fibers')
+        assert hasattr(self, 'aa_dots'), 'Cannot add Parallel Fiber, add ascending axon first!'
+        self.pf_dots = self.aa_dots.copy()
+        self.pf_dots[:,0,2] = self.pf_dots[:,1,2] #z axis shall be the same
+        self.pf_dots[:,0,0] = self.pf_dots[:,0,0] - pf_length/2
+        self.pf_dots[:,1,0] = self.pf_dots[:,1,0] + pf_length/2
+        self.qpts_pf = Query_point(self.pf_dots)
 
     def add_3D_aa_and_pf(self):
+        '''adds 3-dimensional coordinates for ascending axons and parallel fiber to the granule cell objects.
+        Both AA and PF are represented by regularly spaced dots'''
+
         aa_length = self.args.PCLdepth+ self.args.GLdepth
         aa_nd = int(self.aa_length / self.args.AAstep) #number of dots for the aa
-        aa_sp = np.linspace(0, self.aa_length, aa_nd)
+        aa_sp = np.linspace(0, self.aa_length, aa_nd) #grid that contains the spacing for the aa points
 
         pf_nd = int(self.args.PFlength/self.args.PFstep) # number of dots for the pf
-        pf_sp = np.linspace(-self.args.PFlength/2, self.args.PFlength/2)
+        pf_sp = np.linspace(-self.args.PFlength/2, self.args.PFlength/2) # grid that contains spacing of po points
 
         self.aa_dots = np.zeros((len(coo), aa_nd, 3))
         self.pf_dots = np.zeros((len(coo), pf_nd, 3))
@@ -765,18 +654,30 @@ class Granule_pop (Cell_pop):
         aa_sgts= np.zeros((len(coo), aa_nd))
         pf_idx = np.zeros((len(coo), pf_nd))
         pf_sgts= np.zeros((len(coo), pf_nd))
+
         for i, som in enumerate(coo):
-            self.aa_dots[i] = np.ones((aa_nd, 3))*som
-            self.aa_dots[i,:,2] = aa_dots[i,:,2] + aa_sp
-            aa_idx[i,:] = i
-            aa_sgts[i,:] = np.arange(aa_nd)
-            self.pf_dots[i] = np.ones((pf_nd,3))*aa_dots[i,-1, :]
-            self.pf_dots[i,:,0] = pf_dots[i,:,0] + pf_sp
+
+            self.aa_dots[i] = np.ones((aa_nd, 3))*som #copy soma location for each point of the aa
+            self.aa_dots[i,:,2] = aa_dots[i,:,2] + aa_sp # add the z offsets
+            aa_idx[i,:] = i #cell indices, for the query object
+            aa_sgts[i,:] = np.arange(aa_nd) #segment points, for the query object
+
+            self.pf_dots[i] = np.ones((pf_nd,3))*aa_dots[i,-1, :] #uppermost aa point is the origin of the pf points
+            self.pf_dots[i,:,0] = pf_dots[i,:,0] + pf_sp #this time, points differ only by their offset along the x direction
             pf_idx[i,:]  = i
             pf_sgts[i,:] = np.arange(pf_nd) #! Not necessarily nice
 
         self.qpts_aa = Query_point(self.aa_dots, aa_idx, aa_sgts)
         self.qpts_pf = Query_point(self.pf_dots, pf_idx, pf_sgts)
+
+
+    def save_gct_points (self, prefix = ''):
+        ''' Saves the coordinates of the Granule cell T points, i.e. the points where the Granule cell ascending axons
+        split into the parallel fiber'''
+        assert hasattr(self, 'aa_dots'),  'No ascending axons added yet'
+        gctp = self.aa_dots[:,-1,:]
+        with open (prefix+'GCTcoordinates.dat', 'w') as f_out:
+            f_out.write("\n".join(map(str_l, gctp)))
 
 
 
