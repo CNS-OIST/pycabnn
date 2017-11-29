@@ -24,7 +24,172 @@ def pt_in_tr2 (kdt, pt, c_rad):
 
 
 
- 
+
+
+
+
+class Query_point (object):
+    def __init__ (self, coord, IDs = [], segs = []):
+        self.coo = coord
+        self.seg = segs
+        self.npts = len(coord)
+        if not IDs == []: self.idx = IDs
+        else: self.idx = np.arange(len(coord)) 
+        self.lin = self.lin_check()
+
+    def lin_check (self):
+        if len(self.coo.shape) == 3:
+            if self.coo.shape[1] == 2 and self.coo.shape[2] == 3:
+                sm = sum(abs(self.coo[:,0,:] - self.coo[:,1,:]))
+                no_dif = [np.isclose(sm[i],0) for i in range(len(sm))]
+                if sum(no_dif) == 2: # 2 coordinates are the same, one is not
+                    self.lin_axis = np.invert(no_dif) #this one is the axis that cn be linearized
+                    return True
+        return False
+
+
+    def linearize (self):
+        pass
+        #this function should linearize points when they are in a higher structure than nx3, and the IDs and 
+#class Query_point_lin (Query_point):
+
+
+
+
+class Connect_2D(object):
+
+    def __init__(self, qpts_src, qpts_tar, c_rad):
+
+        #If the arguments are np arrays, make a Query_point from it.
+        if type(qpts_src).__module__ == np.__name__ : qpts_src = Query_point(qpts_src)
+        if type(qpts_tar).__module__ == np.__name__ : qpts_tar = Query_point(qpts_tar)
+
+        #find out which of the pointsets is the linear one and assign accordingly
+        if qpts_src.lin and not qpts_tar.lin:
+            self.lpts = qpts_src
+            self.pts = qpts_tar
+            self.lin_axis = qpts_src.lin_axis
+        elif qpts_tar.lin and not qpts_src.lin:
+            self.lpts = qpts_tar
+            self.pts = qpts_src
+            self.lin_axis = qpts_tar.lin_axis
+        else: 
+            print ('Failure to initialize connector, there is not one linearized and one regular point set')
+        self.lin_is_src = qpts_src.lin
+        self.c_rad = c_rad
+
+
+
+    def get_tree_setup (self, lin_in_tree = []):
+        '''Gets the setup for the connection.
+        lin_in_tree determines whether
+         '''
+
+        # if not specified which of the point population is the query point population, take the smaller one and put the bigger one in the tree.
+        if not type(lin_in_tree).__name__ == 'bool':
+            lin_in_tree = self.lpts.npts > self.pts.npts
+        self.lin_in_tree = lin_in_tree
+        #depending on which points shall be in the tree and which shall be the query points, assign, and project at the same time
+        if lin_in_tree:
+            tr_pts = self.lpts.coo[:,0,np.invert(self.lin_axis)]
+            q_pts = self.pts.coo[:, np.invert(self.lin_axis)]  
+        else:
+            q_pts = self.lpts.coo[:,0,np.invert(self.lin_axis)]
+            tr_pts = self.pts.coo[:, np.invert(self.lin_axis)] 
+                              
+        #get the information for the axis along which the projection is done
+        lax_c = self.pts.coo[:,self.lin_axis] 
+        lax_range = self.lpts.coo[:,:,self.lin_axis] 
+        lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
+        #build 2D Tree
+        kdt = KDTree(tr_pts)
+
+        return kdt, q_pts, lax_c, lax_range, self.lin_in_tree
+
+
+    def find_connections (self, lin_in_tree = []):
+        
+        kdt, q_pts, lax_c, lax_range, _ = self.get_tree_setup(lin_in_tree)        
+        res = []
+        l_res = []
+        for i, pt in enumerate(q_pts): #iterate through the query points
+            # find the points within the critical radius
+            warnings.simplefilter('ignore')
+            ind, = kdt.query_radius(pt, r = self.c_rad)
+            #check if the found points match along the linearized axis and if so, add distance from the beginning of the linearized axis
+            if self.lin_in_tree: 
+                ind = ind[np.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
+                l_res.append(lax_c[i] - lax_range[ind,0])
+            else:
+                ind = ind[np.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind]).ravel()]
+                l_res.append(lax_c[ind] - lax_range[i,0])
+
+            res.append(ind.astype('int'))
+
+        return res, l_res
+
+
+    def save_results (self, res, res_l, prefix = ''):
+        '''Saves the results as produced by the query_x_in_y method similarly as BREP.
+        res = result (containing a list of arrays/lists with the found IDs 
+            -> first index = query point ID
+            -> numbers within the 2nd level arrays/lists -> tree point IDs
+        res_l = for the linear point species, distance from the first outer boder
+        prefix = prefix for the result file -> path, output specifier
+        With the two last bools different 4 different modes can be created to have flexibility.'''
+
+        # file names
+        fn_tar = prefix + '_target.dat'
+        fn_src = prefix + '_source.dat'
+        fn_segs = prefix + '_segments.dat'
+        fn_dis = prefix + '_distance.dat'
+
+        with open (fn_tar, 'w') as f_tar, open (fn_src, 'w') as f_src, open (fn_dis, 'w') as f_dis, open (fn_segs, 'w') as f_segs: 
+
+            for l, (cl, cl_l) in enumerate(zip(res, res_l)):
+                
+                assert len(cl) == len(cl_l), 'Something went wrong, all corresponding lists in your input arguments should have the same length'               
+                assert hasattr(self, 'lin_in_tree'), 'Attribute lin_in_tree must be set, this should happen in the get_tree_setup method!'
+                assert hasattr(self, 'lin_is_src'), 'Attribute lin_is_src must be set, this should happen at initialization depending on the order of the query point arguments!'
+
+                if len(cl_l)>0:
+                    f_dis.write("\n".join(map(str, cl_l)))
+                    #first, get the cell IDS of the query and tree points (for the linear points, that is just the point ID, 
+                    #for the other points this information has to be extracted from the corresponding Query_points object.
+                    #Segments also corresponds to the 3D point population, right value is acquired from Query-points object.
+                    if self.lin_in_tree: 
+                        s_ar = self.pts.seg[l,:].astype('int')
+                        f_segs.write("\n".join(map(str_l, [s_ar for i in range (len(cl))])))#*np.ones((len(cl), len (s_ar)))))) 
+
+                        q_id = np.ones(len(cl))*self.pts.idx[l]
+                        tr_id = cl
+                    else:
+                        f_segs.write("\n".join(map(str_l, self.pts.seg[cl].astype('int'))))
+                        q_id = self.pts.idx[cl] 
+                        tr_id = np.ones(len(cl))*l 
+
+                    #depending on which population should be source and which should be target, save cell IDs accordingly.
+                    if self.lin_in_tree == self.lin_is_src:
+                        f_tar.write("\n".join(map(str, tr_id)))
+                        f_src.write("\n".join(map(str, q_id)))
+                    else:
+                        f_tar.write("\n".join(map(str, q_id)))
+                        f_src.write("\n".join(map(str, tr_id )))
+
+                    #need to attach one more line here or we get two elements per line 
+                    f_dis.write("\n")
+                    f_src.write("\n")
+                    f_tar.write("\n")
+                    f_segs.write("\n")
+
+
+
+
+
+
+####################################################################
+## POPULATION PART                                                ##
+####################################################################
 
 class Cell_pop (object):
 
@@ -123,180 +288,6 @@ class Cell_pop (object):
         #Deletion step
         grc = grc[np.setdiff1d(np.arange(len(grc)), most_out_idx[:n_del]),:]
         return grc
-
-
-
-class Query_point (object):
-    def __init__ (self, coord, IDs = [], segs = []):
-        self.coo = coord
-        self.seg = segs
-        self.npts = len(coord)
-        if not IDs == []: self.idx = IDs
-        else: self.idx = np.arange(len(coord)) 
-        self.lin = self.lin_check()
-
-    def lin_check (self):
-        if len(self.coo.shape) == 3:
-            if self.coo.shape[1] == 2 and self.coo.shape[2] == 3:
-                sm = sum(abs(self.coo[:,0,:] - self.coo[:,1,:]))
-                no_dif = [np.isclose(sm[i],0) for i in range(len(sm))]
-                if sum(no_dif) == 2: # 2 coordinates are the same, one is not
-                    self.lin_axis = np.invert(no_dif) #this one is the axis that cn be linearized
-                    return True
-        return False
-
-
-    def linearize (self):
-        pass
-        #this function should linearize points when they are in a higher structure than nx3, and the IDs and 
-#class Query_point_lin (Query_point):
-
-
-
-
-class Connect_2D(object):
-
-    def __init__(self, qpts_src, qpts_tar, c_rad):
-
-        #If the arguments are np arrays, make a Query_point from it.
-        if type(qpts_src).__module__ == np.__name__ : qpts_src = Query_point(qpts_src)
-        if type(qpts_tar).__module__ == np.__name__ : qpts_tar = Query_point(qpts_tar)
-
-        #find out which of the pointsets is the linear one and assign accordingly
-        if qpts_src.lin and not qpts_tar.lin:
-            self.lpts = qpts_src
-            self.pts = qpts_tar
-            self.lin_axis = qpts_src.lin_axis
-        elif qpts_tar.lin and not qpts_src.lin:
-            self.lpts = qpts_tar
-            self.pts = qpts_src
-            self.lin_axis = qpts_tar.lin_axis
-        else: 
-            print ('Failure to initialize connector, there is not one linearized and one regular point set')
-        self.src_is_lin = qpts_src.lin
-        self.c_rad = c_rad
-
-
-
-
-    def get_tree_setup (self):
-        ''' For experiments in the ipynb
-        Returns kdt, q_pts, lax_c, lax_range, lin_in_tree  '''
-        if self.lpts.npts >= self.pts.npts:
-            tr_pts = self.lpts.coo[:,0,np.invert(self.lin_axis)]
-            q_pts = self.pts.coo[:, np.invert(self.lin_axis)]
-            lin_in_tree = True
-        else: 
-            tr_pts  = self.pts.coo [:,np.invert(self.lin_axis)]
-            q_pts = self.lpts.coo [:,0, np.invert(self.lin_axis)]
-            lin_in_tree = False
-        lax_c = self.pts.coo[:,self.lin_axis]
-        lax_range = self.lpts.coo[:,:,self.lin_axis]
-        lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
-        kdt = KDTree(tr_pts) #construct KDTree
-
-        return kdt, q_pts, lax_c, lax_range, lin_in_tree
-
-
-
-    def save_results (self, res, res_l, prefix = '', query_is_tar = True, query_is_lin = False):
-        '''Saves the results as produced by the query_x_in_y method similarly as BREP.
-        res = result (containing a list of arrays/lists with the found IDs 
-            -> first index = query point ID
-            -> numbers within the 2nd level arrays/lists -> tree point IDs
-        res_l = for the linear point species, distance from the first outer boder
-        prefix = prefix for the result file -> path, output specifier
-        query_is_tar = if True, the query points are the target points
-        query_is_lin = if True, the query points are from the linearized structure.
-        With the two last bools different 4 different modes can be created to have flexibility.'''
-
-        # file names
-        fn_tar = prefix + '_target.dat'
-        fn_src = prefix + '_source.dat'
-        fn_segs = prefix + '_segments.dat'
-        fn_dis = prefix + '_distance.dat'
-
-        with open (fn_tar, 'w') as f_tar, open (fn_src, 'w') as f_src, open (fn_dis, 'w') as f_dis, open (fn_segs, 'w') as f_segs: 
-
-            for l, (cl, cl_l) in enumerate(zip(res, res_l)):
-                
-                assert len(cl) == len(cl_l), 'Something went wrong, all corresponding lists in your input arguments should have the same length'               
-                if len(cl_l)>0:
-                    f_dis.write("\n".join(map(str, cl_l)))
-                    #first, get the cell IDS of the query and tree points (for the linear points, that is just the point ID, 
-                    #for the other points this information has to be extracted from the corresponding Query_points object.
-                    #Segments also corresponds to the 3D point population, right value is acquired from Query-points object.
-                    if query_is_lin: 
-                        #f_segs.write("\n".join(map(str,[self.pts.seg[s] for s in cl])))
-                        f_segs.write("\n".join(map(str_l, self.pts.seg[cl].astype('int'))))
-                        q_id = self.pts.idx[cl] 
-                        tr_id = np.ones(len(cl))*l 
-                    else:
-                        #f_segs.write("\n".join(map(str,[self.pts.seg[l] for s in cl]))) #
-                        s_ar = self.pts.seg[l,:].astype('int')
-                        f_segs.write("\n".join(map(str_l, [s_ar for i in range (len(cl))])))#*np.ones((len(cl), len (s_ar)))))) 
-
-                        q_id = np.ones(len(cl))*self.pts.idx[l]
-                        tr_id = cl
-
-                    #depending on which population should be source and which should be target, save cell IDs accordingly.
-                    if query_is_tar:
-                        f_tar.write("\n".join(map(str, q_id)))
-                        f_src.write("\n".join(map(str, tr_id )))
-                    else:
-                        f_tar.write("\n".join(map(str, tr_id)))
-                        f_src.write("\n".join(map(str, q_id)))
-
-                    #need to attach one more line here or we get two elements per line 
-                    f_dis.write("\n")
-                    f_src.write("\n")
-                    f_tar.write("\n")
-                    f_segs.write("\n")
-
-
-    def find_connections (self, lin_in_tree = []):
-        
-        # if not specified which of the point population is the query point population, take the smaller one and put the bigger one in the tree.
-        if not type(lin_in_tree).__name__ == 'bool':
-            lin_in_tree = self.lpts.npts > self.pts.npts
-        self.lin_in_tree = lin_in_tree
-
-        #depending on which points shall be in the tree and which shall be the query points, assign, and project at the same time
-        if lin_in_tree:
-            tr_pts = self.lpts.coo[:,0,np.invert(self.lin_axis)]
-            q_pts = self.pts.coo[:, np.invert(self.lin_axis)]  
-        else:
-            q_pts = self.lpts.coo[:,0,np.invert(self.lin_axis)]
-            tr_pts = self.pts.coo[:, np.invert(self.lin_axis)] 
-                              
-        #get the information for the axis along which the projection is done
-        lax_c = self.pts.coo[:,self.lin_axis] 
-        lax_range = self.lpts.coo[:,:,self.lin_axis] 
-        lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
-
-        #build 2D Tree
-        kdt = KDTree(tr_pts)
-
-        res = []
-        l_res = []
-
-        for i, pt in enumerate(q_pts): #iterate through the query points
-            # find the points within the critical radius
-            warnings.simplefilter('ignore')
-            ind, = kdt.query_radius(pt, r = self.c_rad)
-            #check if the found points match along the linearized axis and if so, add distance from the beginning of the linearized axis
-            if lin_in_tree: 
-                ind = ind[np.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
-                l_res.append(lax_c[i] - lax_range[ind,0])
-            else:
-                ind = ind[np.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind]).ravel()]
-                l_res.append(lax_c[ind] - lax_range[i,0])
-
-            res.append(ind.astype('int'))
-
-        return res, l_res
-
-
 
 
 class Golgi_pop (Cell_pop):
