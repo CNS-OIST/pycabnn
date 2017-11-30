@@ -1,15 +1,16 @@
 import argparse 
 import numpy as np
 import datetime
-import neuron
+#import neuron
 import csv
 import warnings
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+#import matplotlib.pyplot as plt
+#from mpl_toolkits.mplot3d import Axes3D
 from sklearn.neighbors import KDTree 
 
-try: from neuron import hoc, h
-except: print ('No neuron installation found! Will try to run using Pseudo_hoc object.')
+#try: from neuron import hoc, h
+#except: pass
+    #print ('No neuron installation found! Will try to run using Pseudo_hoc object.')
 
 
 
@@ -64,7 +65,7 @@ class Pseudo_hoc (object):
         with open(output_fn, 'wb') as f:
             pickle.dump(h_dict, f)
 
-            
+
 
 def str_l (ar): 
     '''make a space-seperated string from all elements in a 1D-array'''
@@ -79,31 +80,12 @@ def pt_in_tr2 (kdt, pt, c_rad):
 
 
 
-class Query_point (object):
-    def __init__ (self, coord, IDs = [], segs = []):
-        self.coo = coord
-        self.seg = segs
-        self.npts = len(coord)
-        if not IDs == []: self.idx = IDs
-        else: self.idx = np.arange(len(coord)) 
-        self.lin = self.lin_check()
-
-    def lin_check (self):
-        if len(self.coo.shape) == 3:
-            if self.coo.shape[1] == 2 and self.coo.shape[2] == 3:
-                sm = sum(abs(self.coo[:,0,:] - self.coo[:,1,:]))
-                no_dif = [np.isclose(sm[i],0) for i in range(len(sm))]
-                if sum(no_dif) == 2: # 2 coordinates are the same, one is not
-                    self.lin_axis = np.invert(no_dif) #this one is the axis that cn be linearized
-                    return True
-        return False
 
 
-    def linearize (self):
-        pass
-        #this function should linearize points when they are in a higher structure than nx3, and the IDs and 
 
-
+####################################################################
+## CONNECTOR PART                                                 ##
+####################################################################
 
 class Connect_2D(object):
 
@@ -164,7 +146,7 @@ class Connect_2D(object):
         for i, pt in enumerate(q_pts): #iterate through the query points
             # find the points within the critical radius
             warnings.simplefilter('ignore')
-            ind, = kdt.query_radius(pt, r = self.c_rad)
+            ind, = kdt.query_radius(np.expand_dims(pt, axis = 0), r = self.c_rad)
             #check if the found points match along the linearized axis and if so, add distance from the beginning of the linearized axis
             if self.lin_in_tree: 
                 ind = ind[np.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
@@ -231,6 +213,33 @@ class Connect_2D(object):
                     f_tar.write("\n")
                     f_segs.write("\n")
 
+
+#class Connect_3D(object):
+
+
+class Query_point (object):
+    def __init__ (self, coord, IDs = [], segs = []):
+        self.coo = coord
+        self.seg = segs
+        self.npts = len(coord)
+        if not IDs == []: self.idx = IDs
+        else: self.idx = np.arange(len(coord)) 
+        self.lin = self.lin_check()
+
+    def lin_check (self):
+        if len(self.coo.shape) == 3:
+            if self.coo.shape[1] == 2 and self.coo.shape[2] == 3:
+                sm = sum(abs(self.coo[:,0,:] - self.coo[:,1,:]))
+                no_dif = [np.isclose(sm[i],0) for i in range(len(sm))]
+                if sum(no_dif) == 2: # 2 coordinates are the same, one is not
+                    self.lin_axis = np.invert(no_dif) #this one is the axis that cn be linearized
+                    return True
+        return False
+
+
+    def linearize (self):
+        pass
+        #this function should linearize points when they are in a higher structure than nx3, and the IDs and 
 
 
 ####################################################################
