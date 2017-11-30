@@ -1,10 +1,20 @@
 
+'''
+
+import sys
+
+sys.displayhook(stdout)
+x = open('test_run_serial', 'w')
+sys.displayhook(x)
+sys.stdout = x
+'''
 
 import time
 t1= time.time()
 print ('Starting sequential cess...')
 
 from BREPpy import *
+
 
 
 #Parameters (might be read in from the command line some day...)
@@ -47,7 +57,7 @@ print ('All imported after', t2-t1)
 gg = Golgi_pop(h)
 gg.load_somata(go_16)
 gg.add_dendrites()
-gg.save_dend_coords(global_prefix)
+gg.save_dend_coords('global_prefix')
 
 
 t3= time.time()
@@ -61,35 +71,52 @@ gp.add_aa_endpoints_fixed()
 gp.add_pf_endpoints()
 gp.save_gct_points (global_prefix)
 
+c_rad_aa = h.AAtoGoCzone
+c_rad_pf = h.PFtoGoCzone
+
 
 t4= time.time()
 print ('Granule generation finished after', t4-t3)
 
-#Build connector and obtain the connections
-c_rad_aa = h.AAtoGoCzone
-cc = Connect_2D(gg.qpts, gp.qpts_aa, c_rad_aa)
-res_aa, l_res_aa = cc.find_connections()
-
-t5= time.time()
-print ('AA connections found after', t5-t4)
-
-cc.save_results (res_aa, l_res_aa, global_prefix+'AAtoGoC')
-
-t6= time.time()
-print ('AA connections saved after', t6-t5)
 
 
-c_rad_pf = h.PFtoGoCzone
-cc = Connect_2D(gg.qpts, gp.qpts_pf, c_rad_pf)
-res_pf, l_res_pf = cc.find_connections()
+###
 
-t7= time.time()
-print ('PF connections found after', t7-t6)
+st1 = time.time()
 
-cc.save_results (res_pf, l_res_pf, global_prefix+'PFtoGoC')
 
-t8= time.time()
-print ('PF connections saved after', t8-t7)
-print ('Total time was: ' , t8-t1)
+import ipyparallel as ipp
 
+rc = ipp.Client()
+dv = rc[:]
+print (len (rc.ids))
+lv = rc.load_balanced_view()
+
+cc_aa = Connect_2D(gg.qpts, gp.qpts_aa, c_rad_aa)
+kdt_aa, q_pts_aa, lax_c, lax_range, lin_in_tree = cc_aa.get_tree_setup()
+
+cc_pf = Connect_2D(gg.qpts, gp.qpts_pf, c_rad_pf)
+kdt_pf, q_pts_pf, lax_c, lax_range, lin_in_tree = cc_pf.get_tree_setup()
+
+dv.block = True
+with dv.sync_imports(): # note: import as does not work as only import part works, not assignment. Also, you will have to store the file in a directory reachable from the PYTHONPATH
+    import BREPpy
+dv.push(dict(kdt_aa = kdt_aa, kdt_pf = kdt_pf, c_rad_aa = c_rad_aa, c_rad_pf = c_rad_pf))
+
+lam_qpt_aa = lambda pt: BREPpy.pt_in_tr2(kdt_aa, pt, c_rad_aa)
+lam_qpt_pf = lambda pt: BREPpy.pt_in_tr2(kdt_pf, pt, c_rad_pf)
+#lam_qpt = lambda pt, c_rad: BREPpy.pt_in_tr2(kdt, pt, c_rad)
+dv.block = False
+
+st2 = time.time()
+print ('copying done after', st2-st1)
+
+res_aa = list(lv.map (lam_qpt_aa, q_pts_aa))
+st3 = time.time()
+print ('aa query ended after', st3-st2)
+
+
+res_pf = list(lv.map (lam_qpt_pf, q_pts_pf))
+st4 = time.time()
+print ('pf query ended after', st4-st3)
 

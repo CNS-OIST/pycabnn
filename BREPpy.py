@@ -75,7 +75,7 @@ def str_l (ar):
 # This is a test for Parallelization experimnets
 def pt_in_tr2 (kdt, pt, c_rad):
     warnings.simplefilter('ignore')
-    res, = kdt.query_radius(pt, r = c_rad)
+    res, = kdt.query_radius(np.expand_dims(pt, axis = 0), r = c_rad)
     return res
 
 
