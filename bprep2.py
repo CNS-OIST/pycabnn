@@ -10,7 +10,7 @@ np.random.seed (0)
 
 #Parameters (might be read in from the command line some day...)
 #Output path
-global_prefix = './output/manyfiles/'
+global_prefix = './output/manyfiles_full/'
 #config files
 config_hoc = './input_data/Parameters.hoc'
 config_pseudo_hoc = 'input_data/pseudo_hoc.pkl'
@@ -46,7 +46,7 @@ print ('All imported after', t2-t1)
 
 # Set up the Golgi population, render dendrites
 gg = Golgi_pop(h)
-gg.load_somata(go_16)
+gg.load_somata(go_ori)
 gg.add_dendrites()
 gg.save_dend_coords('global_prefix')
 
@@ -57,7 +57,7 @@ print ('Golgi generation finished after', t3-t2)
 
 #Set up Granule population including aa and pf
 gp = Granule_pop(h)
-gp.load_somata(gr_16)
+gp.load_somata(gr_ori)
 gp.add_aa_endpoints_fixed()
 gp.add_pf_endpoints()
 gp.save_gct_points (global_prefix)
@@ -98,12 +98,12 @@ con2d_dict = dict(
 	kdt = kdt, 
 	q_pts = q_pts, 
 	c_rad = c_rad_aa, 
-	lax_c = lax_c, 
-	lax_range = lax_range, 
+	lin_axis = cc_aa.lin_axis, 
 	lin_in_tree = lin_in_tree,
 	lin_is_src = cc_aa.lin_is_src, 
 	prefix = global_prefix, 
-	pts = gg.qpts)
+	pts = gg.qpts,
+	lpts = gp.qpts_aa)
 
 
 
@@ -111,7 +111,7 @@ dv.push(con2d_dict)
 
 #lam_qpt_aa = lambda pt: BREPpy.pt_in_tr2(kdt_aa, pt, c_rad_aa)
 #lam_qpt_pf = lambda pt: BREPpy.pt_in_tr2(kdt_pf, pt, c_rad_pf)
-lam_qpt = lambda ids: parallel_util.pts_in_tr_ids2 (kdt, q_pts, c_rad, lax_c, lax_range, ids, lin_in_tree, lin_is_src, prefix, pts)
+lam_qpt = lambda ids: parallel_util.pts_in_tr_ids2 (kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix)
 dv.block = False
 
 
@@ -139,7 +139,11 @@ id_ar = get_id_array(len(q_pts), spacing)
 
 res_workers = list(lv.map (lam_qpt, id_ar))
 
-idx, pre_res, pre_l_res = zip(*res_workers)
+st3 = time.time()
+print ('Done after ', st3-st2)
+
+
+'''idx, pre_res, pre_l_res = zip(*res_workers)
 
 id_a = np.argsort(idx)
 res = pre_res[id_a[0]]
@@ -154,7 +158,7 @@ print ('Result obtained after ', st3-st2)
 #cc_aa.save_results(res, l_res, global_prefix + 'AAtoGoC')
 
 st4 = time.time()
-print ('Saving finished after', st4-st3)
+print ('Saving finished after', st4-st3)'''
 
 
 

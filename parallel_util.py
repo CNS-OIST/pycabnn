@@ -25,9 +25,17 @@ def pts_in_tr_ids (kdt, q_pts, c_rad, lax_c, lax_range,  ids, lin_in_tree, pts):
 
 
 
-def pts_in_tr_ids2 (kdt, q_pts, c_rad, lax_c, lax_range,  ids, lin_in_tree, lin_is_src, prefix, pts):
+
+def pts_in_tr_ids2 (kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix):
     
     import numpy
+
+    if lin_in_tree: q_pts = pts.coo[:, numpy.invert(lin_axis)]  
+    else: lpts.coo[:,0,numpy.invert(lin_axis)]
+
+    lax_c = pts.coo[:,lin_axis] 
+    lax_range = lpts.coo[:,:,lin_axis] 
+    lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
 
     def str_l (ar): 
         '''make a space-seperated string from all elements in a 1D-array'''
