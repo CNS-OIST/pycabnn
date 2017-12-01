@@ -45,7 +45,7 @@ print ('All imported after', t2-t1)
 
 # Set up the Golgi population, render dendrites
 gg = Golgi_pop(h)
-gg.load_somata(go_16)
+gg.load_somata(go_64)
 gg.add_dendrites()
 gg.save_dend_coords('global_prefix')
 
@@ -56,7 +56,7 @@ print ('Golgi generation finished after', t3-t2)
 
 #Set up Granule population including aa and pf
 gp = Granule_pop(h)
-gp.load_somata(gr_16)
+gp.load_somata(gr_64)
 gp.add_aa_endpoints_fixed()
 gp.add_pf_endpoints()
 gp.save_gct_points (global_prefix)
@@ -111,12 +111,20 @@ print (np.ceil(len(q_pts_aa)/len(rc.ids)))
 st2 = time.time()
 print ('copying done after', st2-st1)
 
-for ids in [10, 100, 1000, np.ceil(len(q_pts_aa)/len(rc.ids)), np.floor(len(q_pts_aa)/len(rc.ids))]:
+for ids in [10, 100, 1000, np.ceil(len(q_pts_aa)/len(rc.ids))]:
 
 	st2 = time.time()
 	id_ar = get_id_array(len(q_pts_aa), ids)
 
 	res_aa = list(lv.map (lam_qpt, id_ar))
+
+	idx, pre_res, pre_l_res = zip(*res_aa)
+	id_a = np.argsort(idx)
+	res = pre_res[id_a[0]]
+	l_res = pre_l_res[id_a[0]]
+	for n in id_a[1:]: 
+		res.extend(pre_res[n])
+		l_res.extend(pre_l_res[n])
 
 	print ('For spacing', ids, ', aa query ended after', time.time() - st2)
 	st3 = time.time()
@@ -126,7 +134,7 @@ for ids in [10, 100, 1000, np.ceil(len(q_pts_aa)/len(rc.ids)), np.floor(len(q_pt
 
 
 import pickle
-with open('test_pf', 'wb') as f:
+with open('test_aa16', 'wb') as f:
     pickle.dump(res_aa, f)
 
 
