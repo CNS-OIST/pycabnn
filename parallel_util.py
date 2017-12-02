@@ -1,32 +1,5 @@
-def pts_in_tr_ids (kdt, q_pts, c_rad, lax_c, lax_range,  ids, lin_in_tree, pts):
-    
-    import numpy
 
-    res = []
-    res_l = []
-
-    for i, pt in enumerate(q_pts[ids[1]]): #iterate through the query points
-        # find the points within the critical radius
-        ind, = kdt.query_radius(numpy.expand_dims(pt, axis = 0), r = c_rad)
-
-        #check if the found points match along the linearized axis and if so, add distance from the beginning of the linearized axis
-        if lin_in_tree: 
-            ind = ind[numpy.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
-            res_l.append(lax_c[i] - lax_range[ind,0])
-        else:
-            ind = ind[numpy.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind]).ravel()]
-            res_l.append(lax_c[ind] - lax_range[i,0])
-
-        res.append(ind.astype('int'))
-
-    print (len(pts.seg))
-
-    return [ids[0], res, res_l]
-
-
-
-
-def pts_in_tr_ids2 (kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix):
+def find_connections_2dpar (kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix):
     
     import numpy
 
@@ -51,10 +24,10 @@ def pts_in_tr_ids2 (kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, id
         #check if the found points match along the linearized axis and if so, add distance from the beginning of the linearized axis
         if lin_in_tree: 
             ind = ind[numpy.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
-            res_l.append(lax_c[i] - lax_range[ind,0])
+            res_l.append(lax_c[i] - lax_range[ind,0] + lpts.lin_offset[ind])
         else:
             ind = ind[numpy.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind]).ravel()]
-            res_l.append(lax_c[ind] - lax_range[i,0])
+            res_l.append(lax_c[ind] - lax_range[i,0] + lpts.lin_offset[i])
 
         res.append(ind.astype('int'))
 

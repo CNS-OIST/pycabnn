@@ -79,6 +79,35 @@ def pt_in_tr2 (kdt, pt, c_rad):
     return res
 
 
+def pts_in_tr_ids (kdt, q_pts, lax_c, lax_range, c_rad, ids, lin_in_tree):
+           
+    res = []
+    l_res = []
+    for i, pt in enumerate(q_pts[ids]): #iterate through the query points
+        # find the points within the critical radius
+        warnings.simplefilter('ignore')
+        ind, = kdt.query_radius(np.expand_dims(pt, axis = 0), r = c_rad)
+        try: 
+            print (numpy.sqrt (12))
+        except: pass
+        try:
+            print (np.sqrt (113))
+        except: pass
+
+
+        #check if the found points match along the linearized axis and if so, add distance from the beginning of the linearized axis
+        if lin_in_tree: 
+            ind = ind[numpy.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
+            l_res.append(lax_c[i] - lax_range[ind,0])
+        else:
+            ind = ind[numpy.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind]).ravel()]
+            l_res.append(lax_c[ind] - lax_range[i,0])
+
+        res.append(ind.astype('int'))
+
+    return [res, l_res]
+
+
 
 
 
@@ -87,9 +116,14 @@ def pt_in_tr2 (kdt, pt, c_rad):
 ## CONNECTOR PART                                                 ##
 ####################################################################
 
+class Connect_3D_parallel (object):
+
+
+
+
 class Connect_2D(object):
 
-    def __init__(self, qpts_src, qpts_tar, c_rad):
+    def __init__(self, qpts_src, qpts_tar, c_rad, prefix = ''):
 
         #If the arguments are np arrays, make a Query_point from it.
         if type(qpts_src).__module__ == np.__name__ : qpts_src = Query_point(qpts_src)
@@ -108,10 +142,16 @@ class Connect_2D(object):
             print ('Failure to initialize connector, there is not one linearized and one regular point set')
         self.lin_is_src = qpts_src.lin
         self.c_rad = c_rad
+        self.prefix = prefix
+
+
+    def connections_serial (self):
 
 
 
-    def get_tree_setup (self, lin_in_tree = []):
+
+
+    def get_tree_setup (self, return_kdt_only = False, lin_in_tree = []):
         '''Gets the setup for the connection.
         lin_in_tree determines whether
          '''
@@ -128,14 +168,17 @@ class Connect_2D(object):
             q_pts = self.lpts.coo[:,0,np.invert(self.lin_axis)]
             tr_pts = self.pts.coo[:, np.invert(self.lin_axis)] 
                               
-        #get the information for the axis along which the projection is done
-        lax_c = self.pts.coo[:,self.lin_axis] 
-        lax_range = self.lpts.coo[:,:,self.lin_axis] 
-        lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
+
         #build 2D Tree
         kdt = KDTree(tr_pts)
 
-        return kdt, q_pts, lax_c, lax_range, self.lin_in_tree
+        if return_kdt_only: return kdt
+        else: 
+            #get the information for the axis along which the projection is done
+            lax_c = self.pts.coo[:,self.lin_axis] 
+            lax_range = self.lpts.coo[:,:,self.lin_axis] 
+            lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
+            return kdt, q_pts, lax_c, lax_range, self.lin_in_tree
 
 
     def find_connections (self, lin_in_tree = []):
@@ -150,10 +193,10 @@ class Connect_2D(object):
             #check if the found points match along the linearized axis and if so, add distance from the beginning of the linearized axis
             if self.lin_in_tree: 
                 ind = ind[np.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
-                l_res.append(lax_c[i] - lax_range[ind,0])
+                l_res.append(lax_c[i] - lax_range[ind,0] + self.lpts.lin_offset[ind])
             else:
                 ind = ind[np.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind]).ravel()]
-                l_res.append(lax_c[ind] - lax_range[i,0])
+                l_res.append(lax_c[ind] - lax_range[i,0] + self.lpts.lin_offset[i])
 
             res.append(ind.astype('int'))
 
@@ -170,10 +213,10 @@ class Connect_2D(object):
         With the two last bools different 4 different modes can be created to have flexibility.'''
 
         # file names
-        fn_tar = prefix + '_target.dat'
-        fn_src = prefix + '_source.dat'
-        fn_segs = prefix + '_segments.dat'
-        fn_dis = prefix + '_distance.dat'
+        fn_tar = prefix + 'target.dat'
+        fn_src = prefix + 'source.dat'
+        fn_segs = prefix + 'segments.dat'
+        fn_dis = prefix + 'distance.dat'
 
         with open (fn_tar, 'w') as f_tar, open (fn_src, 'w') as f_src, open (fn_dis, 'w') as f_dis, open (fn_segs, 'w') as f_segs: 
 
@@ -218,13 +261,19 @@ class Connect_2D(object):
 
 
 class Query_point (object):
-    def __init__ (self, coord, IDs = [], segs = []):
+    def __init__ (self, coord, IDs = [], segs = [], lin_offset = 0):
         self.coo = coord
         self.seg = segs
         self.npts = len(coord)
         if not IDs == []: self.idx = IDs
         else: self.idx = np.arange(len(coord)) 
         self.lin = self.lin_check()
+        if self.lin: #lin_offset is added to the distance for each cell.
+            try: lin_offset = float (np.array(lin_offset)) * np.ones(self.npts)
+            except:
+                assert (len(lin_offset) == self.npts), 'lin_offset should be a scalar or an array with length npts!'
+            finally: self.lin_offset = lin_offset
+
 
     def lin_check (self):
         if len(self.coo.shape) == 3:
@@ -475,8 +524,7 @@ class Granule_pop (Cell_pop):
         self.pf_dots[:,0,2] = self.pf_dots[:,1,2] #z axis shall be the same
         self.pf_dots[:,0,0] = self.pf_dots[:,0,0] - pf_length/2
         self.pf_dots[:,1,0] = self.pf_dots[:,1,0] + pf_length/2
-        self.qpts_pf = Query_point(self.pf_dots)
-
+        self.qpts_pf = Query_point(self.pf_dots, lin_offset = self.aa_dots[:,1,2] - self.aa_dots[:,0,2])
 
     def add_3D_aa_and_pf(self):
         '''adds 3-dimensional coordinates for ascending axons and parallel fiber to the granule cell objects.
