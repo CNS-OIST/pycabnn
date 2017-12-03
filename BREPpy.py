@@ -148,55 +148,30 @@ class Connect_2D(object):
     def connections_serial (self):
 
 
-        '''try:
+
+        try:
             import ipyparallel as ipp
-            rc = ipp.Client()
-            dv = rc[:]
-            lv = rc.load_balanced_view()
-            print ('Started parallel process with', len(rc.ids), 'workers.')
+            self.rc = ipp.Client()
+            self.dv = self.rc[:]
+            self.dv.use_cloudpickle()
+            self.lv = self.rc.load_balanced_view()
+            import os
+            print ('Started parallel process with', len(self.rc.ids), 'workers.')
+            print('Work directory for workers:', self.rc[0].apply_sync(os.getcwd))
+            print ('Work directory of main process:', os.getcwd())
         except:
             print ('Parallel process could not be started!')
             if True:
                 print ('Will do it sequentially instead...')
                 res, l_res = self.find_connections()
                 self.save_results (res, res_l, self.prefix)
-            return'''
-
-
-        import ipyparallel as ipp
-        self.rc = ipp.Client()
-        self.dv = self.rc[:]
-        self.dv.use_cloudpickle()
-        self.lv = self.rc.load_balanced_view()
-
-        import os
-        print(self.rc[:].apply_sync(os.getcwd))
-        print (os.getcwd())
-
-
-
-
-
-
-        print ('Started parallel process with', len(self.rc.ids), 'workers.')
+            return
 
         kdt, q_pts = self.get_tree_setup (return_lax = False)
-        import cloudpickle
         self.dv.block = True
         with self.dv.sync_imports():
             import parallel_util
 
-        con2d_dict = dict (
-            kdt = kdt,
-            q_pts = q_pts,
-            c_rad = self.c_rad,
-            lin_axis = self.lin_axis,
-            lin_in_tree = self.lin_in_tree,
-            lin_is_src = self.lin_is_src,
-            prefix = self.prefix,
-            pts = self.pts.coo,
-            lpts = self.lpts.coo)
-        self.dv.push (con2d_dict)
 
         pts = self.pts
         lpts = self.lpts
@@ -206,17 +181,9 @@ class Connect_2D(object):
         lin_is_src = self.lin_is_src
         prefix = self.prefix
 
-
-
-
         lam_qpt = lambda ids: parallel_util.find_connections_2dpar (kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix)
         self.dv.block = False
-        '''def get_id_array (len_id, id_sp, add_num = True):
-            id_sp = int(id_sp)
-            c = [np.arange(id_sp) + i * id_sp for i in range(int(np.ceil (len_id/id_sp)))]
-            c[-1] = c[-1][c[-1]<len_id]
-            if add_num: c= [[i, c[i]] for i in range(len(c))]
-            return c'''
+
 
         id_sp = int(np.ceil(len(q_pts)/len(self.rc.ids)))
         id_ar = [np.arange(id_sp) + i * id_sp for i in range(int(np.ceil (len(q_pts)/id_sp)))]
@@ -224,15 +191,9 @@ class Connect_2D(object):
         id_ar= [[i, id_ar[i]] for i in range(len(id_ar))]
 
 
-
-        
-
         s = list(self.lv.map (lam_qpt, id_ar, block = True))
-         # Note that this can also be set False, but in the current version this gives an error, compare: https://github.com/ipython/ipyparallel/issues/274
-        print ('whoa')
-        s = list(self.lv.apply (lam_qpt, id_ar, block = True))
 
-
+        print ('Exited process, saving as:' , prefix)
 
 
     def get_tree_setup (self, return_lax = True, lin_in_tree = []):

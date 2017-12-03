@@ -10,7 +10,7 @@ np.random.seed (0)
 
 #Parameters (might be read in from the command line some day...)
 #Output path
-global_prefix = './output/manyfiles2/'
+global_prefix = './output/parallel12_full/'
 #config files
 config_hoc = './input_data/Parameters.hoc'
 config_pseudo_hoc = 'input_data/pseudo_hoc.pkl'
@@ -46,20 +46,18 @@ print ('All imported after', t2-t1)
 
 # Set up the Golgi population, render dendrites
 gg = Golgi_pop(h)
-gg.load_somata(go_16)
+gg.load_somata(go_ori)
 gg.add_dendrites()
 gg.save_dend_coords(global_prefix)
 gg.save_somata (global_prefix, 'GoCcoordinates.sorted.dat')
 
-
-
 t3= time.time()
-print ('Golgi generation finished after', t3-t2)
+print ('Golgi cell processing:', t3-t2)
 
 
 #Set up Granule population including aa and pf
 gp = Granule_pop(h)
-gp.load_somata(gr_16)
+gp.load_somata(gr_ori)
 gp.add_aa_endpoints_fixed()
 gp.add_pf_endpoints()
 gp.save_gct_points (global_prefix)
@@ -68,10 +66,22 @@ gp.save_somata (global_prefix, 'GCcoordinates.sorted.dat')
 c_rad_aa = h.AAtoGoCzone
 c_rad_pf = h.PFtoGoCzone
 
-
 t4= time.time()
-print ('Granule generation finished after', t4-t3)
-
+print ('Granule cell processing:', t4-t3)
+print (' ')
 
 cc = Connect_2D(gg.qpts, gp.qpts_aa, c_rad_aa, global_prefix+'AAtoGoC')
 cc.connections_serial()
+
+t5 = time.time()
+print ('AA: Found and saved after', t5-t4)
+print (' ')
+
+cc = Connect_2D(gg.qpts, gp.qpts_pf, c_rad_pf, global_prefix+'PFtoGoC')
+cc.connections_serial()
+
+t6 = time.time()
+print ('PF: Found and saved after', t6-t5)
+print (' ')
+
+print ('Whole process completed after', t6-t1)
