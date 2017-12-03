@@ -116,7 +116,7 @@ def pts_in_tr_ids (kdt, q_pts, lax_c, lax_range, c_rad, ids, lin_in_tree):
 ## CONNECTOR PART                                                 ##
 ####################################################################
 
-class Connect_3D_parallel (object):
+#class Connect_3D_parallel (object):
 
 
 
@@ -148,10 +148,94 @@ class Connect_2D(object):
     def connections_serial (self):
 
 
+        '''try:
+            import ipyparallel as ipp
+            rc = ipp.Client()
+            dv = rc[:]
+            lv = rc.load_balanced_view()
+            print ('Started parallel process with', len(rc.ids), 'workers.')
+        except:
+            print ('Parallel process could not be started!')
+            if True:
+                print ('Will do it sequentially instead...')
+                res, l_res = self.find_connections()
+                self.save_results (res, res_l, self.prefix)
+            return'''
+
+
+        import ipyparallel as ipp
+        self.rc = ipp.Client()
+        self.dv = self.rc[:]
+        self.dv.use_cloudpickle()
+        self.lv = self.rc.load_balanced_view()
+
+        import os
+        print(self.rc[:].apply_sync(os.getcwd))
+        print (os.getcwd())
 
 
 
-    def get_tree_setup (self, return_kdt_only = False, lin_in_tree = []):
+
+
+
+        print ('Started parallel process with', len(self.rc.ids), 'workers.')
+
+        kdt, q_pts = self.get_tree_setup (return_lax = False)
+        import cloudpickle
+        self.dv.block = True
+        with self.dv.sync_imports():
+            import parallel_util
+
+        con2d_dict = dict (
+            kdt = kdt,
+            q_pts = q_pts,
+            c_rad = self.c_rad,
+            lin_axis = self.lin_axis,
+            lin_in_tree = self.lin_in_tree,
+            lin_is_src = self.lin_is_src,
+            prefix = self.prefix,
+            pts = self.pts.coo,
+            lpts = self.lpts.coo)
+        self.dv.push (con2d_dict)
+
+        pts = self.pts
+        lpts = self.lpts
+        c_rad = self.c_rad
+        lin_axis = self.lin_axis
+        lin_in_tree = self.lin_in_tree
+        lin_is_src = self.lin_is_src
+        prefix = self.prefix
+
+
+
+
+        lam_qpt = lambda ids: parallel_util.find_connections_2dpar (kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix)
+        self.dv.block = False
+        '''def get_id_array (len_id, id_sp, add_num = True):
+            id_sp = int(id_sp)
+            c = [np.arange(id_sp) + i * id_sp for i in range(int(np.ceil (len_id/id_sp)))]
+            c[-1] = c[-1][c[-1]<len_id]
+            if add_num: c= [[i, c[i]] for i in range(len(c))]
+            return c'''
+
+        id_sp = int(np.ceil(len(q_pts)/len(self.rc.ids)))
+        id_ar = [np.arange(id_sp) + i * id_sp for i in range(int(np.ceil (len(q_pts)/id_sp)))]
+        id_ar[-1] = id_ar[-1][id_ar[-1]<len(q_pts)]
+        id_ar= [[i, id_ar[i]] for i in range(len(id_ar))]
+
+
+
+        
+
+        s = list(self.lv.map (lam_qpt, id_ar, block = True))
+         # Note that this can also be set False, but in the current version this gives an error, compare: https://github.com/ipython/ipyparallel/issues/274
+        print ('whoa')
+        s = list(self.lv.apply (lam_qpt, id_ar, block = True))
+
+
+
+
+    def get_tree_setup (self, return_lax = True, lin_in_tree = []):
         '''Gets the setup for the connection.
         lin_in_tree determines whether
          '''
@@ -172,7 +256,7 @@ class Connect_2D(object):
         #build 2D Tree
         kdt = KDTree(tr_pts)
 
-        if return_kdt_only: return kdt
+        if not return_lax: return kdt, q_pts
         else: 
             #get the information for the axis along which the projection is done
             lax_c = self.pts.coo[:,self.lin_axis] 
@@ -183,7 +267,7 @@ class Connect_2D(object):
 
     def find_connections (self, lin_in_tree = []):
         
-        kdt, q_pts, lax_c, lax_range, _ = self.get_tree_setup(lin_in_tree)        
+        kdt, q_pts, lax_c, lax_range, _ = self.get_tree_setup(True, lin_in_tree)        
         res = []
         l_res = []
         for i, pt in enumerate(q_pts): #iterate through the query points

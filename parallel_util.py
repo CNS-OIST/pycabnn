@@ -1,4 +1,10 @@
 
+
+def str_l (ar): 
+    '''make a space-seperated string from all elements in a 1D-array'''
+    return (' '.join(str(ar[i]) for i in range(len(ar))))
+
+
 def find_connections_2dpar (kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix):
     
     import numpy
@@ -10,9 +16,7 @@ def find_connections_2dpar (kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is
     lax_range = lpts.coo[:,:,lin_axis] 
     lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
 
-    def str_l (ar): 
-        '''make a space-seperated string from all elements in a 1D-array'''
-        return (' '.join(str(ar[i]) for i in range(len(ar))))
+
 
     res = []
     res_l = []
@@ -31,13 +35,15 @@ def find_connections_2dpar (kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is
 
         res.append(ind.astype('int'))
 
-    print (len(pts.seg))
+    #print (len(pts.seg))
+
 
 
     fn_tar = prefix + 'target' + str(ids[0])+'.dat'
     fn_src = prefix + 'source' + str(ids[0])+'.dat'
     fn_segs = prefix +'segments'+ str(ids[0])+'.dat'
     fn_dis = prefix + 'distance'+ str(ids[0])+'.dat'
+
 
     with open (fn_tar, 'w') as f_tar, open (fn_src, 'w') as f_src, open (fn_dis, 'w') as f_dis, open (fn_segs, 'w') as f_segs: 
 
@@ -75,7 +81,14 @@ def find_connections_2dpar (kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is
                 f_tar.write("\n")
                 f_segs.write("\n")
 
+
     return [ids[0], res, res_l]
+
+
+    #except:
+    #    with open (prefix  + 'failed', 'w') as f:
+    #        f.write ('I know this sucks :(')
+
 
 
 
