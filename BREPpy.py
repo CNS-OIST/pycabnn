@@ -116,7 +116,69 @@ def pts_in_tr_ids (kdt, q_pts, lax_c, lax_range, c_rad, ids, lin_in_tree):
 ## CONNECTOR PART                                                 ##
 ####################################################################
 
-#class Connect_3D_parallel (object):
+class Connect_3D_parallel (object):
+
+    def __init__(self, qpts_src, qpts_tar, c_rad, prefix = ''):
+
+        #If the arguments are np arrays, make a Query_point from it.
+        if type(qpts_src).__module__ == np.__name__ : qpts_src = Query_point(qpts_src)
+        if type(qpts_tar).__module__ == np.__name__ : qpts_tar = Query_point(qpts_tar)
+
+        self.spts = qpts_src
+        self.tpts = qpts_tar
+        self.c_rad = c_rad
+        self.prefix = prefix
+
+    def connections_serial (self, src_in_tree = []):
+
+        import ipyparallel as ipp
+        self.rc = ipp.Client()
+        self.dv = self.rc[:]
+        self.dv.use_cloudpickle()
+        self.lv = self.rc.load_balanced_view()
+        import os
+        print ('Started parallel process with', len(self.rc.ids), 'workers.')
+        print('Work directory for workers:', self.rc[0].apply_sync(os.getcwd))
+        print ('Work directory of main process:', os.getcwd())
+
+
+        if not type(src_in_tree).__name__ == 'bool':
+            src_in_tree = self.spts.npts > self.tpts.npts
+        self.src_in_tree = src_in_tree
+        #depending on which points shall be in the tree and which shall be the query points, assign, and project at the same time
+        if src_in_tree: kdt =KDTree(self.spts.coo)
+        else: kdt =KDTree(self.tpts.coo)
+
+        spts = self.spts
+        tpts = self.tpts
+        c_rad = self.c_rad
+        src_in_tree = self.src_in_tree
+        prefix = self.prefix
+
+        lam_qpt = lambda ids: parallel_util.find_connections_3dpar (kdt, spts, tpts, c_rad, lin_axis, src_in_tree, ids, prefix)
+        #self.dv.block = False
+
+        if src_in_tree: nqpts = tpts.npts
+        else: nqpts = spts.npts
+
+        id_sp = int(np.ceil(nqpts/len(self.rc.ids)))
+        id_ar = [np.arange(id_sp) + i * id_sp for i in range(int(np.ceil (nqpts/id_sp)))]
+        id_ar[-1] = id_ar[-1][id_ar[-1]<nqpts]
+        id_ar= [[i, id_ar[i]] for i in range(len(id_ar))]
+
+        s = list(self.lv.map (lam_qpt, id_ar, block = True))
+
+        print ('Exited process, saving as:' , prefix)
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -146,8 +208,6 @@ class Connect_2D(object):
 
 
     def connections_serial (self):
-
-
 
         try:
             import ipyparallel as ipp
@@ -182,7 +242,7 @@ class Connect_2D(object):
         prefix = self.prefix
 
         lam_qpt = lambda ids: parallel_util.find_connections_2dpar (kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix)
-        self.dv.block = False
+        #self.dv.block = False
 
 
         id_sp = int(np.ceil(len(q_pts)/len(self.rc.ids)))
@@ -194,6 +254,8 @@ class Connect_2D(object):
         s = list(self.lv.map (lam_qpt, id_ar, block = True))
 
         print ('Exited process, saving as:' , prefix)
+
+        return s
 
 
     def get_tree_setup (self, return_lax = True, lin_in_tree = []):
@@ -238,10 +300,10 @@ class Connect_2D(object):
             #check if the found points match along the linearized axis and if so, add distance from the beginning of the linearized axis
             if self.lin_in_tree: 
                 ind = ind[np.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
-                l_res.append(lax_c[i] - lax_range[ind,0] + self.lpts.lin_offset[ind])
+                l_res.append(abs(lax_c[i] - lax_range[ind,0] - self.lpts.set_0)+ self.lpts.lin_offset[ind])
             else:
                 ind = ind[np.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind]).ravel()]
-                l_res.append(lax_c[ind] - lax_range[i,0] + self.lpts.lin_offset[i])
+                l_res.append(abs(lax_c[ind] - lax_range[i,0] -self.lpts.set_0) + self.lpts.lin_offset[i])
 
             res.append(ind.astype('int'))
 
@@ -306,7 +368,7 @@ class Connect_2D(object):
 
 
 class Query_point (object):
-    def __init__ (self, coord, IDs = [], segs = [], lin_offset = 0):
+    def __init__ (self, coord, IDs = [], segs = [], lin_offset = 0, set_0 = 0):
         self.coo = coord
         self.seg = segs
         self.npts = len(coord)
@@ -318,6 +380,7 @@ class Query_point (object):
             except:
                 assert (len(lin_offset) == self.npts), 'lin_offset should be a scalar or an array with length npts!'
             finally: self.lin_offset = lin_offset
+            self.set_0 = set_0
 
 
     def lin_check (self):
@@ -497,11 +560,15 @@ class Golgi_pop (Cell_pop):
         assert hasattr(self, 'a_dend') or hasattr(self, 'b_dend'), 'Could not find any added dendrites'
         if hasattr(self, 'a_dend'):
             with open(prefix +  'GoCadendcoordinates.dat', 'w') as f_out:
-                f_out.write("\n".join(map(str_l, self.a_dend)))
+                for ad in self.a_dend:
+                    flad = np.array([a for l in ad for a in l])
+                    f_out.write(str_l(flad)+"\n")
         else: warnings.warn('Could not find apical dendrite')
         if hasattr(self, 'b_dend'):
             with open(prefix +  'GoCbdendcoordinates.dat', 'w') as f_out:
-                f_out.write("\n".join(map(str_l, self.a_dend)))
+                for bd in self.b_dend:
+                    flbd = [b for l in bd for b in l]
+                    f_out.write(str_l(flbd)+"\n")
         else: warnings.warn('Could not find basal dendrite')
 
 
@@ -522,6 +589,9 @@ class Golgi_pop (Cell_pop):
         c_gr = np.linspace(0,1,c_n)*np.ones((3, c_n)) #linspace grid between 0 and 1 with c_n elements
         b_res = []
         idx = []  #cell indices
+
+        c_m = -np.array(c_m) + 90 # This is the angle conversion that is necessary to be compatible with the scheme BREP
+
         for i in range(len(self.som)): #each cell
             som_c = self.som[i,:]
             d_res = []
@@ -569,7 +639,7 @@ class Granule_pop (Cell_pop):
         self.pf_dots[:,0,2] = self.pf_dots[:,1,2] #z axis shall be the same
         self.pf_dots[:,0,0] = self.pf_dots[:,0,0] - pf_length/2
         self.pf_dots[:,1,0] = self.pf_dots[:,1,0] + pf_length/2
-        self.qpts_pf = Query_point(self.pf_dots, lin_offset = self.aa_dots[:,1,2] - self.aa_dots[:,0,2])
+        self.qpts_pf = Query_point(self.pf_dots, lin_offset = self.aa_dots[:,1,2] - self.aa_dots[:,0,2], set_0 = pf_length/2)
 
     def add_3D_aa_and_pf(self):
         '''adds 3-dimensional coordinates for ascending axons and parallel fiber to the granule cell objects.
