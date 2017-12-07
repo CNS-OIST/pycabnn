@@ -1,0 +1,45 @@
+#
+
+from BREPpy import *
+
+p1 = './example_simulation/coordinates_input/'
+p2 = './example_simulation/coordinates_input/subsampled/'
+
+go_ori = p1+'GoCcoordinates.dat'
+gr_ori = p1+'GCcoordinates.dat'
+go_64 = p2+'GoCcoordinates_64.dat'
+gr_64 = p2+'GCcoordinates_64.dat'
+go_16 = p2+'GoCcoordinates_16.dat'
+gr_16 = p2+'GCcoordinates_16.dat'
+go_4 = p2+'GoCcoordinates_4.dat'
+gr_4 = p2+'GCcoordinates_4.dat' 
+
+
+empty_hoc = dir(neuron.hoc.HocObject()).copy()
+config_fn = './input_files/Parameters.hoc'
+neuron.h.xopen(config_fn)
+
+
+# Set up the Golgi population, render dendrites
+gg = Golgi_pop(h)
+gg.load_somata(go_64)
+gg.add_dendrites()
+
+
+#Set up Granule population including aa and pf
+gp = Granule_pop(h)
+gp.load_somata(gr_64)
+gp.add_aa_endpoints_fixed()
+gp.add_pf_endpoints()
+
+#Build connector and obtain the connections
+cc = Connect_2D(gg.qpts, gp.qpts_aa, 15)
+res_aa, l_res_aa = cc.find_connections()
+cc.save_results (res_aa, l_res_aa)
+#cc.save_results(l1,r1, 'first_test/pts_in_lin_aa_')
+#cc.save_results(l2,r2, 'first_test/lin_in_pts_aa_', query_is_lin=True)
+
+cc = Connect_2D(gg.qpts, gp.qpts_pf, 15)
+res_pf, l_res_pf = cc.find_connections()
+
+

@@ -47,6 +47,7 @@ class Pseudo_hoc (object):
         except: 
             print ('Could not import neuron, go to a python environment with an installed neuron version and try again.')
             return
+        h = neuron.hoc.HocObject()
         neuron.h.xopen(config_fn)
         d = dir(h)
         h_dict = dict()
@@ -72,45 +73,6 @@ def str_l (ar):
     return (' '.join(str(ar[i]) for i in range(len(ar))))
 
 
-# This is a test for Parallelization experimnets
-def pt_in_tr2 (kdt, pt, c_rad):
-    warnings.simplefilter('ignore')
-    res, = kdt.query_radius(np.expand_dims(pt, axis = 0), r = c_rad)
-    return res
-
-
-def pts_in_tr_ids (kdt, q_pts, lax_c, lax_range, c_rad, ids, lin_in_tree):
-           
-    res = []
-    l_res = []
-    for i, pt in enumerate(q_pts[ids]): #iterate through the query points
-        # find the points within the critical radius
-        warnings.simplefilter('ignore')
-        ind, = kdt.query_radius(np.expand_dims(pt, axis = 0), r = c_rad)
-        try: 
-            print (numpy.sqrt (12))
-        except: pass
-        try:
-            print (np.sqrt (113))
-        except: pass
-
-
-        #check if the found points match along the linearized axis and if so, add distance from the beginning of the linearized axis
-        if lin_in_tree: 
-            ind = ind[numpy.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
-            l_res.append(lax_c[i] - lax_range[ind,0])
-        else:
-            ind = ind[numpy.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind]).ravel()]
-            l_res.append(lax_c[ind] - lax_range[i,0])
-
-        res.append(ind.astype('int'))
-
-    return [res, l_res]
-
-
-
-
-
 
 ####################################################################
 ## CONNECTOR PART                                                 ##
@@ -129,25 +91,39 @@ class Connect_3D_parallel (object):
         self.c_rad = c_rad
         self.prefix = prefix
 
-    def connections_serial (self, src_in_tree = []):
+    def connections_parallel (self, deparallelize = False, src_in_tree = []):
 
-        import ipyparallel as ipp
-        self.rc = ipp.Client()
-        self.dv = self.rc[:]
-        self.dv.use_cloudpickle()
-        self.lv = self.rc.load_balanced_view()
-        import os
-        print ('Started parallel process with', len(self.rc.ids), 'workers.')
-        print('Work directory for workers:', self.rc[0].apply_sync(os.getcwd))
-        print ('Work directory of main process:', os.getcwd())
+        if not deparallelize:
+            import ipyparallel as ipp
+            self.rc = ipp.Client()
+            self.dv = self.rc[:]
+            self.dv.use_cloudpickle()
+            self.lv = self.rc.load_balanced_view()
+            import os
+            print ('Started parallel process with', len(self.rc.ids), 'workers.')
+            print('Work directory for workers:', self.rc[0].apply_sync(os.getcwd))
+            print ('Work directory of main process:', os.getcwd())
 
 
         if not type(src_in_tree).__name__ == 'bool':
             src_in_tree = self.spts.npts > self.tpts.npts
         self.src_in_tree = src_in_tree
         #depending on which points shall be in the tree and which shall be the query points, assign, and project at the same time
-        if src_in_tree: kdt =KDTree(self.spts.coo)
-        else: kdt =KDTree(self.tpts.coo)
+        print (type(self.spts.coo))
+        print (type(self.tpts.coo))
+        
+
+        print (self.spts.coo.shape)
+        print (self.tpts.coo.shape)
+
+
+        if src_in_tree: kdt = KDTree(self.spts.coo)
+        else: kdt = KDTree(self.tpts.coo)
+
+        if not deparallelize:
+            self.dv.block = True
+            with self.dv.sync_imports():
+                import parallel_util
 
         spts = self.spts
         tpts = self.tpts
@@ -155,29 +131,27 @@ class Connect_3D_parallel (object):
         src_in_tree = self.src_in_tree
         prefix = self.prefix
 
-        lam_qpt = lambda ids: parallel_util.find_connections_3dpar (kdt, spts, tpts, c_rad, lin_axis, src_in_tree, ids, prefix)
+        print ('sit', src_in_tree)
+
+        lam_qpt = lambda ids: parallel_util.find_connections_3dpar (kdt, spts, tpts, c_rad, src_in_tree, ids, prefix)
         #self.dv.block = False
 
         if src_in_tree: nqpts = tpts.npts
         else: nqpts = spts.npts
 
-        id_sp = int(np.ceil(nqpts/len(self.rc.ids)))
-        id_ar = [np.arange(id_sp) + i * id_sp for i in range(int(np.ceil (nqpts/id_sp)))]
-        id_ar[-1] = id_ar[-1][id_ar[-1]<nqpts]
-        id_ar= [[i, id_ar[i]] for i in range(len(id_ar))]
+        if not deparallelize:
 
-        s = list(self.lv.map (lam_qpt, id_ar, block = True))
+            id_sp = int(np.ceil(nqpts/len(self.rc.ids)))
+            id_ar = [np.arange(id_sp) + i * id_sp for i in range(int(np.ceil (nqpts/id_sp)))]
+            id_ar[-1] = id_ar[-1][id_ar[-1]<nqpts]
+            id_ar= [[i, id_ar[i]] for i in range(len(id_ar))]
+            s = list(self.lv.map (lam_qpt, id_ar, block = True))
+
+        else: 
+            import parallel_util
+            s = lam_qpt([0, np.arange(nqpts)])
 
         print ('Exited process, saving as:' , prefix)
-
-
-
-
-
-
-
-
-
 
 
 
@@ -207,7 +181,7 @@ class Connect_2D(object):
         self.prefix = prefix
 
 
-    def connections_serial (self):
+    def connections_parallel (self):
 
         try:
             import ipyparallel as ipp
@@ -216,9 +190,6 @@ class Connect_2D(object):
             self.dv.use_cloudpickle()
             self.lv = self.rc.load_balanced_view()
             import os
-            print ('Started parallel process with', len(self.rc.ids), 'workers.')
-            print('Work directory for workers:', self.rc[0].apply_sync(os.getcwd))
-            print ('Work directory of main process:', os.getcwd())
         except:
             print ('Parallel process could not be started!')
             if True:
@@ -320,10 +291,10 @@ class Connect_2D(object):
         With the two last bools different 4 different modes can be created to have flexibility.'''
 
         # file names
-        fn_tar = prefix + 'target.dat'
-        fn_src = prefix + 'source.dat'
+        fn_tar = prefix + 'targets.dat'
+        fn_src = prefix + 'sources.dat'
         fn_segs = prefix + 'segments.dat'
-        fn_dis = prefix + 'distance.dat'
+        fn_dis = prefix + 'distances.dat'
 
         with open (fn_tar, 'w') as f_tar, open (fn_src, 'w') as f_src, open (fn_dis, 'w') as f_dis, open (fn_segs, 'w') as f_segs: 
 
@@ -351,11 +322,11 @@ class Connect_2D(object):
 
                     #depending on which population should be source and which should be target, save cell IDs accordingly.
                     if self.lin_in_tree == self.lin_is_src:
-                        f_tar.write("\n".join(map(str, tr_id)))
-                        f_src.write("\n".join(map(str, q_id)))
-                    else:
+                        f_src.write("\n".join(map(str, tr_id)))
                         f_tar.write("\n".join(map(str, q_id)))
-                        f_src.write("\n".join(map(str, tr_id )))
+                    else:
+                        f_src.write("\n".join(map(str, q_id)))
+                        f_tar.write("\n".join(map(str, tr_id )))
 
                     #need to attach one more line here or we get two elements per line 
                     f_dis.write("\n")
@@ -363,8 +334,6 @@ class Connect_2D(object):
                     f_tar.write("\n")
                     f_segs.write("\n")
 
-
-#class Connect_3D(object):
 
 
 class Query_point (object):
@@ -460,14 +429,7 @@ class Cell_pop (object):
         return dat
 
 
-    def plot_somata (self, new_fig = True, *args, **kwargs):
-        if new_fig:
-            plt.figure()
-        ax = plt.gcf().gca(projection='3d')
-        ax.plot(self.som[:,0], self.som[:,1], self.som[:,2], *args, **kwargs)
-
-
-    def gen_random_cell_loc (self, n_cell):
+    def gen_random_cell_loc (self, n_cell, Gc_x = -1, Gc_y = -1, Gc_z = -1, sp_std = 2):
         '''Random generation for cell somatas
         n_cell (int) = number of cells
         Gc_x, Gc_y, Gc_z (float) = dimensions of volume in which cells shall be distributed
@@ -476,8 +438,12 @@ class Cell_pop (object):
         Last step is to prune the volume, i.e. remove the most outlying cells until the goal number of cells is left
         Returns: cell coordinates'''
         # get spacing for grid:
-        vol_c = Gc_x*Gc_y*Gc_z/n_cell
-        sp_def = vol_c**(1/3)/2
+        if Gc_x < 0: Gc_x = self.args.GoCxrange
+        if Gc_y < 0: Gc_y = self.args.GoCyrange
+        if Gc_z < 0: Gc_z = self.args.GoCzrange
+
+        vol_c = Gc_x*Gc_y*Gc_z/n_cell #volume that on average contains exactly one cell
+        sp_def = vol_c**(1/3)/2 #average spacing between cells (cube of above volume)
         
         #Get grid with a few too many elements
         gr = np.asarray([[i,j,k] 
@@ -485,7 +451,7 @@ class Cell_pop (object):
                          for j in np.arange(0, Gc_y, 2*sp_def) 
                          for k in np.arange(0, Gc_z, 2*sp_def)])
         #random displacement
-        grc = gr + np.random.randn(*gr.shape)*sp_def
+        grc = gr + np.random.randn(*gr.shape)*sp_def*sp_std
         
         #then remove the ones that lie most outside to get the correct number of cells:
         #First find the strongest outliers
@@ -499,6 +465,14 @@ class Cell_pop (object):
             n_del = n_del + del_el - len(np.unique(most_out_idx[:n_del]))
         #Deletion step
         grc = grc[np.setdiff1d(np.arange(len(grc)), most_out_idx[:n_del]),:]
+
+        #Now, this might still bee too far out, so we shrink or expand it.
+        mi = np.min(grc, axis = 0)
+        ma = np.max(grc, axis = 0)
+        dim  = ([Gc_x, Gc_y, Gc_z])
+        grc = (grc - mi)/(ma-mi)*dim
+
+        self.som = grc
         return grc
 
 
@@ -624,7 +598,7 @@ class Granule_pop (Cell_pop):
 
 
     def add_aa_endpoints_fixed(self):
-        '''Generate aa endpoints with a random aa length (end point will be somewhere in mol_range)'''
+        '''Generate aa endpoints with a fixed aa length'''
         #aa_length = self.args.PFzoffset   #NOTE: This value exists, but in the BREP original file it is replaced by the other definition
         self.aa_dots = np.array([np.array([self.som[i], self.som[i]]) for i in range(len(self.som))]) 
         self.aa_dots[:,1,2] = self.aa_dots[:,1,2] + self.aa_length
