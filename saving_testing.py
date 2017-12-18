@@ -86,8 +86,8 @@ c_rad_pf = h.PFtoGoCzone
 #_ = cc.connections_parallel(True)
 
 # 2: serial case:
-#cc = Connect_2D( gp.qpts_aa, gg.qpts, c_rad_aa, output_path+'AAtoGoC_ser')
-#_ = cc.connections_parallel(False, True)
+cc = Connect_2D( gp.qpts_aa, gg.qpts, c_rad_aa, output_path+'AAtoGoC_ser')
+_ = cc.connections_parallel(False, True)
 
 # 3: try once with lin_in_tree and once opposite:
 cc = Connect_2D( gp.qpts_aa, gg.qpts, c_rad_aa, output_path+'AAtoGoC_lit')

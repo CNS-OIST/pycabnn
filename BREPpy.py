@@ -329,7 +329,7 @@ class Connect_2D(object):
                         tr_id = (np.ones(len(cl))*l).astype('int')
 
                     #depending on which population should be source and which should be target, save cell IDs accordingly.
-                    if self.lin_in_tree == self.lin_is_src:
+                    if self.lin_is_src:
                         f_src.write("\n".join(map(str, tr_id)))
                         f_tar.write("\n".join(map(str, q_id)))
                     else:
