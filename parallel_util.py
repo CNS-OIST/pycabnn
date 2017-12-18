@@ -69,11 +69,11 @@ def find_connections_2dpar (kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is
 
                 #depending on which population should be source and which should be target, save cell IDs accordingly.
                 if lin_in_tree == lin_is_src:
-                    f_tar.write("\n".join(map(str, tr_id)))
-                    f_src.write("\n".join(map(str, q_id)))
-                else:
+                    f_src.write("\n".join(map(str, tr_id)))
                     f_tar.write("\n".join(map(str, q_id)))
-                    f_src.write("\n".join(map(str, tr_id )))
+                else:
+                    f_src.write("\n".join(map(str, q_id)))
+                    f_tar.write("\n".join(map(str, tr_id )))
 
                 #need to attach one more line here or we get two elements per line 
                 f_dis.write("\n")
