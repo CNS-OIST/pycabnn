@@ -79,13 +79,27 @@ print (' ')
 c_rad_aa = h.AAtoGoCzone
 c_rad_pf = h.PFtoGoCzone
 
+### Test cases
 
-#cc = Connect_2D( gg.qpts, gp.qpts_aa, c_rad_aa, output_path+'AAtoGoC')
-#cc = Connect_2D( gp.qpts_aa, gg.qpts, c_rad_aa, output_path+'AAtoGoC_dep')
+# 1: Basic case: only deparallelized
+#cc = Connect_2D( gp.qpts_aa, gg.qpts, c_rad_aa, output_path+'AAtoGoC')
 #_ = cc.connections_parallel(True)
 
-cc = Connect_2D( gp.qpts_aa, gg.qpts, c_rad_aa, output_path+'AAtoGoC_ser')
-_ = cc.connections_parallel(False, True)
+# 2: serial case:
+#cc = Connect_2D( gp.qpts_aa, gg.qpts, c_rad_aa, output_path+'AAtoGoC_ser')
+#_ = cc.connections_parallel(False, True)
+
+# 3: try once with lin_in_tree and once opposite:
+cc = Connect_2D( gp.qpts_aa, gg.qpts, c_rad_aa, output_path+'AAtoGoC_lit')
+_ = cc.connections_parallel(True, False, True)
+cc = Connect_2D( gp.qpts_aa, gg.qpts, c_rad_aa, output_path+'AAtoGoC_qit')
+_ = cc.connections_parallel(True, False, False)
+
+# 4: switch source and target, once with lin_in_tree and once opposite:
+cc = Connect_2D( gg.qpts, gp.qpts_aa, c_rad_aa, output_path+'AAtoGoC_inv_lit')
+_ = cc.connections_parallel(True, False, True)
+cc = Connect_2D( gg.qpts, gp.qpts_aa, c_rad_aa, output_path+'AAtoGoC_inv_qit')
+_ = cc.connections_parallel(True, False, False)
 
 
 t5 = time.time()

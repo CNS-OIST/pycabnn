@@ -282,7 +282,7 @@ class Connect_2D(object):
                 l_res.append(abs(lax_c[i] - lax_range[ind,0] - self.lpts.set_0)+ self.lpts.lin_offset[ind])
             else:
                 ind = ind[np.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind]).ravel()]
-                l_res.append(abs(lax_c[ind] - lax_range[i,0] -self.lpts.set_0) + self.lpts.lin_offset[i])
+                l_res.append(abs(lax_c[ind].ravel() - lax_range[i,0] -self.lpts.set_0) + self.lpts.lin_offset[i])
 
             res.append(ind.astype('int'))
 
@@ -321,12 +321,12 @@ class Connect_2D(object):
                         s_ar = self.pts.seg[l,:].astype('int')
                         f_segs.write("\n".join(map(str_l, [s_ar for i in range (len(cl))])))#*np.ones((len(cl), len (s_ar)))))) 
 
-                        q_id = np.ones(len(cl))*self.pts.idx[l]
+                        q_id = (np.ones(len(cl))*self.pts.idx[l]).astype('int')
                         tr_id = cl
                     else:
                         f_segs.write("\n".join(map(str_l, self.pts.seg[cl].astype('int'))))
-                        q_id = self.pts.idx[cl] 
-                        tr_id = np.ones(len(cl))*l 
+                        q_id = self.pts.idx[cl].ravel()
+                        tr_id = (np.ones(len(cl))*l).astype('int')
 
                     #depending on which population should be source and which should be target, save cell IDs accordingly.
                     if self.lin_in_tree == self.lin_is_src:
