@@ -186,7 +186,7 @@ class Connect_2D(object):
         self.c_rad = c_rad
         self.prefix = Path(prefix)
 
-    def connections_parallel(self):
+    def connections_parallel(self, nblocks=None):
         try:
             import ipyparallel as ipp
             self.rc = ipp.Client()
@@ -215,13 +215,15 @@ class Connect_2D(object):
 
         lam_qpt = lambda ids: parallel_util.find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix)
 
-        n_workers = len(self.rc.ids)
-        print('Processes = ', n_workers)
+        if nblocks is None:
+            nblocks = len(self.rc.ids)
+
+        print('Blocks = ', nblocks)
         n_q_pts = len(q_pts)
-        id_ar = np.array_split(np.arange(n_q_pts), n_workers)
-        print(id_ar) # Check what is in id_ar
-        id_ar = [(i, id_ar[i]) for i in range(n_workers)]
-        print(id_ar) # Check what is in id_ar
+        id_ar = np.array_split(np.arange(n_q_pts), nblocks)
+        # print(id_ar) # Check what is in id_ar
+        id_ar = [(i, id_ar[i]) for i in range(nblocks)]
+        # print(id_ar) # Check what is in id_ar
 
         s = list(self.lv.map(lam_qpt, id_ar, block=True))
         # self.lv.map(lam_qpt, id_ar, block=True)
@@ -229,7 +231,10 @@ class Connect_2D(object):
         print('Exited process, saving as: {}.'.format(prefix))
         return s
 
-    def connections_pseudo_parallel(self, nprocs=120):
+    def connections_pseudo_parallel(self, nblocks=120):
+        """Finds distance based connections between source and target points in
+        a pseudo-parallel way, i.e. going through a task queue one by one."""
+
         import parallel_util
 
         kdt, q_pts = self.get_tree_setup(return_lax=False)
@@ -243,12 +248,11 @@ class Connect_2D(object):
 
         lam_qpt = lambda ids: parallel_util.find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix)
 
-        n_workers = nprocs
-        print('Processes = ', n_workers)
+        print('Blocks = ', nblocks)
         n_q_pts = len(q_pts)
-        id_ar = np.array_split(np.arange(n_q_pts), n_workers)
+        id_ar = np.array_split(np.arange(n_q_pts), nblocks)
         # print(id_ar) # Check what is in id_ar
-        id_ar = [(i, id_ar[i]) for i in range(n_workers)]
+        id_ar = [(i, id_ar[i]) for i in range(nblocks)]
         # print(id_ar) # Check what is in id_ar
 
         # s = list(self.lv.map(lam_qpt, id_ar, block=True))
