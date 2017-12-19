@@ -9,21 +9,12 @@ Written by Ines Wichert and Sungho Hong, Computation Neuroscience Unit,
 Okinawa Institute of Science and Technology
 
 """"
-import argparse
 import numpy as np
 import datetime
-#import neuron
 import csv
 import warnings
-#import matplotlib.pyplot as plt
-#from mpl_toolkits.mplot3d import Axes3D
 from pathlib import Path
 from sklearn.neighbors import KDTree
-
-#try: from neuron import hoc, h
-#except: pass
-    #print('No neuron installation found! Will try to run using Pseudo_hoc object.')
-
 
 class Pseudo_hoc(object):
     '''Up to now, the program depends on a hoc object that contains the parameters for the simulation.
@@ -95,55 +86,61 @@ def str_l(ar):
 ## CONNECTOR PART                                                 ##
 ####################################################################
 
-class Connect_3D_parallel(object):
+class Connect_3D(object):
+    ''' Connects 3D point datasets.'''
 
     def __init__(self, qpts_src, qpts_tar, c_rad, prefix=''):
+        '''Connect two 3D point datasets with a given critical radius.
+        qpts_src: source population
+        qpts_tar: target population
+        c_rad: critical radius, points from distinct datasets that have a distance of less than c_rad will be connected
+        prefix: For the saving procedure'''
 
-        # If the arguments are np arrays, make a Query_point from it.
-        if type(qpts_src).__module__ == np.__name__: qpts_src = Query_point(qpts_src)
-        if type(qpts_tar).__module__ == np.__name__: qpts_tar = Query_point(qpts_tar)
-
+        #If the arguments are np arrays, make a Query_point from it.
+        if type(qpts_src).__module__ == np.__name__ : qpts_src = Query_point(qpts_src)
+        if type(qpts_tar).__module__ == np.__name__ : qpts_tar = Query_point(qpts_tar)
+        #  save to object
         self.spts = qpts_src
         self.tpts = qpts_tar
         self.c_rad = c_rad
         self.prefix = prefix
 
     def connections_parallel(self, deparallelize=False, src_in_tree=[]):
+        ''' Finds the connections in parallel, depending on a running IPython cluster.
+        The deparallelize option switches to a serial mode independent of the Ipython cluster.
+        src_in_tree determines whether the source or target population will go into the tree.
+        If ĺeft blank, the bigger point cloud will be used, as this is faster.'''
 
         if not deparallelize:
+            # set up client and workers
             import ipyparallel as ipp
             self.rc = ipp.Client()
             self.dv = self.rc[:]
-            self.dv.use_cloudpickle()
+            self.dv.use_cloudpickle() #this is necessary so that closures can be sent to the workers
             self.lv = self.rc.load_balanced_view()
             import os
             print('Started parallel process with', len(self.rc.ids), 'workers.')
             print('Work directory for workers:', self.rc[0].apply_sync(os.getcwd))
             print('Work directory of main process:', os.getcwd())
 
-
+        # If not given, determine which point cloud should go to the tree (the bigger one)
         if not type(src_in_tree).__name__ == 'bool':
             src_in_tree = self.spts.npts > self.tpts.npts
         self.src_in_tree = src_in_tree
+
         #depending on which points shall be in the tree and which shall be the query points, assign, and project at the same time
-        print(type(self.spts.coo))
-        print(type(self.tpts.coo))
-
-
-        print(self.spts.coo.shape)
-        print(self.tpts.coo.shape)
-
-
         if src_in_tree:
             kdt = KDTree(self.spts.coo)
         else:
             kdt = KDTree(self.tpts.coo)
 
+        #import methods to workers
         if not deparallelize:
             self.dv.block = True
             with self.dv.sync_imports():
                 import parallel_util
 
+        # Using cloudpickle, the variables used in the worker methods have to be in the workspace
         spts = self.spts
         tpts = self.tpts
         c_rad = self.c_rad
@@ -153,19 +150,19 @@ class Connect_3D_parallel(object):
         print('sit', src_in_tree)
 
         lam_qpt = lambda ids: parallel_util.find_connections_3dpar(kdt, spts, tpts, c_rad, src_in_tree, ids, prefix)
-        #self.dv.block = False
 
         if src_in_tree: nqpts = tpts.npts
         else: nqpts = spts.npts
 
         if not deparallelize:
-
+            #chunk the query points so that each worker gets roughly the same amount of points to query in the KDTree
+            #Only IDs are sent in order to speed it up by preallocating the coordinates and as much information as possible
+            #to the workers.
             id_sp = int(np.ceil(nqpts/len(self.rc.ids)))
             id_ar = [np.arange(id_sp) + i * id_sp for i in range(int(np.ceil(nqpts/id_sp)))]
             id_ar[-1] = id_ar[-1][id_ar[-1]<nqpts]
             id_ar= [[i, id_ar[i]] for i in range(len(id_ar))]
             s = list(self.lv.map(lam_qpt, id_ar, block = True))
-
         else:
             import parallel_util
             s = lam_qpt([0, np.arange(nqpts)])
@@ -176,6 +173,9 @@ class Connect_3D_parallel(object):
 class Connect_2D(object):
 
     def __init__(self, qpts_src, qpts_tar, c_rad, prefix=''):
+        '''Initialize the Connect_2D object. Source population, target population, critical radius.
+        The source and target population can either be of the Query_point class or arrays'''
+
         #If the arguments are np arrays, make a Query_point from it.
         if type(qpts_src).__module__ == np.__name__:
             qpts_src = Query_point(qpts_src)
@@ -197,24 +197,32 @@ class Connect_2D(object):
         self.c_rad = c_rad
         self.prefix = Path(prefix)
 
-    def connections_parallel(self, nblocks=None):
-        try:
-            import ipyparallel as ipp
-            self.rc = ipp.Client()
-            self.dv = self.rc[:]
-            self.dv.use_cloudpickle()
-            self.lv = self.rc.load_balanced_view()
-        except:
-            print('Parallel process could not be started!')
-            print('Will do it sequentially instead...')
-            res, l_res = self.find_connections()
-            self.save_results(res, res_l, self.prefix)
-            return
+    def connections_parallel(self, deparallelize=False, serial_fallback=False, req_lin_in_tree=[], nblocks=None):
 
-        kdt, q_pts = self.get_tree_setup(return_lax=False)
+        if not deparallelize:
+            try:
+                import ipyparallel as ipp
+                self.rc = ipp.Client()
+                self.dv = self.rc[:]
+                self.dv.use_cloudpickle()
+                self.lv = self.rc.load_balanced_view()
+            except:
+                print('Parallel process could not be started!')
+                if serial_fallback:
+                    print('Will do it sequentially instead...')
+                    res, l_res = self.find_connections()
+                    self.save_results(res, l_res, self.prefix)
+                return
 
-        with self.dv.sync_imports():
-            import parallel_util
+        if type(req_lin_in_tree).__name__ == 'bool':
+            kdt, q_pts = self.get_tree_setup(return_lax=False, lin_in_tree=req_lin_in_tree)
+        else:
+            kdt, q_pts = self.get_tree_setup(return_lax=False)
+
+        if not deparallelize:
+            self.dv.block = True
+            with self.dv.sync_imports():
+                import parallel_util
 
         pts = self.pts
         lpts = self.lpts
@@ -236,8 +244,16 @@ class Connect_2D(object):
         id_ar = [(i, id_ar[i]) for i in range(nblocks)]
         # print(id_ar) # Check what is in id_ar
 
-        s = list(self.lv.map(lam_qpt, id_ar, block=True))
-        # self.lv.map(lam_qpt, id_ar, block=True)
+        if not deparallelize:
+            s = list(self.lv.map (lam_qpt, id_ar, block=True))
+        else:
+            # essentially the same as connections_pseudo_parallel
+            import parallel_util
+            s = []
+            for id1 in id_ar:
+                print('Processing block:', id1[0])
+                print('Poins:', id1[1])
+                s.append(lam_qpt(id1))
 
         print('Exited process, saving as: {}.'.format(prefix))
         return s
@@ -320,7 +336,7 @@ class Connect_2D(object):
                 l_res.append(abs(lax_c[i] - lax_range[ind,0] - self.lpts.set_0)+ self.lpts.lin_offset[ind])
             else:
                 ind = ind[np.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind]).ravel()]
-                l_res.append(abs(lax_c[ind] - lax_range[i,0] -self.lpts.set_0) + self.lpts.lin_offset[i])
+                l_res.append(abs(lax_c[ind].ravel() - lax_range[i,0] -self.lpts.set_0) + self.lpts.lin_offset[i])
 
             res.append(ind.astype('int'))
 
@@ -360,20 +376,20 @@ class Connect_2D(object):
                         s_ar = self.pts.seg[l,:].astype('int')
                         f_segs.write("\n".join(map(str_l, [s_ar for i in range(len(cl))])))#*np.ones((len(cl), len(s_ar))))))
 
-                        q_id = np.ones(len(cl))*self.pts.idx[l]
+                        q_id = (np.ones(len(cl))*self.pts.idx[l]).astype('int')
                         tr_id = cl
                     else:
                         f_segs.write("\n".join(map(str_l, self.pts.seg[cl].astype('int'))))
-                        q_id = self.pts.idx[cl]
-                        tr_id = np.ones(len(cl))*l
+                        q_id = self.pts.idx[cl].ravel()
+                        tr_id = (np.ones(len(cl))*l).astype('int')
 
                     #depending on which population should be source and which should be target, save cell IDs accordingly.
-                    if self.lin_in_tree == self.lin_is_src:
-                        f_tar.write("\n".join(map(str, tr_id)))
-                        f_src.write("\n".join(map(str, q_id)))
-                    else:
+                    if self.lin_is_src:
+                        f_src.write("\n".join(map(str, tr_id)))
                         f_tar.write("\n".join(map(str, q_id)))
-                        f_src.write("\n".join(map(str, tr_id )))
+                    else:
+                        f_src.write("\n".join(map(str, q_id)))
+                        f_tar.write("\n".join(map(str, tr_id )))
 
                     #need to attach one more line here or we get two elements per line
                     f_dis.write("\n")

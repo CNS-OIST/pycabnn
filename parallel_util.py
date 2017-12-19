@@ -30,7 +30,7 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
             res_l.append(abs(lax_c[i] - lax_range[ind,0] -lpts.set_0) + lpts.lin_offset[ind])
         else:
             ind = ind[numpy.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind]).ravel()]
-            res_l.append(abs(lax_c[ind] - lax_range[i,0] -lpts.set_0)+ lpts.lin_offset[i])
+            res_l.append(abs(lax_c[ind].ravel() - lax_range[i,0] -lpts.set_0)+ lpts.lin_offset[i])
 
         res.append(ind.astype('int'))
 
@@ -57,20 +57,21 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
                     s_ar = pts.seg[l,:].astype('int')
                     f_segs.write("\n".join(map(str_l, [s_ar for i in range (len(cl))])))#*numpy.ones((len(cl), len (s_ar))))))
 
-                    q_id = numpy.ones(len(cl))*pts.idx[l]
+                    q_id = (numpy.ones(len(cl))*pts.idx[l]).astype('int')
                     tr_id = cl
                 else:
                     f_segs.write("\n".join(map(str_l, pts.seg[cl].astype('int'))))
-                    q_id = pts.idx[cl]
-                    tr_id = numpy.ones(len(cl))*l
+                    q_id = pts.idx[cl].ravel()
+                    tr_id = (numpy.ones(len(cl))*l).astype('int')
 
                 #depending on which population should be source and which should be target, save cell IDs accordingly.
-                if lin_in_tree == lin_is_src:
-                    f_tar.write("\n".join(map(str, tr_id)))
-                    f_src.write("\n".join(map(str, q_id)))
-                else:
+                #if l == 1: print (lin_in_tree, lin_is_src)
+                if lin_is_src:
+                    f_src.write("\n".join(map(str, tr_id)))
                     f_tar.write("\n".join(map(str, q_id)))
-                    f_src.write("\n".join(map(str, tr_id )))
+                else:
+                    f_src.write("\n".join(map(str, q_id)))
+                    f_tar.write("\n".join(map(str, tr_id )))
 
                 #need to attach one more line here or we get two elements per line
                 f_dis.write("\n")
