@@ -223,11 +223,11 @@ class Connect_2D(object):
         id_ar = [(i, id_ar[i]) for i in range(n_workers)]
         print(id_ar) # Check what is in id_ar
 
-        # s = list(self.lv.map(lam_qpt, id_ar, block=True))
-        self.lv.map(lam_qpt, id_ar, block=True)
+        s = list(self.lv.map(lam_qpt, id_ar, block=True))
+        # self.lv.map(lam_qpt, id_ar, block=True)
 
         print('Exited process, saving as: {}.'.format(prefix))
-        # return s
+        return s
 
     def connections_pseudo_parallel(self, nprocs=120):
         import parallel_util
@@ -252,13 +252,14 @@ class Connect_2D(object):
         # print(id_ar) # Check what is in id_ar
 
         # s = list(self.lv.map(lam_qpt, id_ar, block=True))
+        s = []
         for id1 in id_ar:
             print('Processing block:', id1[0])
             print('Poins:', id1[1])
-            lam_qpt(id1)
+            s.append(lam_qpt(id1))
 
         print('Exited process, saving as: {}.'.format(prefix))
-        # return s
+        return s
 
     def get_tree_setup(self, return_lax=True, lin_in_tree=[]):
         '''Gets the setup for the connection.

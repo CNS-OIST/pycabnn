@@ -78,7 +78,7 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
                 f_tar.write("\n")
                 f_segs.write("\n")
 
-    # return [ids[0], res, res_l]
+    return [ids[0], res, res_l]
 
 
 def find_connections_3dpar(kdt, spts, tpts, c_rad,  src_in_tree, ids, prefix):
