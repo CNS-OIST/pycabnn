@@ -8,7 +8,7 @@ network model of the cerebellar cortex.
 Written by Ines Wichert and Sungho Hong, Computation Neuroscience Unit,
 Okinawa Institute of Science and Technology
 
-""""
+"""
 import numpy as np
 import datetime
 import csv
@@ -31,11 +31,16 @@ class Pseudo_hoc(object):
         elif type(ad_or_fn) != dict:
             try:
                 ad_or_fn = Path(ad_or_fn)
+                #print (ad_or_fn.exists())
+                #print (ad_or_fn.is_file())
+                #print (ad_or_fn.absolute())
+
                 import pickle
-                with open(ad_or_fn, 'rb') as f_in:
+                with ad_or_fn.open('rb') as f_in:
                     ad_or_fn = pickle.load(f_in)
             except:
                 print('Tried to read in ', ad_or_fn, ' as a file, failed')
+                return
         else:
             assert type(ad_or_fn) == dict, 'Could not read in {}'.format(ad_or_fn)
         # Add all elements from the read in file as arguments to the pseudo-hoc object
@@ -197,8 +202,16 @@ class Connect_2D(object):
         self.c_rad = c_rad
         self.prefix = Path(prefix)
 
-    def connections_parallel(self, deparallelize=False, serial_fallback=False, req_lin_in_tree=[], nblocks=None):
 
+    def connections_parallel(self, deparallelize=False, serial_fallback=False, req_lin_in_tree=[], nblocks=None):
+        '''searches connections, per default in parallel. Workers will get a copy of the tree, query points etc. 
+        and perform the search independently, each saving the result themself.
+        deparallelize: if set True, modules and functions tailored for a parallel process will be used, 
+        but all will be run in serial (no iPython cluster necessary)
+        serial_fallback:  If set True, this function will call the older connect function
+        nblocks: Number of blocks that the data should be partitioned into'''
+
+        # If not deparallelized, try to connect to the parallel cluster, fall back to serial if necessary
         if not deparallelize:
             try:
                 import ipyparallel as ipp
@@ -206,6 +219,8 @@ class Connect_2D(object):
                 self.dv = self.rc[:]
                 self.dv.use_cloudpickle()
                 self.lv = self.rc.load_balanced_view()
+                if nblocks is None:
+                    nblocks = len(self.rc.ids)
             except:
                 print('Parallel process could not be started!')
                 if serial_fallback:
@@ -213,17 +228,18 @@ class Connect_2D(object):
                     res, l_res = self.find_connections()
                     self.save_results(res, l_res, self.prefix)
                 return
+        else:
+            if nblocks is None:
+                nblocks = 1
+        print('Blocks = ', nblocks)
 
+        # Get tree setup
         if type(req_lin_in_tree).__name__ == 'bool':
             kdt, q_pts = self.get_tree_setup(return_lax=False, lin_in_tree=req_lin_in_tree)
         else:
             kdt, q_pts = self.get_tree_setup(return_lax=False)
 
-        if not deparallelize:
-            self.dv.block = True
-            with self.dv.sync_imports():
-                import parallel_util
-
+        # Copy variables to workspace for cloudpickle
         pts = self.pts
         lpts = self.lpts
         c_rad = self.c_rad
@@ -234,17 +250,15 @@ class Connect_2D(object):
 
         lam_qpt = lambda ids: parallel_util.find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix)
 
-        if nblocks is None:
-            nblocks = len(self.rc.ids)
-
-        print('Blocks = ', nblocks)
+        # split data into nblocks blocks       
         n_q_pts = len(q_pts)
         id_ar = np.array_split(np.arange(n_q_pts), nblocks)
-        # print(id_ar) # Check what is in id_ar
         id_ar = [(i, id_ar[i]) for i in range(nblocks)]
         # print(id_ar) # Check what is in id_ar
 
         if not deparallelize:
+            with self.dv.sync_imports():
+                import parallel_util
             s = list(self.lv.map (lam_qpt, id_ar, block=True))
         else:
             # essentially the same as connections_pseudo_parallel
@@ -252,7 +266,7 @@ class Connect_2D(object):
             s = []
             for id1 in id_ar:
                 print('Processing block:', id1[0])
-                print('Poins:', id1[1])
+                #print('Points:', id1[1])
                 s.append(lam_qpt(id1))
 
         print('Exited process, saving as: {}.'.format(prefix))
