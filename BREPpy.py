@@ -78,7 +78,7 @@ class Pseudo_hoc(object):
                     pass
         # Dump the dictionary
         import pickle
-        with open(output_fn, 'wb') as f:
+        with output_fn.open('wb') as f:
             pickle.dump(h_dict, f)
 
 
@@ -376,7 +376,7 @@ class Connect_2D(object):
         fn_segs = prefix + 'segments.dat'
         fn_dis = prefix + 'distances.dat'
 
-        with open(fn_tar, 'w') as f_tar, open(fn_src, 'w') as f_src, open(fn_dis, 'w') as f_dis, open(fn_segs, 'w') as f_segs:
+        with fn_tar.open('w') as f_tar, fn_src.open('w') as f_src, fn_dis.open('w') as f_dis, fn_segs.open('w') as f_segs:
 
             for l,(cl, cl_l) in enumerate(zip(res, res_l)):
 
@@ -413,7 +413,6 @@ class Connect_2D(object):
                     f_src.write("\n")
                     f_tar.write("\n")
                     f_segs.write("\n")
-
 
 
 class Query_point(object):
@@ -482,7 +481,7 @@ class Cell_pop(object):
         if fn == '': fn = type(self).__name__ + '_coords.dat'
         '''Save the soma coordinates'''
         assert hasattr(self, 'som'), 'Cannot save soma coordinates, as apparently none have been added yet'
-        with open(prefix / fn, 'w') as f_out:
+        with (prefix / fn).open('w') as f_out:
             f_out.write("\n".join(map(str_l, self.som)))
         print('Successfully wrote {}.'.format(prefix / fn))
 
@@ -627,7 +626,7 @@ class Golgi_pop(Cell_pop):
 
         if hasattr(self, 'a_dend'):
             dend_file = prefix /  'GoCadendcoordinates.dat'
-            with open(dend_file, 'w') as f_out:
+            with dend_file.open( 'w') as f_out:
                 for ad in self.a_dend:
                     flad = np.array([a for l in ad for a in l])
                     f_out.write(str_l(flad)+"\n")
@@ -637,7 +636,7 @@ class Golgi_pop(Cell_pop):
 
         if hasattr(self, 'b_dend'):
             dend_file = prefix /  'GoCbdendcoordinates.dat'
-            with open(dend_file, 'w') as f_out:
+            with dend_file.open('w') as f_out:
                 for bd in self.b_dend:
                     flbd = [b for l in bd for b in l]
                     f_out.write(str_l(flbd)+"\n")
@@ -725,24 +724,24 @@ class Granule_pop(Cell_pop):
         aa_sp = np.linspace(0, self.aa_length, aa_nd) #grid that contains the spacing for the aa points
 
         pf_nd = int(self.args.PFlength/self.args.PFstep) # number of dots for the pf
-        pf_sp = np.linspace(-self.args.PFlength/2, self.args.PFlength/2) # grid that contains spacing of po points
+        pf_sp = np.linspace(-self.args.PFlength/2, self.args.PFlength/2, pf_nd) # grid that contains spacing of po points
 
-        self.aa_dots = np.zeros((len(coo), aa_nd, 3))
-        self.pf_dots = np.zeros((len(coo), pf_nd, 3))
-        aa_idx = np.zeros((len(coo), aa_nd))
-        aa_sgts= np.zeros((len(coo), aa_nd))
-        pf_idx = np.zeros((len(coo), pf_nd))
-        pf_sgts= np.zeros((len(coo), pf_nd))
+        self.aa_dots = np.zeros((len(self.som), aa_nd, 3))
+        self.pf_dots = np.zeros((len(self.som), pf_nd, 3))
+        aa_idx = np.zeros((len(self.som), aa_nd))
+        aa_sgts= np.zeros((len(self.som), aa_nd))
+        pf_idx = np.zeros((len(self.som), pf_nd))
+        pf_sgts= np.zeros((len(self.som), pf_nd))
 
-        for i, som in enumerate(coo):
+        for i, som in enumerate(self.som):
 
             self.aa_dots[i] = np.ones((aa_nd, 3))*som #copy soma location for each point of the aa
-            self.aa_dots[i,:,2] = aa_dots[i,:,2] + aa_sp # add the z offsets
+            self.aa_dots[i,:,2] = self.aa_dots[i,:,2] + aa_sp # add the z offsets
             aa_idx[i,:] = i #cell indices, for the query object
             aa_sgts[i,:] = np.arange(aa_nd) #segment points, for the query object
 
-            self.pf_dots[i] = np.ones((pf_nd,3))*aa_dots[i,-1, :] #uppermost aa point is the origin of the pf points
-            self.pf_dots[i,:,0] = pf_dots[i,:,0] + pf_sp #this time, points differ only by their offset along the x direction
+            self.pf_dots[i] = np.ones((pf_nd,3))*self.aa_dots[i,-1, :] #uppermost aa point is the origin of the pf points
+            self.pf_dots[i,:,0] = self.pf_dots[i,:,0] + pf_sp #this time, points differ only by their offset along the x direction
             pf_idx[i,:]  = i
             pf_sgts[i,:] = np.arange(pf_nd) #! Not necessarily nice
 
@@ -757,6 +756,6 @@ class Granule_pop(Cell_pop):
         assert hasattr(self, 'aa_dots'),  'No ascending axons added yet'
         gctp = self.aa_dots[:,-1,:]
         filename = prefix / 'GCTcoordinates.dat'
-        with open(filename, 'w') as f_out:
+        with filename.open('w') as f_out:
             f_out.write("\n".join(map(str_l, gctp)))
         print('Successfully wrote {}.'.format(filename))
