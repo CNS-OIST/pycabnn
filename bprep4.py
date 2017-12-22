@@ -93,7 +93,7 @@ print ('AA: Found and saved after', t5-t4)
 print (' ')
 
 cc = Connect_3D(gp.qpts_pf, gg.qpts, c_rad_pf, global_prefix+'PFtoGoC_3D_')
-res_workers = cc.connections_parallel(True)
+res_workers = cc.connections_parallel(True, False)
 
 t6 = time.time()
 print ('PF: Found and saved after', t6-t5)

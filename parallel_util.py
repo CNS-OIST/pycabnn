@@ -113,8 +113,8 @@ def find_connections_3dpar(kdt, spts, tpts, c_rad,  src_in_tree, ids, prefix):
             if len(cl)>0:
                 #depending on which population should be source and which should be target, save cell IDs accordingly.
                 if src_in_tree:
-                    f_tar.write("\n".join(map(str, numpy.ones(len(cl)) * tpts.idx[l])))
-                    f_src.write("\n".join(map(str, spts.idx[cl.astype('int')])))
+                    f_tar.write("\n".join(map(str, numpy.ones(len(cl)) * int(tpts.idx[l]))))
+                    f_src.write("\n".join(map(str, (spts.idx[cl.astype('int')].ravel()).astype('int'))))
 
                     f_tseg.write("\n".join(map(str_l, [tpts.seg[l,:].astype('int') for i in range(len(cl))] )))
                     f_sseg.write("\n".join(map(str_l, spts.seg[cl.astype('int')].astype('int'))))
@@ -125,9 +125,9 @@ def find_connections_3dpar(kdt, spts, tpts, c_rad,  src_in_tree, ids, prefix):
                     f_tseg.write("\n".join(map(str, tpts.seg[cl.astype('int')])))
                     f_sseg.write("\n".join(map(str, [spts.seg[l].astype('int') for i in range(len(cl))] )))
                 #need to attach one more line here or we get two elements per line
-                f_dis.write("\n")
+                f_tseg.write("\n")
                 f_src.write("\n")
                 f_tar.write("\n")
-                f_segs.write("\n")
+                f_sseg.write("\n")
 
     return [ids[0], res]
