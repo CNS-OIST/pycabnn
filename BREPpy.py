@@ -616,6 +616,39 @@ class Golgi_pop(Cell_pop):
     def __init__(self, my_args):
         Cell_pop.__init__(self,my_args)
 
+    def add_axon (self):
+        '''Adds axons as points with a uniform random distribution in a certain rectangle
+        The seg array will contain the distance of the axon point from the soma'''
+        x_r = [self.args.GoC_Axon_Xmin, self.args.GoC_Axon_Xmax]
+        y_r = [self.args.GoC_Axon_Ymin, self.args.GoC_Axon_Ymax]
+        z_r = [self.args.GoC_Axon_Zmin, self.args.GoC_Axon_Zmax]
+        n_ax = int(self.args.numAxonGolgi)
+
+        ar = np.random.uniform(size = [len(self.som), n_ax+1, 3])
+        for i, [low, high] in enumerate([x_r, y_r, z_r]):
+            ar[:,:,i] = ar[:,:,i]*(high-low)+low
+        ar[:,0,:] = ar[:,0,:]*0
+        segs = np.linalg.norm(ar, axis = 2)
+        idx = np.array([[j for k in range(len(ar[j]))] for j in range(len(ar))])
+        self.axon = ar
+        self.axon_q = Query_point(ar, idx, segs)
+
+    def save_axon_coords(self, prefix=''):
+        ''' Save the coordinates of the dendrites, BREP style
+        -> each line of the output file corresponds to one cell, and contains all its dendrites sequentially'''
+        assert hasattr(self, 'axon'), 'Could not find axon, please generate first'
+
+        prefix = Path(prefix)
+        axon_file = prefix /  'GoCaxoncoordinates.dat'
+        with axon_file.open( 'w') as f_out:
+            for ax in self.axon:
+                flad = np.array([a for l in ax for a in l])
+                f_out.write(str_l(flad)+"\n")
+            print('Successfully wrote {}.'.format(axon_file))
+
+
+
+
 
     def add_dendrites(self):
         '''Add apical and basolateral dendrites using the parameters specified in the Parameters file.
@@ -658,6 +691,8 @@ class Golgi_pop(Cell_pop):
 
         self.a_dend = a_dend
         self.b_dend = b_dend
+        #self.b_dend_q = Query_point(flatten_cells(b_dend), flatten_cells(b_idx), flatten_cells(b_sgts))
+        self.b_dend_q = Query_point(b_dend, b_idx, b_sgts)
         self.qpts = Query_point(all_dends, all_idx, all_sgts)
 
 
