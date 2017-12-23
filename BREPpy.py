@@ -5,7 +5,7 @@ Finds distance-based connectivity between neurons with spatially extended
 dendritic and axonal morphology, mainly developed for a physiologically detailed
 network model of the cerebellar cortex.
 
-Written by Ines Wichert and Sungho Hong, Computation Neuroscience Unit,
+Written by Ines Wichert and Sungho Hong, Computational Neuroscience Unit,
 Okinawa Institute of Science and Technology
 
 """
@@ -15,6 +15,10 @@ import csv
 import warnings
 from pathlib import Path
 from sklearn.neighbors import KDTree
+
+####################################################################
+## GENERAL UTILS PART                                                 ##
+####################################################################
 
 class Pseudo_hoc(object):
     '''Up to now, the program depends on a hoc object that contains the parameters for the simulation.
@@ -81,11 +85,15 @@ class Pseudo_hoc(object):
         with output_fn.open('wb') as f:
             pickle.dump(h_dict, f)
 
-
 def str_l(ar):
     '''make a space-seperated string from all elements in a 1D-array'''
     return(' '.join(str(ar[i]) for i in range(len(ar))))
 
+def print_time_and_reset (t, comment = 'Finished block after '):
+    import time
+    t_new = time.time()
+    print (comment, t_new-t)
+    return t_new
 
 ####################################################################
 ## CONNECTOR PART                                                 ##
@@ -152,7 +160,7 @@ class Connect_3D(object):
         src_in_tree = self.src_in_tree
         prefix = self.prefix
 
-        print('sit', src_in_tree)
+        print('source_in_tree:', src_in_tree)
 
         lam_qpt = lambda ids: parallel_util.find_connections_3dpar(kdt, spts, tpts, c_rad, src_in_tree, ids, prefix)
 
@@ -603,7 +611,6 @@ class Cell_pop(object):
         return grc
 
 
-
 class Golgi_pop(Cell_pop):
 
     def __init__(self, my_args):
@@ -719,7 +726,6 @@ class Golgi_pop(Cell_pop):
         return np.array(b_res), np.array(idx), segs
 
 
-
 class Granule_pop(Cell_pop):
     def __init__(self, my_args):
         Cell_pop.__init__(self, my_args)
@@ -775,12 +781,14 @@ class Granule_pop(Cell_pop):
             self.aa_dots[i] = np.ones((aa_nd, 3))*som #copy soma location for each point of the aa
             self.aa_dots[i,:,2] = self.aa_dots[i,:,2] + aa_sp # add the z offsets
             aa_idx[i,:] = i #cell indices, for the query object
-            aa_sgts[i,:] = np.arange(aa_nd) #segment points, for the query object
+            #aa_sgts[i,:] = np.arange(aa_nd) #segment points, for the query object
+            aa_sgts[i,:] = aa_sp
 
             self.pf_dots[i] = np.ones((pf_nd,3))*self.aa_dots[i,-1, :] #uppermost aa point is the origin of the pf points
             self.pf_dots[i,:,0] = self.pf_dots[i,:,0] + pf_sp #this time, points differ only by their offset along the x direction
             pf_idx[i,:]  = i
-            pf_sgts[i,:] = np.arange(pf_nd) #! Not necessarily nice
+            #pf_sgts[i,:] = np.arange(pf_nd) #! Not necessarily nice
+            pf_sgts[i,:] = aa_length + abs(pf_sp)
 
         self.qpts_aa = Query_point(self.aa_dots, aa_idx, aa_sgts)
         self.qpts_pf = Query_point(self.pf_dots, pf_idx, pf_sgts)
