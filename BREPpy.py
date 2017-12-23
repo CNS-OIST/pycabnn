@@ -628,6 +628,8 @@ class Golgi_pop(Cell_pop):
         for i, [low, high] in enumerate([x_r, y_r, z_r]):
             ar[:,:,i] = ar[:,:,i]*(high-low)+low
         ar[:,0,:] = ar[:,0,:]*0
+        for i in range(len(ar)):
+            ar[i,:,:] = ar[i,:,:] + self.som[i,:] 
         segs = np.linalg.norm(ar, axis = 2)
         idx = np.array([[j for k in range(len(ar[j]))] for j in range(len(ar))])
         self.axon = ar
@@ -639,7 +641,7 @@ class Golgi_pop(Cell_pop):
         assert hasattr(self, 'axon'), 'Could not find axon, please generate first'
 
         prefix = Path(prefix)
-        axon_file = prefix /  'GoCaxoncoordinates.dat'
+        axon_file = prefix /  'GoCaxoncoordinates_test.dat'
         with axon_file.open( 'w') as f_out:
             for ax in self.axon:
                 flad = np.array([a for l in ax for a in l])
