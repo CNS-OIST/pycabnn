@@ -67,22 +67,21 @@ class Pseudo_hoc(object):
             print('Could not import neuron, go to a python environment with an installed neuron version and try again.')
             return
         neuron.h.xopen(config_fn)
-        d = dir(h)
+        #h = neuron.h
+        d = dir(neuron.h)
         h_dict = dict()
         #Transfer parameters from the hoc object to a python dictionary
         for n, el in enumerate(d):
-            #note! so far all used parameters in the BREPpy started with capital letters, so only adding atrributes that start with capital letters is a reasonable filtering method.
-            #However, this is to be kept in mind when adding additional parameters to the parameter file.
-            if el[0].isupper():
+            if el[0].isupper() or el[0].islower():
                 try:
                     #The value has to be converted to its string representation to get rid of the hoc properties.
                     #Must be kept in mind when reading in though.
-                    h_dict[el] = repr(getattr(h,el))
+                    h_dict[el] = repr(getattr(neuron.h,el))
                 except:
                     pass
         # Dump the dictionary
         import pickle
-        with output_fn.open('wb') as f:
+        with Path(output_fn).open('wb') as f:
             pickle.dump(h_dict, f)
 
 def str_l(ar):
@@ -179,6 +178,7 @@ class Connect_3D(object):
         else:
             import parallel_util
             s = lam_qpt([0, np.arange(nqpts)])
+
 
         print('Exited process, saving as:' , prefix)
 
@@ -428,7 +428,6 @@ class Query_point(object):
         with the additional attributes IDs (cell, first dimenion of coord), and segs (second dimension of coord).
         It will be automatically checked whether the points can be linearized/projected, i.e. represented by a start, end, and 2-D projection'''
 
-        self.npts = len(coord)
         # check if lin -> then it can be used for the Connect_2D method. In that case it will not be 
         if not prevent_lin:
             self.lin = self.lin_check(coord)
@@ -476,14 +475,21 @@ class Query_point(object):
         if len(coord.shape) == 3:
             assert (IDs is None) == (segs is None), 'To avoid confusion, cell IDs and segment numbers must either be specified both, or neither'
             if (not (IDs is None)) and (not (segs is None)):
-                assert np.all(IDs.shape == coord.shape[:-1]) and np.all(segs.shape == coord.shape[:-1]) , 'Dimensions of ID and segment file should be '+str(coord.shape[:-1])
+                assert np.all(IDs.shape[:2] == coord.shape[:2]), 'First two dimensions of ID array should be '+str(coord.shape[:2])
+                assert np.all(segs.shape[:2] == coord.shape[:2]) , 'First two dimensions of segment array should be '+str(coord.shape[:2])
             else:
                 IDs = np.array([[[i] for j in range(coord.shape[1])] for i in range(coord.shape[0])])
                 segs = np.array([[[j] for j in range(coord.shape[1])] for i in range(coord.shape[0])])
-            lam_res = lambda d: d.reshape(d.shape[0]*d.shape[1],d.shape[2])
-            self.coo = lam_res(coord)
-            self.seg = lam_res(np.expand_dims(segs, axis = 2))
-            self.idx = lam_res(np.expand_dims(IDs, axis = 2))
+            
+            def flatten_cells(dat): # keep the last dimension(3, for spatial coordinates), ravel the first two(ncell*npts)
+                if len(dat.shape) == 2: dat = np.expand_dims(dat, axis = 2)
+                return dat.reshape(dat.shape[0]*dat.shape[1],dat.shape[2])
+
+            self.coo = flatten_cells(coord)
+            self.seg = flatten_cells(segs)
+            self.idx = flatten_cells(IDs)
+
+        self.npts = len(self.coo)
 
 
     #check if input array can be used for the projection method (Connect_2D) (-> the points have a start and an end point)
@@ -528,9 +534,9 @@ class Cell_pop(object):
                 print('Tried to read in ', fn_or_ar, ', failed.')
 
     def save_somata(self, prefix='', fn=''):
+        '''Save the soma coordinates'''
         prefix = Path(prefix)
         if fn == '': fn = type(self).__name__ + '_coords.dat'
-        '''Save the soma coordinates'''
         assert hasattr(self, 'som'), 'Cannot save soma coordinates, as apparently none have been added yet'
         with (prefix / fn).open('w') as f_out:
             f_out.write("\n".join(map(str_l, self.som)))
@@ -562,6 +568,8 @@ class Cell_pop(object):
         Thus, converts from an array with shape(#cells x(#pts*ndim)) to one with shape(#cells x #pts x ndim)'''
         dat = dat.reshape([dat.shape[0], int(dat.shape[1]/n_dim),n_dim])
         return dat
+
+
 
 
     def gen_random_cell_loc(self, n_cell, Gc_x = -1, Gc_y = -1, Gc_z = -1, sp_std = 2):
@@ -649,9 +657,6 @@ class Golgi_pop(Cell_pop):
             print('Successfully wrote {}.'.format(axon_file))
 
 
-
-
-
     def add_dendrites(self):
         '''Add apical and basolateral dendrites using the parameters specified in the Parameters file.
         Will construct Query points by itself and add them to the object'''
@@ -694,6 +699,8 @@ class Golgi_pop(Cell_pop):
         self.a_dend = a_dend
         self.b_dend = b_dend
         #self.b_dend_q = Query_point(flatten_cells(b_dend), flatten_cells(b_idx), flatten_cells(b_sgts))
+        print (b_idx.shape)
+        print (b_sgts.shape)
         self.b_dend_q = Query_point(b_dend, b_idx, b_sgts)
         self.qpts = Query_point(all_dends, all_idx, all_sgts)
 

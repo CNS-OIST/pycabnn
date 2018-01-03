@@ -1178,7 +1178,7 @@
     (y-extent . 700.)
     (x-extent . 1500.)
     (num-gc . 10) ;798000
-    (num-goc . 10) ;1995
+    (num-goc . 100) ;1995
     (mean-goc-distance . 50)
     (goc-grid-xstep . 200)
     (goc-grid-ystep . 500)
@@ -1194,8 +1194,8 @@
     (goc-basolateral-nsegpts . 4) ;4
 
     (goc-axons . 10)
-    (goc-axonsegs . 1)
-    (goc-axonpts . 2)
+    (goc-axonsegs . 2)
+    (goc-axonpts . 4)
     (goc-axon-x-min . -200)
     (goc-axon-x-max . 200)
     (goc-axon-y-min . -200)
