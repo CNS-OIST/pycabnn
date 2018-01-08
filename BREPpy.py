@@ -212,7 +212,7 @@ class Connect_2D(object):
         self.prefix = Path(prefix)
 
 
-    def connections_parallel(self, deparallelize=False, serial_fallback=False, req_lin_in_tree=[], nblocks=None, debug=False):
+    def connections_parallel(self, deparallelize=False, serial_fallback=False, req_lin_in_tree=[], nblocks=None, run_only=[], debug=False):
         '''searches connections, per default in parallel. Workers will get a copy of the tree, query points etc.
         and perform the search independently, each saving the result themself.
         deparallelize: if set True, modules and functions tailored for a parallel process will be used,
@@ -262,7 +262,10 @@ class Connect_2D(object):
         # split data into nblocks blocks
         n_q_pts = len(q_pts)
         id_ar = np.array_split(np.arange(n_q_pts), nblocks)
-        id_ar = [(i, id_ar[i]) for i in range(nblocks)]
+        if run_only:
+            id_ar = [(i, id_ar[i]) for i in run_only]
+        else:
+            id_ar = [(i, id_ar[i]) for i in range(nblocks)]
         # print(id_ar) # Check what is in id_ar
 
         if not deparallelize:
