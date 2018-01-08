@@ -83,7 +83,7 @@ c_rad_aa = h.AAtoGoCzone
 print("R for AA: {}".format(c_rad_aa))
 
 cc = brp.Connect_2D(gp.qpts_aa, gg.qpts, c_rad_aa, output_path / 'AAtoGoC')
-_ = cc.connections_parallel(deparallelize=False, debug=True)
+_ = cc.connections_parallel(deparallelize=False, nblocks=120, debug=True)
 t5 = time.time()
 print('AA: Found and saved after', t5-t4)
 print(' ')
@@ -92,7 +92,7 @@ c_rad_pf = h.PFtoGoCzone
 print("R for PF: {}".format(c_rad_pf))
 
 cc = brp.Connect_2D(gp.qpts_pf, gg.qpts, c_rad_pf, output_path / 'PFtoGoC')
-_ = cc.connections_parallel(deparallelize=False, debug=True)
+_ = cc.connections_parallel(deparallelize=False, nblocks=120, debug=True)
 t6 = time.time()
 print('PF: Found and saved after', t6-t5)
 print(' ')
