@@ -12,13 +12,13 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 
-# In[8]:
+# In[2]:
 
 
 output_path = Path.cwd().parent.parent / 'output_1'
 
 
-# In[9]:
+# In[3]:
 
 
 adend = np.loadtxt('/Users/shhong/Documents/Ines/output_1/GoCadendcoordinates.dat')
@@ -27,17 +27,16 @@ grcs = np.loadtxt(output_path / "GCcoordinates.sorted.dat")
 gcts = np.loadtxt(output_path / "GCTcoordinates.dat")
 
 
-# In[10]:
+# In[4]:
 
 
 adend = adend.reshape((1995,50,3))
 bdend = bdend.reshape((1995,24,3))
 
 
-# In[11]:
+# In[5]:
 
 
-get_ipython().run_line_magic('matplotlib', 'nbagg')
 i = 1
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
@@ -49,7 +48,7 @@ ax.plot(adend[i][:,0], adend[i][:,1], adend[i][:,2],'.r')
 ax.plot(bdend[i][:,0], bdend[i][:,1], bdend[i][:,2],'.k')
 
 
-# In[3]:
+# In[6]:
 
 
 data_index = 20
@@ -64,7 +63,7 @@ srcs = np.loadtxt(data_dir / fsrcs).astype(int)
 tgts = np.loadtxt(data_dir / ftgts).astype(int)
 
 
-# In[4]:
+# In[7]:
 
 
 i = 5000
@@ -73,8 +72,10 @@ src = srcs[i]
 print("{} -> {}".format(src, tgt))
 
 
-# In[52]:
+# In[9]:
 
+
+get_ipython().run_line_magic('matplotlib', 'nbagg')
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
@@ -87,12 +88,12 @@ ax.plot(adend[tgt][:,0], adend[tgt][:,1], adend[tgt][:,2],'.r')
 ax.plot(bdend[tgt][:,0], bdend[tgt][:,1], bdend[tgt][:,2],'.m')
 pt2 = xyz[i]
 ax.plot([pt2[0]], [pt2[1]], [pt2[2]], 'oc')
-ax.set_xlim([0, 1500])
+# ax.set_xlim([0, 1500])
 
 
 # ## Ascending axon - GoC
 
-# In[12]:
+# In[10]:
 
 
 data_index = 80
@@ -107,16 +108,16 @@ srcs = np.loadtxt(data_dir / fsrcs).astype(int)
 tgts = np.loadtxt(data_dir / ftgts).astype(int)
 
 
-# In[13]:
+# In[11]:
 
 
-i = 30000
+i = 10000
 tgt = tgts[i]
 src = srcs[i]
 print("{} -> {}".format(src, tgt))
 
 
-# In[18]:
+# In[12]:
 
 
 fig = plt.figure()
@@ -133,13 +134,13 @@ ax.plot([pt2[0]], [pt2[1]], [pt2[2]], 'oc')
 ax.set_xlim([0, 1500])
 
 
-# In[15]:
+# In[ ]:
 
 
 pt2
 
 
-# In[16]:
+# In[ ]:
 
 
 tgt
