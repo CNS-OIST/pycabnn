@@ -204,9 +204,9 @@ class Connect_2D(object):
 
 
     def connections_parallel(self, deparallelize=False, serial_fallback=False, req_lin_in_tree=[], nblocks=None):
-        '''searches connections, per default in parallel. Workers will get a copy of the tree, query points etc. 
+        '''searches connections, per default in parallel. Workers will get a copy of the tree, query points etc.
         and perform the search independently, each saving the result themself.
-        deparallelize: if set True, modules and functions tailored for a parallel process will be used, 
+        deparallelize: if set True, modules and functions tailored for a parallel process will be used,
         but all will be run in serial (no iPython cluster necessary)
         serial_fallback:  If set True, this function will call the older connect function
         nblocks: Number of blocks that the data should be partitioned into'''
@@ -250,7 +250,7 @@ class Connect_2D(object):
 
         lam_qpt = lambda ids: parallel_util.find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix)
 
-        # split data into nblocks blocks       
+        # split data into nblocks blocks
         n_q_pts = len(q_pts)
         id_ar = np.array_split(np.arange(n_q_pts), nblocks)
         id_ar = [(i, id_ar[i]) for i in range(nblocks)]
@@ -259,7 +259,7 @@ class Connect_2D(object):
         if not deparallelize:
             with self.dv.sync_imports():
                 import parallel_util
-            s = list(self.lv.map (lam_qpt, id_ar, block=True))
+            s = list(self.lv.map(lam_qpt, id_ar, block=True))
         else:
             # essentially the same as connections_pseudo_parallel
             import parallel_util
@@ -593,16 +593,22 @@ class Golgi_pop(Cell_pop):
         b_sgts[:,:,0] = np.floor(b_sgts[:,:,0]/self.args.GoC_Bd_nsegpts)+1
 
         # special concatenation function for apical and basal dendrite
-        def conc_ab(a, b):
-            def flatten_cells(dat): # keep the last dimension(3, for spatial coordinates), ravel the first two(ncell*npts)
-                if len(dat.shape) == 2: dat = np.expand_dims(dat, axis = 2)
-                return dat.reshape(dat.shape[0]*dat.shape[1],dat.shape[2])
-            return np.concatenate((flatten_cells(a), flatten_cells(b)))
+        # stack coords/segments of a and b dends when they are from the same cell
+        conc_ab_one = lambda i, a, b: np.vstack((a[a_idx==i], b[b_idx==i]))
+        # loop around all the cells
+        conc_ab = lambda a, b: np.vstack(conc_ab_one(i, a, b) for i in range(self.n_cell))
 
         #concatenated dendrite information(coords, cell indices, segment information)
         all_dends = conc_ab(a_dend, b_dend)
-        all_idx = conc_ab(a_idx, b_idx)
-        all_sgts = conc_ab(a_sgts, b_sgts)
+        all_sgts  = conc_ab(a_sgts, b_sgts)
+
+        # put a and b indices together and rearrange them in a row
+        all_idx = np.hstack((a_idx, b_idx))
+        all_idx = all_idx.reshape((np.prod(all_idx.shape),1))
+
+        # test code for the part above
+        # zz = all_dends[all_idx.flatten()==2,:]
+        # plt.plot(zz[:,1], zz[:,2],'.')
 
         self.a_dend = a_dend
         self.b_dend = b_dend
@@ -705,6 +711,7 @@ class Granule_pop(Cell_pop):
         self.pf_dots[:,0,0] = self.pf_dots[:,0,0] - pf_length/2
         self.pf_dots[:,1,0] = self.pf_dots[:,1,0] + pf_length/2
         self.qpts_pf = Query_point(self.pf_dots, lin_offset = self.aa_dots[:,1,2] - self.aa_dots[:,0,2], set_0 = pf_length/2)
+
 
     def add_3D_aa_and_pf(self):
         '''adds 3-dimensional coordinates for ascending axons and parallel fiber to the granule cell objects.
