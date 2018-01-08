@@ -5,7 +5,7 @@ Finds distance-based connectivity between neurons with spatially extended
 dendritic and axonal morphology, mainly developed for a physiologically detailed
 network model of the cerebellar cortex.
 
-Written by Ines Wichert and Sungho Hong, Computation Neuroscience Unit,
+Written by Ines Wichert and Sungho Hong, Computational Neuroscience Unit,
 Okinawa Institute of Science and Technology
 
 """
@@ -15,6 +15,10 @@ import csv
 import warnings
 from pathlib import Path
 from sklearn.neighbors import KDTree
+
+####################################################################
+## GENERAL UTILS PART                                                 ##
+####################################################################
 
 class Pseudo_hoc(object):
     '''Up to now, the program depends on a hoc object that contains the parameters for the simulation.
@@ -63,22 +67,21 @@ class Pseudo_hoc(object):
             print('Could not import neuron, go to a python environment with an installed neuron version and try again.')
             return
         neuron.h.xopen(config_fn)
-        d = dir(h)
+        #h = neuron.h
+        d = dir(neuron.h)
         h_dict = dict()
         #Transfer parameters from the hoc object to a python dictionary
         for n, el in enumerate(d):
-            #note! so far all used parameters in the BREPpy started with capital letters, so only adding atrributes that start with capital letters is a reasonable filtering method.
-            #However, this is to be kept in mind when adding additional parameters to the parameter file.
-            if el[0].isupper():
+            if el[0].isupper() or el[0].islower():
                 try:
                     #The value has to be converted to its string representation to get rid of the hoc properties.
                     #Must be kept in mind when reading in though.
-                    h_dict[el] = repr(getattr(h,el))
+                    h_dict[el] = repr(getattr(neuron.h,el))
                 except:
                     pass
         # Dump the dictionary
         import pickle
-        with open(output_fn, 'wb') as f:
+        with Path(output_fn).open('wb') as f:
             pickle.dump(h_dict, f)
 
 
@@ -86,6 +89,11 @@ def str_l(ar):
     '''make a space-seperated string from all elements in a 1D-array'''
     return(' '.join(str(ar[i]) for i in range(len(ar))))
 
+def print_time_and_reset (t, comment = 'Finished block after '):
+    import time
+    t_new = time.time()
+    print (comment, t_new-t)
+    return t_new
 
 ####################################################################
 ## CONNECTOR PART                                                 ##
@@ -152,7 +160,7 @@ class Connect_3D(object):
         src_in_tree = self.src_in_tree
         prefix = self.prefix
 
-        print('sit', src_in_tree)
+        print('source_in_tree:', src_in_tree)
 
         lam_qpt = lambda ids: parallel_util.find_connections_3dpar(kdt, spts, tpts, c_rad, src_in_tree, ids, prefix)
 
@@ -171,6 +179,7 @@ class Connect_3D(object):
         else:
             import parallel_util
             s = lam_qpt([0, np.arange(nqpts)])
+
 
         print('Exited process, saving as:' , prefix)
 
@@ -347,10 +356,10 @@ class Connect_2D(object):
             #check if the found points match along the linearized axis and if so, add distance from the beginning of the linearized axis
             if self.lin_in_tree:
                 ind = ind[np.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
-                l_res.append(abs(lax_c[i] - lax_range[ind,0] - self.lpts.set_0)+ self.lpts.lin_offset[ind])
+                l_res.append(abs(lax_c[i] - lax_range[ind,0] - self.lpts.set_0[ind])+ self.lpts.lin_offset[ind])
             else:
                 ind = ind[np.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind]).ravel()]
-                l_res.append(abs(lax_c[ind].ravel() - lax_range[i,0] -self.lpts.set_0) + self.lpts.lin_offset[i])
+                l_res.append(abs(lax_c[ind].ravel() - lax_range[i,0] -self.lpts.set_0[i]) + self.lpts.lin_offset[i])
 
             res.append(ind.astype('int'))
 
@@ -373,7 +382,7 @@ class Connect_2D(object):
         fn_segs = prefix + 'segments.dat'
         fn_dis = prefix + 'distances.dat'
 
-        with open(fn_tar, 'w') as f_tar, open(fn_src, 'w') as f_src, open(fn_dis, 'w') as f_dis, open(fn_segs, 'w') as f_segs:
+        with open(fn_tar, 'w') as f_tar, open(fn_tar, 'w') as f_src, open(fn_dis, 'w') as f_dis, open(fn_segs, 'w') as f_segs:
 
             for l,(cl, cl_l) in enumerate(zip(res, res_l)):
 
@@ -412,38 +421,89 @@ class Connect_2D(object):
                     f_segs.write("\n")
 
 
-
 class Query_point(object):
-    def __init__(self, coord, IDs = [], segs = [], lin_offset = 0, set_0 = 0):
-        self.coo = coord
-        self.seg = segs
-        self.npts = len(coord)
-        if not IDs == []: self.idx = IDs
-        else: self.idx = np.arange(len(coord))
+    def __init__(self, coord, IDs = None, segs = None, lin_offset = 0, set_0 = 0, prevent_lin = False):
+        '''Make a Query_point object from a point array and any meta data:
+        The coord array should have either the shape (#points, point dimension) or 
+        (#cells, #points per cell, point dimenstion). In the second case the array will be reshaped to be like the first case,
+        with the additional attributes IDs (cell, first dimenion of coord), and segs (second dimension of coord).
+        It will be automatically checked whether the points can be linearized/projected, i.e. represented by a start, end, and 2-D projection'''
 
-        self.lin = self.lin_check()
-        if self.lin: #lin_offset is added to the distance for each cell.
-            try: lin_offset = float(np.array(lin_offset)) * np.ones(self.npts)
-            except:
-                assert(len(lin_offset) == self.npts), 'lin_offset should be a scalar or an array with length npts!'
-            finally: self.lin_offset = lin_offset
-            self.set_0 = set_0
+        # check if lin -> then it can be used for the Connect_2D method. In that case it will not be 
+        if not prevent_lin:
+            self.lin = self.lin_check(coord)
+            if self.lin: 
+                #lin_offset will be added to the distance for each connection (e.g. aa length for pf)
+                try: 
+                    lin_offset = float(np.array(lin_offset)) * np.ones(self.npts)
+                except:
+                    assert(len(lin_offset) == self.npts), 'lin_offset should be a scalar or an array with length npts!'
+                finally: 
+                    self.lin_offset = lin_offset
+                #set0 sets where 0 is defined along the elongated structure (e.g. branching point for PF)
+                try: 
+                    set_0 = float(np.array(set_0)) * np.ones(self.npts)
+                except:
+                    assert(len(set_0) == self.npts), 'lin_offset should be a scalar or an array with length npts!'
+                finally: self.set_0 = set_0
+
+                self.coo = coord
+                self.seg = np.ones(len(coord))
+                if IDs is None:
+                    self.idx = np.arange(len(coord))
+                else:
+                    assert len(IDs) == len(coord), 'ID length does not match '
+                    self.idx = IDs
+                return
+        self.lin = False
 
 
-    def lin_check(self):
-        if len(self.coo.shape) == 3:
-            if self.coo.shape[1] == 2 and self.coo.shape[2] == 3:
-                sm = sum(abs(self.coo[:,0,:] - self.coo[:,1,:]))
+        # If the structure is already flattened or there is only one point per ID
+        if len (coord.shape) == 2:
+            self.coo = coord
+            if IDs is not None:
+                assert len(coord) == len(IDs), 'Length of ID list and length of coordinate file must be equal'
+                self.idx = IDs
+            if segs is None: 
+                self.seg = np.ones(len(coord))
+                if IDs is None:
+                    self.idx = np.arange(len(coord))
+            else:
+                assert not np.all(IDs == None), 'Cell IDs must be sepcified before segment number'
+                self.seg = segs
+
+        # If the input array still represents the structure
+        if len(coord.shape) == 3:
+            assert (IDs is None) == (segs is None), 'To avoid confusion, cell IDs and segment numbers must either be specified both, or neither'
+            if (not (IDs is None)) and (not (segs is None)):
+                assert np.all(IDs.shape[:2] == coord.shape[:2]), 'First two dimensions of ID array should be '+str(coord.shape[:2])
+                assert np.all(segs.shape[:2] == coord.shape[:2]) , 'First two dimensions of segment array should be '+str(coord.shape[:2])
+            else:
+                IDs = np.array([[[i] for j in range(coord.shape[1])] for i in range(coord.shape[0])])
+                segs = np.array([[[j] for j in range(coord.shape[1])] for i in range(coord.shape[0])])
+            
+            def flatten_cells(dat): # keep the last dimension(3, for spatial coordinates), ravel the first two(ncell*npts)
+                if len(dat.shape) == 2: dat = np.expand_dims(dat, axis = 2)
+                return dat.reshape(dat.shape[0]*dat.shape[1],dat.shape[2])
+
+            self.coo = flatten_cells(coord)
+            self.seg = flatten_cells(segs)
+            self.idx = flatten_cells(IDs)
+
+        self.npts = len(self.coo)
+
+
+    #check if input array can be used for the projection method (Connect_2D) (-> the points have a start and an end point)
+    #Note that a lot of points describing a line will not be projected automatically
+    def lin_check(self, coord):
+        if len(coord.shape) == 3:
+            if coord.shape[1] == 2 and coord.shape[2] == 3:
+                sm = sum(abs(coord[:,0,:] - coord[:,1,:]))
                 no_dif = [np.isclose(sm[i],0) for i in range(len(sm))]
                 if sum(no_dif) == 2: # 2 coordinates are the same, one is not
                     self.lin_axis = np.invert(no_dif) #this one is the axis that cn be linearized
                     return True
         return False
-
-
-    def linearize(self):
-        pass
-        #this function should linearize points when they are in a higher structure than nx3, and the IDs and
 
 
 ####################################################################
@@ -475,11 +535,11 @@ class Cell_pop(object):
                 print('Tried to read in ', fn_or_ar, ', failed.')
 
     def save_somata(self, prefix='', fn=''):
+        '''Save the soma coordinates'''
         prefix = Path(prefix)
         if fn == '': fn = type(self).__name__ + '_coords.dat'
-        '''Save the soma coordinates'''
         assert hasattr(self, 'som'), 'Cannot save soma coordinates, as apparently none have been added yet'
-        with open(prefix / fn, 'w') as f_out:
+        with (prefix / fn).open('w') as f_out:
             f_out.write("\n".join(map(str_l, self.som)))
         print('Successfully wrote {}.'.format(prefix / fn))
 
@@ -558,11 +618,42 @@ class Cell_pop(object):
         return grc
 
 
-
 class Golgi_pop(Cell_pop):
 
     def __init__(self, my_args):
         Cell_pop.__init__(self,my_args)
+
+    def add_axon (self):
+        '''Adds axons as points with a uniform random distribution in a certain rectangle
+        The seg array will contain the distance of the axon point from the soma'''
+        x_r = [self.args.GoC_Axon_Xmin, self.args.GoC_Axon_Xmax]
+        y_r = [self.args.GoC_Axon_Ymin, self.args.GoC_Axon_Ymax]
+        z_r = [self.args.GoC_Axon_Zmin, self.args.GoC_Axon_Zmax]
+        n_ax = int(self.args.numAxonGolgi)
+
+        ar = np.random.uniform(size = [len(self.som), n_ax+1, 3])
+        for i, [low, high] in enumerate([x_r, y_r, z_r]):
+            ar[:,:,i] = ar[:,:,i]*(high-low)+low
+        ar[:,0,:] = ar[:,0,:]*0
+        for i in range(len(ar)):
+            ar[i,:,:] = ar[i,:,:] + self.som[i,:] 
+        segs = np.linalg.norm(ar, axis = 2)
+        idx = np.array([[j for k in range(len(ar[j]))] for j in range(len(ar))])
+        self.axon = ar
+        self.axon_q = Query_point(ar, idx, segs)
+
+    def save_axon_coords(self, prefix=''):
+        ''' Save the coordinates of the dendrites, BREP style
+        -> each line of the output file corresponds to one cell, and contains all its dendrites sequentially'''
+        assert hasattr(self, 'axon'), 'Could not find axon, please generate first'
+
+        prefix = Path(prefix)
+        axon_file = prefix /  'GoCaxoncoordinates_test.dat'
+        with axon_file.open( 'w') as f_out:
+            for ax in self.axon:
+                flad = np.array([a for l in ax for a in l])
+                f_out.write(str_l(flad)+"\n")
+            print('Successfully wrote {}.'.format(axon_file))
 
 
     def add_dendrites(self):
@@ -612,6 +703,10 @@ class Golgi_pop(Cell_pop):
 
         self.a_dend = a_dend
         self.b_dend = b_dend
+        #self.b_dend_q = Query_point(flatten_cells(b_dend), flatten_cells(b_idx), flatten_cells(b_sgts))
+        print (b_idx.shape)
+        print (b_sgts.shape)
+        self.b_dend_q = Query_point(b_dend, b_idx, b_sgts)
         self.qpts = Query_point(all_dends, all_idx, all_sgts)
 
 
@@ -624,7 +719,7 @@ class Golgi_pop(Cell_pop):
 
         if hasattr(self, 'a_dend'):
             dend_file = prefix /  'GoCadendcoordinates.dat'
-            with open(dend_file, 'w') as f_out:
+            with dend_file.open( 'w') as f_out:
                 for ad in self.a_dend:
                     flad = np.array([a for l in ad for a in l])
                     f_out.write(str_l(flad)+"\n")
@@ -634,7 +729,7 @@ class Golgi_pop(Cell_pop):
 
         if hasattr(self, 'b_dend'):
             dend_file = prefix /  'GoCbdendcoordinates.dat'
-            with open(dend_file, 'w') as f_out:
+            with dend_file.open('w') as f_out:
                 for bd in self.b_dend:
                     flbd = [b for l in bd for b in l]
                     f_out.write(str_l(flbd)+"\n")
@@ -679,7 +774,6 @@ class Golgi_pop(Cell_pop):
         return np.array(b_res), np.array(idx), segs
 
 
-
 class Granule_pop(Cell_pop):
     def __init__(self, my_args):
         Cell_pop.__init__(self, my_args)
@@ -722,26 +816,28 @@ class Granule_pop(Cell_pop):
         aa_sp = np.linspace(0, self.aa_length, aa_nd) #grid that contains the spacing for the aa points
 
         pf_nd = int(self.args.PFlength/self.args.PFstep) # number of dots for the pf
-        pf_sp = np.linspace(-self.args.PFlength/2, self.args.PFlength/2) # grid that contains spacing of po points
+        pf_sp = np.linspace(-self.args.PFlength/2, self.args.PFlength/2, pf_nd) # grid that contains spacing of po points
 
-        self.aa_dots = np.zeros((len(coo), aa_nd, 3))
-        self.pf_dots = np.zeros((len(coo), pf_nd, 3))
-        aa_idx = np.zeros((len(coo), aa_nd))
-        aa_sgts= np.zeros((len(coo), aa_nd))
-        pf_idx = np.zeros((len(coo), pf_nd))
-        pf_sgts= np.zeros((len(coo), pf_nd))
+        self.aa_dots = np.zeros((len(self.som), aa_nd, 3))
+        self.pf_dots = np.zeros((len(self.som), pf_nd, 3))
+        aa_idx = np.zeros((len(self.som), aa_nd))
+        aa_sgts= np.zeros((len(self.som), aa_nd))
+        pf_idx = np.zeros((len(self.som), pf_nd))
+        pf_sgts= np.zeros((len(self.som), pf_nd))
 
-        for i, som in enumerate(coo):
+        for i, som in enumerate(self.som):
 
             self.aa_dots[i] = np.ones((aa_nd, 3))*som #copy soma location for each point of the aa
-            self.aa_dots[i,:,2] = aa_dots[i,:,2] + aa_sp # add the z offsets
+            self.aa_dots[i,:,2] = self.aa_dots[i,:,2] + aa_sp # add the z offsets
             aa_idx[i,:] = i #cell indices, for the query object
-            aa_sgts[i,:] = np.arange(aa_nd) #segment points, for the query object
+            #aa_sgts[i,:] = np.arange(aa_nd) #segment points, for the query object
+            aa_sgts[i,:] = aa_sp
 
-            self.pf_dots[i] = np.ones((pf_nd,3))*aa_dots[i,-1, :] #uppermost aa point is the origin of the pf points
-            self.pf_dots[i,:,0] = pf_dots[i,:,0] + pf_sp #this time, points differ only by their offset along the x direction
+            self.pf_dots[i] = np.ones((pf_nd,3))*self.aa_dots[i,-1, :] #uppermost aa point is the origin of the pf points
+            self.pf_dots[i,:,0] = self.pf_dots[i,:,0] + pf_sp #this time, points differ only by their offset along the x direction
             pf_idx[i,:]  = i
-            pf_sgts[i,:] = np.arange(pf_nd) #! Not necessarily nice
+            #pf_sgts[i,:] = np.arange(pf_nd) #! Not necessarily nice
+            pf_sgts[i,:] = aa_length + abs(pf_sp)
 
         self.qpts_aa = Query_point(self.aa_dots, aa_idx, aa_sgts)
         self.qpts_pf = Query_point(self.pf_dots, pf_idx, pf_sgts)
@@ -754,6 +850,6 @@ class Granule_pop(Cell_pop):
         assert hasattr(self, 'aa_dots'),  'No ascending axons added yet'
         gctp = self.aa_dots[:,-1,:]
         filename = prefix / 'GCTcoordinates.dat'
-        with open(filename, 'w') as f_out:
+        with filename.open('w') as f_out:
             f_out.write("\n".join(map(str_l, gctp)))
         print('Successfully wrote {}.'.format(filename))

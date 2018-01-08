@@ -29,10 +29,10 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
         #check if the found points match along the linearized axis and if so, add distance from the beginning of the linearized axis
         if lin_in_tree:
             ind = ind[numpy.logical_and(lax_range[ind,0]<=lax_c[i], lax_range[ind,1]>= lax_c[i])]
-            res_l.append(abs(lax_c[i] - lax_range[ind,0] -lpts.set_0) + lpts.lin_offset[ind])
+            res_l.append(abs(lax_c[i] - lax_range[ind,0] -lpts.set_0[ind]) + lpts.lin_offset[ind])
         else:
             ind = ind[numpy.logical_and(lax_range[i,0]<=lax_c[ind], lax_range[i,1]>= lax_c[ind]).ravel()]
-            res_l.append(abs(lax_c[ind].ravel() - lax_range[i,0] -lpts.set_0)+ lpts.lin_offset[i])
+            res_l.append(abs(lax_c[ind].ravel() - lax_range[i,0] -lpts.set_0[i])+ lpts.lin_offset[i])
 
         res.append(ind.astype('int'))
 
@@ -123,21 +123,21 @@ def find_connections_3dpar(kdt, spts, tpts, c_rad,  src_in_tree, ids, prefix):
             if len(cl)>0:
                 #depending on which population should be source and which should be target, save cell IDs accordingly.
                 if src_in_tree:
-                    f_tar.write("\n".join(map(str, numpy.ones(len(cl)) * tpts.idx[l])))
-                    f_src.write("\n".join(map(str, spts.idx[cl.astype('int')])))
+                    f_tar.write("\n".join(map(str, (numpy.ones(len(cl)) * tpts.idx[l]).astype('int')  )))
+                    f_src.write("\n".join(map(str, (spts.idx[cl.astype('int')].ravel()).astype('int'))))
 
                     f_tseg.write("\n".join(map(str_l, [tpts.seg[l,:].astype('int') for i in range(len(cl))] )))
                     f_sseg.write("\n".join(map(str_l, spts.seg[cl.astype('int')].astype('int'))))
                 else:
-                    f_tar.write("\n".join(map(str, tpts.idx[cl])))
-                    f_src.write("\n".join(map(str, numpy.ones(len(cl)) * spts.idx[l])))
+                    f_tar.write("\n".join(map(str, (tpts.idx[cl].ravel()).astype('int') )))
+                    f_src.write("\n".join(map(str, (numpy.ones(len(cl)) * spts.idx[l]).astype('int'))))
 
-                    f_tseg.write("\n".join(map(str, tpts.seg[cl.astype('int')])))
-                    f_sseg.write("\n".join(map(str, [spts.seg[l].astype('int') for i in range(len(cl))] )))
+                    f_tseg.write("\n".join(map(str_l, tpts.seg[cl.astype('int')].astype('int'))))
+                    f_sseg.write("\n".join(map(str_l, [spts.seg[l,:].astype('int') for i in range(len(cl))] )))
                 #need to attach one more line here or we get two elements per line
-                f_dis.write("\n")
+                f_tseg.write("\n")
                 f_src.write("\n")
                 f_tar.write("\n")
-                f_segs.write("\n")
+                f_sseg.write("\n")
 
     return [ids[0], res]
