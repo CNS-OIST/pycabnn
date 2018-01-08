@@ -420,6 +420,7 @@ class Query_point(object):
         self.npts = len(coord)
         if not IDs == []: self.idx = IDs
         else: self.idx = np.arange(len(coord))
+
         self.lin = self.lin_check()
         if self.lin: #lin_offset is added to the distance for each cell.
             try: lin_offset = float(np.array(lin_offset)) * np.ones(self.npts)
@@ -606,7 +607,6 @@ class Golgi_pop(Cell_pop):
         self.a_dend = a_dend
         self.b_dend = b_dend
         self.qpts = Query_point(all_dends, all_idx, all_sgts)
-
 
 
     def save_dend_coords(self, prefix=''):

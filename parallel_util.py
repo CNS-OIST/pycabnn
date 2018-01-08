@@ -10,10 +10,10 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
     if lin_in_tree:
         q_pts = pts.coo[:, numpy.invert(lin_axis)]
     else:
-        q_pts = lpts.coo[:, 0 ,numpy.invert(lin_axis)]
+        q_pts = lpts.coo[:, 0, numpy.invert(lin_axis)]
 
     lax_c = pts.coo[:, lin_axis]
-    lax_range = lpts.coo[:, : ,lin_axis]
+    lax_range = lpts.coo[:, :, lin_axis]
     lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
 
     res = []
