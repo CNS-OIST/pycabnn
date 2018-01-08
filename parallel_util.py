@@ -13,6 +13,8 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
         q_pts = lpts.coo[:, 0, numpy.invert(lin_axis)]
 
     lax_c = pts.coo[:, lin_axis]
+    if lin_in_tree:
+        lax_c = lax_c[ids[1]] # gives correct coordinates via correct indexing
     lax_range = lpts.coo[:, :, lin_axis]
     lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
 
