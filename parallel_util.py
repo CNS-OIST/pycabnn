@@ -3,17 +3,19 @@ def str_l(ar):
     return (' '.join(str(ar[i]) for i in range(len(ar))))
 
 
-def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix):
+def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, debug=False):
 
     import numpy
 
     if lin_in_tree:
         q_pts = pts.coo[:, numpy.invert(lin_axis)]
     else:
-        q_pts = lpts.coo[:, 0 ,numpy.invert(lin_axis)]
+        q_pts = lpts.coo[:, 0, numpy.invert(lin_axis)]
 
     lax_c = pts.coo[:, lin_axis]
-    lax_range = lpts.coo[:, : ,lin_axis]
+    if lin_in_tree:
+        lax_c = lax_c[ids[1]] # gives correct coordinates via correct indexing
+    lax_range = lpts.coo[:, :, lin_axis]
     lax_range = lax_range.reshape((lax_range.shape[0], lax_range.shape[1]))
 
     res = []
@@ -34,13 +36,15 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
 
         res.append(ind.astype('int'))
 
-    # print (len(pts.seg))
+    prefix  = str(prefix)
+    fn_tar  = prefix + 'targets'   + str(ids[0]) + '.dat'
+    fn_src  = prefix + 'sources'   + str(ids[0]) + '.dat'
+    fn_segs = prefix + 'segments'  + str(ids[0]) + '.dat'
+    fn_dis  = prefix + 'distances' + str(ids[0]) + '.dat'
 
-    prefix = str(prefix)
-    fn_tar = prefix + 'targets' + str(ids[0])+'.dat'
-    fn_src = prefix + 'sources' + str(ids[0])+'.dat'
-    fn_segs = prefix + 'segments' + str(ids[0])+'.dat'
-    fn_dis = prefix + 'distances' + str(ids[0])+'.dat'
+    if debug:
+        fn_coords = prefix + 'coords' + str(ids[0])+'.dat'
+        f_coords = open(fn_coords, 'w')
 
     with open(fn_tar, 'w') as f_tar, open(fn_src, 'w') as f_src, open(fn_dis, 'w') as f_dis, open(fn_segs, 'w') as f_segs:
 
@@ -55,7 +59,7 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
                 #Segments also corresponds to the 3D point population, right value is acquired from Query-points object.
                 if lin_in_tree:
                     s_ar = pts.seg[l,:].astype('int')
-                    f_segs.write("\n".join(map(str_l, [s_ar for i in range (len(cl))])))#*numpy.ones((len(cl), len (s_ar))))))
+                    f_segs.write("\n".join(map(str_l, [s_ar for i in range(len(cl))])))#*numpy.ones((len(cl), len (s_ar))))))
 
                     q_id = (numpy.ones(len(cl))*pts.idx[l]).astype('int')
                     tr_id = cl
@@ -71,13 +75,19 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
                     f_tar.write("\n".join(map(str, q_id)))
                 else:
                     f_src.write("\n".join(map(str, q_id)))
-                    f_tar.write("\n".join(map(str, tr_id )))
+                    f_tar.write("\n".join(map(str, tr_id)))
+
+                if debug:
+                    f_coords.write((' '.join(map(str, pts.coo[l]))+'\n')*len(cl))
 
                 #need to attach one more line here or we get two elements per line
                 f_dis.write("\n")
                 f_src.write("\n")
                 f_tar.write("\n")
                 f_segs.write("\n")
+
+    if debug:
+        f_coords.close()
 
     return [ids[0], res, res_l]
 
