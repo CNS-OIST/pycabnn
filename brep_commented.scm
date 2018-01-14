@@ -1194,8 +1194,8 @@
     (goc-basolateral-nsegpts . 4) ;4
 
     (goc-axons . 10)
-    (goc-axonsegs . 2)
-    (goc-axonpts . 4)
+    (goc-axonsegs . 1)
+    (goc-axonpts . 2)
     (goc-axon-x-min . -200)
     (goc-axon-x-max . 200)
     (goc-axon-y-min . -200)

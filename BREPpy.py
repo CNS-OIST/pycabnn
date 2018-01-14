@@ -1,5 +1,5 @@
 """
-BREPpy.py
+pyBREP.py
 
 Finds distance-based connectivity between neurons with spatially extended
 dendritic and axonal morphology, mainly developed for a physiologically detailed
@@ -99,7 +99,7 @@ def print_time_and_reset (t, comment = 'Finished block after '):
 ####################################################################
 
 class Connect_3D(object):
-    ''' Connects 3D point datasets.'''
+    ''' Finds connections between structures described by 3D point datasets.'''
 
     def __init__(self, qpts_src, qpts_tar, c_rad, prefix=''):
         '''Connect two 3D point datasets with a given critical radius.
@@ -184,6 +184,8 @@ class Connect_3D(object):
 
 
 class Connect_2D(object):
+    '''Finds connections between one structure that can be projected to a 2D plane and another structure
+    that is represented by 3D coordinate points.'''
 
     def __init__(self, qpts_src, qpts_tar, c_rad, prefix=''):
         '''Initialize the Connect_2D object. Source population, target population, critical radius.
@@ -316,7 +318,8 @@ class Connect_2D(object):
 
     def get_tree_setup(self, return_lax=True, lin_in_tree=[]):
         '''Gets the setup for the connection.
-        lin_in_tree determines whether
+        return_lax: return values for the linear axis? -> the ones that were omitted for projection
+        lin_in_tree: 2D projected population in the 2D Tree or the other?
          '''
 
         # if not specified which of the point population is the query point population, take the smaller one and put the bigger one in the tree.
@@ -344,6 +347,7 @@ class Connect_2D(object):
             return kdt, q_pts, lax_c, lax_range, self.lin_in_tree
 
     def find_connections(self, lin_in_tree=[]):
+        '''Perform the seperate nearest-neighbour searches in the tree'''
 
         kdt, q_pts, lax_c, lax_range, _ = self.get_tree_setup(True, lin_in_tree)
         res = []
@@ -510,6 +514,7 @@ class Query_point(object):
 ####################################################################
 
 class Cell_pop(object):
+    '''Basis class for cell populations. The different cell types should inherit from it.'''
 
     def __init__(self, my_args):
         self.args = my_args
@@ -620,6 +625,7 @@ class Cell_pop(object):
 
 
 class Golgi_pop(Cell_pop):
+    '''Golgi cell population. Generates point representations of axons and dendrites as well as Query_point objects from them'''
 
     def __init__(self, my_args):
         Cell_pop.__init__(self,my_args)
@@ -771,6 +777,8 @@ class Golgi_pop(Cell_pop):
 
 
 class Granule_pop(Cell_pop):
+    '''Granule cell population. Generates point representations of ascending axon (aa) and parallel fiber(pf)
+    Can either do so with 3D points or with 2D projections. AA length can be fixed or random'''
     def __init__(self, my_args):
         Cell_pop.__init__(self, my_args)
         self.aa_length = self.args.PCLdepth+ self.args.GLdepth
@@ -793,7 +801,7 @@ class Granule_pop(Cell_pop):
 
 
     def add_pf_endpoints(self):
-        ''' Addd the endpoints of the parallel fibers [begin, end] for each cell'''
+        ''' Add the endpoints of the parallel fibers [begin, end] for each cell'''
         pf_length = self.args.PFlength
         assert hasattr(self, 'aa_dots'), 'Cannot add Parallel Fiber, add ascending axon first!'
         self.pf_dots = self.aa_dots.copy()
@@ -803,7 +811,7 @@ class Granule_pop(Cell_pop):
         self.qpts_pf = Query_point(self.pf_dots, lin_offset = self.aa_dots[:,1,2] - self.aa_dots[:,0,2], set_0 = pf_length/2)
 
     def add_3D_aa_and_pf(self):
-        '''adds 3-dimensional coordinates for ascending axons and parallel fiber to the granule cell objects.
+        '''Ádd 3-dimensional coordinates for ascending axons and parallel fiber to the granule cell objects.
         Both AA and PF are represented by regularly spaced dots'''
 
         aa_length = self.args.PCLdepth+ self.args.GLdepth
