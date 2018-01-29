@@ -9,7 +9,7 @@ import time
 #Parameters(might be read in from the command line some day...)
 #Output path
 input_path = Path('/Users/shhong/Dropbox/network_data/model/')
-output_path = Path.cwd().parent.parent / 'output_1'
+output_path = Path.cwd().parent.parent / 'output_2'
 # config files: if you work in an environment where you want
 paramdir = input_path / 'params/set3005'
 config_hoc = paramdir / 'Parameters.hoc'
