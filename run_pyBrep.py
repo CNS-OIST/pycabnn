@@ -9,7 +9,7 @@ import time
 #Parameters(might be read in from the command line some day...)
 #Output path
 input_path = Path('/Users/shhong/Dropbox/network_data/model/')
-output_path = Path.cwd().parent.parent / 'output_2'
+output_path = Path.cwd().parent.parent / 'output_3'
 # config files: if you work in an environment where you want
 paramdir = input_path / 'params/set3005'
 config_hoc = paramdir / 'Parameters.hoc'
@@ -79,7 +79,8 @@ print(' ')
 ########### CONNECTIONS
 
 # you might want to change the radii
-c_rad_aa = h.AAtoGoCzone
+c_rad_aa = h.AAtoGoCzone/1.73
+# c_rad_aa = h.PFtoGoCzone/np.sq
 print("R for AA: {}".format(c_rad_aa))
 
 cc = brp.Connect_2D(gp.qpts_aa, gg.qpts, c_rad_aa, output_path / 'AAtoGoC')

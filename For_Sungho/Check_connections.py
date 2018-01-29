@@ -3,7 +3,7 @@
 
 # ## Parallel fiber - GoC
 
-# In[2]:
+# In[1]:
 
 
 from pathlib import Path
@@ -12,13 +12,13 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 
-# In[ ]:
+# In[2]:
 
 
-output_path = Path.cwd().parent.parent / 'output_2'
+output_path = Path.cwd().parent.parent / 'output_3'
 
 
-# In[ ]:
+# In[3]:
 
 
 adend = np.loadtxt(output_path / 'GoCadendcoordinates.dat')
@@ -27,16 +27,17 @@ grcs = np.loadtxt(output_path / "GCcoordinates.sorted.dat")
 gcts = np.loadtxt(output_path / "GCTcoordinates.dat")
 
 
-# In[ ]:
+# In[4]:
 
 
 adend = adend.reshape((1995,50,3))
 bdend = bdend.reshape((1995,24,3))
 
 
-# In[ ]:
+# In[7]:
 
 
+get_ipython().run_line_magic('matplotlib', 'nbagg')
 i = 1
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
@@ -121,7 +122,7 @@ ax[1].plot([pt2[0]], [pt2[2]], 'oc')
 
 # ## Ascending axon - GoC
 
-# In[ ]:
+# In[6]:
 
 
 data_index = 80
@@ -138,10 +139,10 @@ tgts = np.loadtxt(data_dir / ftgts).astype(int)
 dsts = np.loadtxt(data_dir / fdsts)
 
 
-# In[ ]:
+# In[22]:
 
 
-i = 20
+i = 12900
 tgt = tgts[i]
 src = srcs[i]
 dst = dsts[i]
@@ -151,7 +152,7 @@ pt2 = xyz[i]
 print("{} -> {} with d = {}".format(src, tgt, dst))
 
 
-# In[ ]:
+# In[23]:
 
 
 fig = plt.figure()
@@ -168,7 +169,7 @@ ax.plot([pt2[0]], [pt2[1]], [pt2[2]], 'oc')
 ax.set_xlim([0, 1500])
 
 
-# In[ ]:
+# In[17]:
 
 
 get_ipython().run_line_magic('matplotlib', 'nbagg')
