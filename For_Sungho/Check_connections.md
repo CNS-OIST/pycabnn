@@ -247,36 +247,33 @@ ax[1].plot([pt2[0]], [pt2[2]], 'oc')
 
 
 ```python
-output_path = Path('/Users/shhong/Dropbox/network_data/output_ines')
+output_path = Path('/Users/shhong/Dropbox/network_data/output_ines_2')
 # output_path = Path('/Users/shhong/Dropbox/network_data/output_brep')
 src = np.loadtxt(output_path / "PFtoGoCsources.dat")
 tgt = np.loadtxt(output_path / "PFtoGoCtargets.dat")
 src = src.astype(int)
 tgt = tgt.astype(int)
-```
 
-
-```python
 np.save(output_path / 'PFtoGoCsources.npy', src)
 np.save(output_path / 'PFtoGoCtargets.npy', tgt)
 ```
 
 
 ```python
-src = np.loadtxt(output_path.parent / "AAtoGoCsources.dat")
-tgt = np.loadtxt(output_path.parent / "AAtoGoCtargets.dat")
+src = np.loadtxt(output_path / "AAtoGoCsources.dat")
+tgt = np.loadtxt(output_path / "AAtoGoCtargets.dat")
 src = src.astype(int)
 tgt = tgt.astype(int)
 
-np.save(output_path.parent / 'AAtoGoCsources.npy', src)
-np.save(output_path.parent / 'AAtoGoCtargets.npy', tgt)
+np.save(output_path / 'AAtoGoCsources.npy', src)
+np.save(output_path / 'AAtoGoCtargets.npy', tgt)
 ```
 
 ## Load back data and check PFs
 
 
 ```python
-output_path = Path('/Users/shhong/Dropbox/network_data/output_ines')
+output_path = Path('/Users/shhong/Dropbox/network_data/output_ines_2')
 
 srcs = np.load(output_path / 'PFtoGoCsources.npy')
 tgts = np.load(output_path / 'PFtoGoCtargets.npy')
@@ -330,179 +327,131 @@ cons_per_pf
   </thead>
   <tbody>
     <tr>
+      <th>16</th>
+      <td>18</td>
+    </tr>
+    <tr>
       <th>28</th>
-      <td>21</td>
+      <td>17</td>
+    </tr>
+    <tr>
+      <th>47</th>
+      <td>31</td>
     </tr>
     <tr>
       <th>51</th>
-      <td>22</td>
+      <td>19</td>
+    </tr>
+    <tr>
+      <th>55</th>
+      <td>9</td>
     </tr>
     <tr>
       <th>56</th>
-      <td>16</td>
+      <td>13</td>
     </tr>
     <tr>
       <th>89</th>
-      <td>28</td>
+      <td>23</td>
     </tr>
     <tr>
-      <th>121</th>
-      <td>24</td>
+      <th>114</th>
+      <td>12</td>
     </tr>
     <tr>
       <th>125</th>
-      <td>31</td>
+      <td>23</td>
     </tr>
     <tr>
       <th>140</th>
-      <td>6</td>
+      <td>3</td>
     </tr>
     <tr>
       <th>143</th>
-      <td>16</td>
+      <td>11</td>
     </tr>
     <tr>
       <th>158</th>
-      <td>34</td>
+      <td>30</td>
     </tr>
     <tr>
-      <th>164</th>
-      <td>21</td>
+      <th>188</th>
+      <td>11</td>
     </tr>
     <tr>
       <th>206</th>
-      <td>31</td>
+      <td>24</td>
     </tr>
     <tr>
       <th>218</th>
-      <td>37</td>
+      <td>32</td>
     </tr>
     <tr>
       <th>223</th>
-      <td>30</td>
+      <td>20</td>
     </tr>
     <tr>
       <th>246</th>
       <td>1</td>
     </tr>
     <tr>
-      <th>322</th>
-      <td>32</td>
-    </tr>
-    <tr>
       <th>344</th>
-      <td>28</td>
+      <td>22</td>
     </tr>
     <tr>
       <th>346</th>
-      <td>26</td>
+      <td>21</td>
+    </tr>
+    <tr>
+      <th>348</th>
+      <td>16</td>
     </tr>
     <tr>
       <th>366</th>
-      <td>23</td>
+      <td>17</td>
     </tr>
     <tr>
       <th>367</th>
-      <td>40</td>
-    </tr>
-    <tr>
-      <th>377</th>
-      <td>41</td>
-    </tr>
-    <tr>
-      <th>390</th>
-      <td>13</td>
-    </tr>
-    <tr>
-      <th>391</th>
-      <td>39</td>
-    </tr>
-    <tr>
-      <th>409</th>
-      <td>38</td>
-    </tr>
-    <tr>
-      <th>452</th>
-      <td>29</td>
-    </tr>
-    <tr>
-      <th>453</th>
-      <td>11</td>
-    </tr>
-    <tr>
-      <th>460</th>
-      <td>24</td>
-    </tr>
-    <tr>
-      <th>474</th>
-      <td>40</td>
-    </tr>
-    <tr>
-      <th>490</th>
-      <td>32</td>
-    </tr>
-    <tr>
-      <th>495</th>
       <td>30</td>
     </tr>
     <tr>
-      <th>561</th>
-      <td>28</td>
+      <th>377</th>
+      <td>31</td>
+    </tr>
+    <tr>
+      <th>390</th>
+      <td>9</td>
+    </tr>
+    <tr>
+      <th>391</th>
+      <td>32</td>
+    </tr>
+    <tr>
+      <th>409</th>
+      <td>33</td>
+    </tr>
+    <tr>
+      <th>453</th>
+      <td>7</td>
+    </tr>
+    <tr>
+      <th>460</th>
+      <td>18</td>
+    </tr>
+    <tr>
+      <th>474</th>
+      <td>32</td>
+    </tr>
+    <tr>
+      <th>490</th>
+      <td>26</td>
     </tr>
     <tr>
       <th>...</th>
       <td>...</td>
     </tr>
     <tr>
-      <th>708776</th>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>710097</th>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>712550</th>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>713428</th>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>714677</th>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>720751</th>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>720934</th>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>721243</th>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>721789</th>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>721849</th>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>723423</th>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>729263</th>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>731688</th>
+      <th>734230</th>
       <td>1</td>
     </tr>
     <tr>
@@ -514,7 +463,23 @@ cons_per_pf
       <td>1</td>
     </tr>
     <tr>
+      <th>740462</th>
+      <td>1</td>
+    </tr>
+    <tr>
       <th>743307</th>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>743609</th>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>744736</th>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>745840</th>
       <td>1</td>
     </tr>
     <tr>
@@ -522,7 +487,31 @@ cons_per_pf
       <td>1</td>
     </tr>
     <tr>
+      <th>746049</th>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>747549</th>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>750633</th>
+      <td>1</td>
+    </tr>
+    <tr>
       <th>751627</th>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>751844</th>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>755346</th>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>755739</th>
       <td>1</td>
     </tr>
     <tr>
@@ -538,11 +527,15 @@ cons_per_pf
       <td>1</td>
     </tr>
     <tr>
-      <th>761408</th>
+      <th>758230</th>
       <td>1</td>
     </tr>
     <tr>
       <th>761769</th>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>762973</th>
       <td>1</td>
     </tr>
     <tr>
@@ -555,6 +548,10 @@ cons_per_pf
     </tr>
     <tr>
       <th>775488</th>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>776811</th>
       <td>1</td>
     </tr>
     <tr>
@@ -575,7 +572,7 @@ cons_per_pf
     </tr>
   </tbody>
 </table>
-<p>797438 rows × 1 columns</p>
+<p>796922 rows × 1 columns</p>
 </div>
 
 
@@ -614,7 +611,7 @@ ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
 
 
 
-![png](Check_connections_files/Check_connections_26_1.png)
+![png](Check_connections_files/Check_connections_25_1.png)
 
 
 
@@ -622,7 +619,7 @@ ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
 print("Connections per GoC = {} ± {}".format(np.mean(cons_per_goc), np.std(cons_per_goc)/np.sqrt(cons_per_goc.size)))
 ```
 
-    Connections per GoC = 9708.829573934838 ± 62.35950343318187
+    Connections per GoC = 7845.491228070176 ± 50.341722506957936
 
 
 
@@ -646,7 +643,7 @@ ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
 
 
 
-![png](Check_connections_files/Check_connections_28_1.png)
+![png](Check_connections_files/Check_connections_27_1.png)
 
 
 
@@ -654,7 +651,7 @@ ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
 print("Connections per PF = {} ± {}".format(np.mean(cons_per_pf), np.std(cons_per_pf)/np.sqrt(cons_per_pf.size)))
 ```
 
-    Connections per PF = 24.272073934837092 ± 0.009487861657287728
+    Connections per PF = 19.613728070175437 ± 0.007967805495340553
 
 
 ## Perform the same analysis on BREP outputs
@@ -721,7 +718,7 @@ ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
 
 
 
-![png](Check_connections_files/Check_connections_34_1.png)
+![png](Check_connections_files/Check_connections_33_1.png)
 
 
 
@@ -753,7 +750,7 @@ ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
 
 
 
-![png](Check_connections_files/Check_connections_36_1.png)
+![png](Check_connections_files/Check_connections_35_1.png)
 
 
 

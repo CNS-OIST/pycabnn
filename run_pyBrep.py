@@ -9,7 +9,7 @@ import time
 #Parameters(might be read in from the command line some day...)
 #Output path
 input_path = Path('/Users/shhong/Dropbox/network_data/model/')
-output_path = Path.cwd().parent.parent / 'output_3'
+output_path = Path.cwd().parent.parent / 'output_4'
 # config files: if you work in an environment where you want
 paramdir = input_path / 'params/set3005'
 config_hoc = paramdir / 'Parameters.hoc'
@@ -89,7 +89,7 @@ t5 = time.time()
 print('AA: Found and saved after', t5-t4)
 print(' ')
 
-c_rad_pf = h.PFtoGoCzone
+c_rad_pf = h.PFtoGoCzone/1.113
 print("R for PF: {}".format(c_rad_pf))
 
 cc = brp.Connect_2D(gp.qpts_pf, gg.qpts, c_rad_pf, output_path / 'PFtoGoC')

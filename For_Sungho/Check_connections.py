@@ -197,42 +197,38 @@ ax[1].plot([pt2[0]], [pt2[2]], 'oc')
 
 # ## Convert big files to the npy format
 
-# In[ ]:
+# In[4]:
 
 
-output_path = Path('/Users/shhong/Dropbox/network_data/output_ines')
+output_path = Path('/Users/shhong/Dropbox/network_data/output_ines_2')
 # output_path = Path('/Users/shhong/Dropbox/network_data/output_brep')
 src = np.loadtxt(output_path / "PFtoGoCsources.dat")
 tgt = np.loadtxt(output_path / "PFtoGoCtargets.dat")
 src = src.astype(int)
 tgt = tgt.astype(int)
 
-
-# In[ ]:
-
-
 np.save(output_path / 'PFtoGoCsources.npy', src)
 np.save(output_path / 'PFtoGoCtargets.npy', tgt)
 
 
-# In[ ]:
+# In[5]:
 
 
-src = np.loadtxt(output_path.parent / "AAtoGoCsources.dat")
-tgt = np.loadtxt(output_path.parent / "AAtoGoCtargets.dat")
+src = np.loadtxt(output_path / "AAtoGoCsources.dat")
+tgt = np.loadtxt(output_path / "AAtoGoCtargets.dat")
 src = src.astype(int)
 tgt = tgt.astype(int)
 
-np.save(output_path.parent / 'AAtoGoCsources.npy', src)
-np.save(output_path.parent / 'AAtoGoCtargets.npy', tgt)
+np.save(output_path / 'AAtoGoCsources.npy', src)
+np.save(output_path / 'AAtoGoCtargets.npy', tgt)
 
 
 # ## Load back data and check PFs
 
-# In[30]:
+# In[6]:
 
 
-output_path = Path('/Users/shhong/Dropbox/network_data/output_ines')
+output_path = Path('/Users/shhong/Dropbox/network_data/output_ines_2')
 
 srcs = np.load(output_path / 'PFtoGoCsources.npy')
 tgts = np.load(output_path / 'PFtoGoCtargets.npy')
@@ -241,7 +237,7 @@ grcxy = np.loadtxt(output_path / 'GCcoordinates.sorted.dat')
 gocxy = np.loadtxt(output_path / 'GoCcoordinates.sorted.dat')
 
 
-# In[31]:
+# In[7]:
 
 
 import dask.dataframe as dd
@@ -249,7 +245,7 @@ import dask.dataframe as dd
 df = dd.from_array(np.vstack((srcs, tgts)).T, columns=('src', 'tgt'))
 
 
-# In[32]:
+# In[8]:
 
 
 cons_per_goc = df.groupby('tgt').count().compute()
@@ -258,7 +254,7 @@ cons_per_pf = df.groupby('src').count().compute()
 cons_per_pf
 
 
-# In[33]:
+# In[9]:
 
 
 import dask.dataframe as dd
@@ -272,7 +268,7 @@ cons_per_goc = convert_from_dd(cons_per_goc.src, gocxy.shape[0])
 cons_per_pf = convert_from_dd(cons_per_pf.tgt, grcxy.shape[0])
 
 
-# In[34]:
+# In[10]:
 
 
 fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(16, 10))
@@ -286,13 +282,13 @@ ax[1,1].scatter(gocxy[:,1], gocxy[:,2], 100, cons_per_goc, '.')
 ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
 
 
-# In[35]:
+# In[11]:
 
 
 print("Connections per GoC = {} ± {}".format(np.mean(cons_per_goc), np.std(cons_per_goc)/np.sqrt(cons_per_goc.size)))
 
 
-# In[36]:
+# In[12]:
 
 
 fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(16, 10))
@@ -306,7 +302,7 @@ ax[1,1].scatter(grcxy[:,1], grcxy[:,2], 0.25, cons_per_pf, '.')
 ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
 
 
-# In[37]:
+# In[13]:
 
 
 print("Connections per PF = {} ± {}".format(np.mean(cons_per_pf), np.std(cons_per_pf)/np.sqrt(cons_per_pf.size)))
