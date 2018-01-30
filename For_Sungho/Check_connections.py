@@ -12,13 +12,13 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 
-# In[2]:
+# In[12]:
 
 
-output_path = Path.cwd().parent.parent / 'output_3'
+output_path = Path.cwd().parent.parent / 'output_2'
 
 
-# In[3]:
+# In[13]:
 
 
 adend = np.loadtxt(output_path / 'GoCadendcoordinates.dat')
@@ -27,17 +27,19 @@ grcs = np.loadtxt(output_path / "GCcoordinates.sorted.dat")
 gcts = np.loadtxt(output_path / "GCTcoordinates.dat")
 
 
-# In[4]:
+# In[14]:
 
 
 adend = adend.reshape((1995,50,3))
 bdend = bdend.reshape((1995,24,3))
 
 
-# In[7]:
+# Here we check if the dendritic point alignment is ok.
+
+# In[15]:
 
 
-get_ipython().run_line_magic('matplotlib', 'nbagg')
+get_ipython().run_line_magic('matplotlib', 'inline')
 i = 1
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
@@ -49,7 +51,9 @@ ax.plot(adend[i][:,0], adend[i][:,1], adend[i][:,2],'.r')
 ax.plot(bdend[i][:,0], bdend[i][:,1], bdend[i][:,2],'.k')
 
 
-# In[ ]:
+# Now we check if connections look ok.
+
+# In[16]:
 
 
 data_index = 10
@@ -67,7 +71,7 @@ tgts = np.loadtxt(data_dir / ftgts).astype(int)
 dsts = np.loadtxt(data_dir / fdsts)
 
 
-# In[ ]:
+# In[17]:
 
 
 i = 4000
@@ -80,7 +84,7 @@ pt2 = xyz[i]
 print("{} -> {} with d = {}".format(src, tgt, dst))
 
 
-# In[ ]:
+# In[18]:
 
 
 get_ipython().run_line_magic('matplotlib', 'inline')
@@ -98,10 +102,10 @@ ax.plot([pt2[0]], [pt2[1]], [pt2[2]], 'oc')
 # ax.set_xlim([0, 1500])
 
 
-# In[ ]:
+# In[19]:
 
 
-get_ipython().run_line_magic('matplotlib', 'nbagg')
+get_ipython().run_line_magic('matplotlib', 'inline')
 
 fig, ax = plt.subplots(ncols=2, figsize=(10, 5), sharex=False)
 ax[0].plot([pt0[0], pt1[0]], [pt0[1], pt1[1]], 'o-k')
@@ -122,7 +126,7 @@ ax[1].plot([pt2[0]], [pt2[2]], 'oc')
 
 # ## Ascending axon - GoC
 
-# In[6]:
+# In[20]:
 
 
 data_index = 80
@@ -139,10 +143,10 @@ tgts = np.loadtxt(data_dir / ftgts).astype(int)
 dsts = np.loadtxt(data_dir / fdsts)
 
 
-# In[22]:
+# In[27]:
 
 
-i = 12900
+i = 6900
 tgt = tgts[i]
 src = srcs[i]
 dst = dsts[i]
@@ -152,7 +156,7 @@ pt2 = xyz[i]
 print("{} -> {} with d = {}".format(src, tgt, dst))
 
 
-# In[23]:
+# In[28]:
 
 
 fig = plt.figure()
@@ -169,10 +173,10 @@ ax.plot([pt2[0]], [pt2[1]], [pt2[2]], 'oc')
 ax.set_xlim([0, 1500])
 
 
-# In[17]:
+# In[29]:
 
 
-get_ipython().run_line_magic('matplotlib', 'nbagg')
+get_ipython().run_line_magic('matplotlib', 'inline')
 
 fig, ax = plt.subplots(ncols=2, figsize=(10, 5), sharex=True)
 ax[0].plot([pt0[0], pt1[0]], [pt0[1], pt1[1]], 'o-k')
@@ -223,9 +227,9 @@ np.save(output_path.parent / 'AAtoGoCsources.npy', src)
 np.save(output_path.parent / 'AAtoGoCtargets.npy', tgt)
 
 
-# ## Load back data
+# ## Load back data and check PFs
 
-# In[3]:
+# In[30]:
 
 
 output_path = Path('/Users/shhong/Dropbox/network_data/output_ines')
@@ -237,7 +241,7 @@ grcxy = np.loadtxt(output_path / 'GCcoordinates.sorted.dat')
 gocxy = np.loadtxt(output_path / 'GoCcoordinates.sorted.dat')
 
 
-# In[5]:
+# In[31]:
 
 
 import dask.dataframe as dd
@@ -245,79 +249,93 @@ import dask.dataframe as dd
 df = dd.from_array(np.vstack((srcs, tgts)).T, columns=('src', 'tgt'))
 
 
-# In[6]:
+# In[32]:
 
 
 cons_per_goc = df.groupby('tgt').count().compute()
 cons_per_goc
-
-
-# In[7]:
-
-
 cons_per_pf = df.groupby('src').count().compute()
 cons_per_pf
 
 
-# In[8]:
+# In[33]:
 
 
-temp = np.zeros(cons_per_goc.src.index.max()+1)
-temp[cons_per_goc.src.index] = cons_per_goc.src.values
+import dask.dataframe as dd
+
+def convert_from_dd(x, size):
+    temp = np.zeros(size)
+    temp[x.index] = x.values
+    return temp
+
+cons_per_goc = convert_from_dd(cons_per_goc.src, gocxy.shape[0])
+cons_per_pf = convert_from_dd(cons_per_pf.tgt, grcxy.shape[0])
 
 
-# In[9]:
-
-
-fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(16, 10))
-ax[0,0].plot(temp, '.')
-_ = ax[0,1].hist(temp,200)
-ax[1,0].scatter(gocxy[:,0], gocxy[:,1], 100, temp, '.')
-ax[1,1].scatter(gocxy[:,1], gocxy[:,2], 100, temp, '.')
-
-
-# In[10]:
-
-
-temp = np.zeros(cons_per_pf.tgt.index.max()+1)
-temp[cons_per_pf.tgt.index] = cons_per_pf.tgt.values
-
-
-# In[11]:
+# In[34]:
 
 
 fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(16, 10))
-ax[0,0].plot(temp, '.')
-_ = ax[0,1].hist(temp,200)
-ax[1,0].scatter(grcxy[:,0], grcxy[:,1], 0.5, temp, '.')
-ax[1,1].scatter(grcxy[:,1], grcxy[:,2], 0.5, temp, '.')
+ax[0,0].plot(cons_per_goc, '.')
+ax[0,0].set(xlabel="GoC id", ylabel='Connections')
+_ = ax[0,1].hist(cons_per_goc, 200)
+ax[0,1].set(xlabel="Connections per GoC", ylabel='Count')
+ax[1,0].scatter(gocxy[:,0], gocxy[:,1], 100, cons_per_goc, '.')
+ax[1,0].set(xlabel="x (um)", ylabel="y (um)")
+ax[1,1].scatter(gocxy[:,1], gocxy[:,2], 100, cons_per_goc, '.')
+ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
+
+
+# In[35]:
+
+
+print("Connections per GoC = {} ± {}".format(np.mean(cons_per_goc), np.std(cons_per_goc)/np.sqrt(cons_per_goc.size)))
+
+
+# In[36]:
+
+
+fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(16, 10))
+ax[0,0].plot(cons_per_pf, '.')
+ax[0,0].set(xlabel="PF id", ylabel='Connections')
+ax[0,1].set(xlabel="Connections per PF", ylabel='Count')
+_ = ax[0,1].hist(cons_per_pf, 200)
+ax[1,0].scatter(grcxy[:,0], grcxy[:,1], 0.25, cons_per_pf, '.')
+ax[1,0].set(xlabel="x (um)", ylabel="y (um)")
+ax[1,1].scatter(grcxy[:,1], grcxy[:,2], 0.25, cons_per_pf, '.')
+ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
+
+
+# In[37]:
+
+
+print("Connections per PF = {} ± {}".format(np.mean(cons_per_pf), np.std(cons_per_pf)/np.sqrt(cons_per_pf.size)))
 
 
 # ## Perform the same analysis on BREP outputs
 
-# In[3]:
+# In[ ]:
 
 
-# output_path = Path('/Users/shhong/Dropbox/network_data/output_ines')
-output_path = Path('/Users/shhong/Dropbox/network_data/output_brep')
-src = np.loadtxt(output_path / "PFtoGoCsources.dat")
-tgt = np.loadtxt(output_path / "PFtoGoCtargets.dat")
-src = src.astype(int)
-tgt = tgt.astype(int)
+# output_path = Path('/Users/shhong/Dropbox/network_data/output_brep')
+# src = np.loadtxt(output_path / "PFtoGoCsources.dat")
+# tgt = np.loadtxt(output_path / "PFtoGoCtargets.dat")
+# src = src.astype(int)
+# tgt = tgt.astype(int)
 
-np.save(output_path / 'PFtoGoCsources.npy', src)
-np.save(output_path / 'PFtoGoCtargets.npy', tgt)
+# np.save(output_path / 'PFtoGoCsources.npy', src)
+# np.save(output_path / 'PFtoGoCtargets.npy', tgt)
 
-src = np.loadtxt(output_path / "AAtoGoCsources.dat")
-tgt = np.loadtxt(output_path / "AAtoGoCtargets.dat")
-src = src.astype(int)
-tgt = tgt.astype(int)
+# src = np.loadtxt(output_path / "AAtoGoCsources.dat")
+# tgt = np.loadtxt(output_path / "AAtoGoCtargets.dat")
+# src = src.astype(int)
+# tgt = tgt.astype(int)
 
-np.save(output_path / 'AAtoGoCsources.npy', src)
-np.save(output_path / 'AAtoGoCtargets.npy', tgt)
+# np.save(output_path / 'AAtoGoCsources.npy', src)
+# np.save(output_path / 'AAtoGoCtargets.npy', tgt)
 
 
-# In[4]:
+# In[38]:
 
 
 output_path = Path('/Users/shhong/Dropbox/network_data/output_brep')
@@ -330,37 +348,70 @@ gocxy = np.loadtxt(output_path / 'GoCcoordinates.sorted.dat')
 df = dd.from_array(np.vstack((srcs, tgts)).T, columns=('src', 'tgt'))
 
 
-# In[5]:
+# In[39]:
 
 
 cons_per_goc = df.groupby('tgt').count().compute()
 cons_per_pf = df.groupby('src').count().compute()
 
-def convert_from_dd(x):
-    temp = np.zeros(x.index.max()+1)
-    temp[x.index] = x.values
-    return temp
-
-cons_per_goc = convert_from_dd(cons_per_goc.src)
-cons_per_pf = convert_from_dd(cons_per_pf.tgt)
+cons_per_goc = convert_from_dd(cons_per_goc.src, gocxy.shape[0])
+cons_per_pf = convert_from_dd(cons_per_pf.tgt, grcxy.shape[0])
 
 
-# In[6]:
+# In[40]:
 
 
 fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(16, 10))
 ax[0,0].plot(cons_per_goc, '.')
+ax[0,0].set(xlabel="GoC id", ylabel='Connections')
 _ = ax[0,1].hist(cons_per_goc, 200)
+ax[0,1].set(xlabel="Connections per GoC", ylabel='Count')
 ax[1,0].scatter(gocxy[:,0], gocxy[:,1], 100, cons_per_goc, '.')
+ax[1,0].set(xlabel="x (um)", ylabel="y (um)")
 ax[1,1].scatter(gocxy[:,1], gocxy[:,2], 100, cons_per_goc, '.')
+ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
 
 
-# In[7]:
+# In[41]:
+
+
+print("Connections per GoC = {} ± {}".format(np.mean(cons_per_goc), np.std(cons_per_goc)/np.sqrt(cons_per_goc.size)))
+
+
+# In[42]:
 
 
 fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(16, 10))
 ax[0,0].plot(cons_per_pf, '.')
-_ = ax[0,1].hist(cons_per_pf,200)
-ax[1,0].scatter(grcxy[:,0], grcxy[:,1], 0.5, cons_per_pf, '.')
-ax[1,1].scatter(grcxy[:,1], grcxy[:,2], 0.5, cons_per_pf, '.')
+ax[0,0].set(xlabel="PF id", ylabel='Connections')
+ax[0,1].set(xlabel="Connections per PF", ylabel='Count')
+_ = ax[0,1].hist(cons_per_pf, 200)
+ax[1,0].scatter(grcxy[:,0], grcxy[:,1], 0.25, cons_per_pf, '.')
+ax[1,0].set(xlabel="x (um)", ylabel="y (um)")
+ax[1,1].scatter(grcxy[:,1], grcxy[:,2], 0.25, cons_per_pf, '.')
+ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
+
+
+# In[43]:
+
+
+print("Connections per PF = {} ± {}".format(np.mean(cons_per_pf), np.std(cons_per_pf)/np.sqrt(cons_per_pf.size)))
+
+
+# In[44]:
+
+
+9708.829573934838/7840.988471177945
+
+
+# In[45]:
+
+
+24.272073934837092/19.602471177944864
+
+
+# In[46]:
+
+
+np.sqrt(1.238215004)
 

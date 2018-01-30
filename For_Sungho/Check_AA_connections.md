@@ -13,6 +13,10 @@ def convert_from_dd(x, size):
 
 ```
 
+## With original parameter
+
+Here we make AA-GoC connections with an original parameter _diameter_= 15 um.
+
 
 ```python
 output_path = Path('/Users/shhong/Dropbox/network_data/output_ines')
@@ -26,62 +30,32 @@ df = dd.from_array(np.vstack((srcs, tgts)).T, columns=('src', 'tgt'))
 ```
 
 
-    ---------------------------------------------------------------------------
-
-    NameError                                 Traceback (most recent call last)
-
-    <ipython-input-3-767c6fd9634b> in <module>()
-          6 gocxy = np.loadtxt(output_path / 'GoCcoordinates.sorted.dat')
-          7 
-    ----> 8 df = dd.from_array(np.vstack((srcs, tgts)).T, columns=('src', 'tgt'))
-    
-
-    NameError: name 'dd' is not defined
-
-
-
 ```python
-
 cons_per_goc = df.groupby('tgt').count().compute()
-cons_per_pf = df.groupby('src').count().compute()
+cons_per_aa = df.groupby('src').count().compute()
 
-cons_per_goc = convert_from_dd(cons_per_goc.src)
-cons_per_pf = convert_from_dd(cons_per_pf.tgt)
+cons_per_goc = convert_from_dd(cons_per_goc.src, gocxy.shape[0])
+cons_per_aa = convert_from_dd(cons_per_aa.tgt, grcxy.shape[0])
 ```
 
 
 ```python
 fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(16, 10))
 ax[0,0].plot(cons_per_goc, '.')
+ax[0,0].set(xlabel="GoC id", ylabel='Connections')
 _ = ax[0,1].hist(cons_per_goc, 200)
+ax[0,1].set(xlabel="Connections per GoC", ylabel='Count')
 ax[1,0].scatter(gocxy[:,0], gocxy[:,1], 100, cons_per_goc, '.')
+ax[1,0].set(xlabel="x (um)", ylabel="y (um)")
 ax[1,1].scatter(gocxy[:,1], gocxy[:,2], 100, cons_per_goc, '.')
+ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
+
 ```
 
 
 
 
-    <matplotlib.collections.PathCollection at 0x10bab88d0>
-
-
-
-
-![png](Check_AA_connections_files/Check_AA_connections_3_1.png)
-
-
-
-```python
-fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(16, 10))
-ax[0,0].plot(cons_per_pf, '.')
-_ = ax[0,1].hist(cons_per_pf, 200)
-ax[1,0].scatter(grcxy[:,0], grcxy[:,1], 0.5, cons_per_pf, '.')
-ax[1,1].scatter(grcxy[:,1], grcxy[:,2], 0.5, cons_per_pf, '.')
-```
-
-
-
-
-    <matplotlib.collections.PathCollection at 0x10c87b400>
+    [Text(0,0.5,'z (um)'), Text(0.5,0,'x (um)')]
 
 
 
@@ -89,7 +63,31 @@ ax[1,1].scatter(grcxy[:,1], grcxy[:,2], 0.5, cons_per_pf, '.')
 ![png](Check_AA_connections_files/Check_AA_connections_4_1.png)
 
 
-## Again the BREP outputs
+
+```python
+fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(16, 10))
+ax[0,0].plot(cons_per_aa, '.')
+ax[0,0].set(xlabel="AA id", ylabel='Connections')
+ax[0,1].set(xlabel="Connections per AA", ylabel='Count')
+_ = ax[0,1].hist(cons_per_aa, 200)
+ax[1,0].scatter(grcxy[:,0], grcxy[:,1], 0.25, cons_per_aa, '.')
+ax[1,0].set(xlabel="x (um)", ylabel="y (um)")
+ax[1,1].scatter(grcxy[:,1], grcxy[:,2], 0.25, cons_per_aa, '.')
+ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
+```
+
+
+
+
+    [Text(0,0.5,'z (um)'), Text(0.5,0,'x (um)')]
+
+
+
+
+![png](Check_AA_connections_files/Check_AA_connections_5_1.png)
+
+
+## The BREP outputs
 
 
 ```python
@@ -105,45 +103,29 @@ df = dd.from_array(np.vstack((srcs, tgts)).T, columns=('src', 'tgt'))
 
 
 cons_per_goc = df.groupby('tgt').count().compute()
-cons_per_pf = df.groupby('src').count().compute()
+cons_per_aa = df.groupby('src').count().compute()
 
-cons_per_goc = convert_from_dd(cons_per_goc.src)
-cons_per_pf = convert_from_dd(cons_per_pf.tgt)
+cons_per_goc = convert_from_dd(cons_per_goc.src, gocxy.shape[0])
+cons_per_aa = convert_from_dd(cons_per_aa.tgt, grcxy.shape[0])
 ```
 
 
 ```python
 fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(16, 10))
 ax[0,0].plot(cons_per_goc, '.')
+ax[0,0].set(xlabel="GoC id", ylabel='Connections')
 _ = ax[0,1].hist(cons_per_goc, 200)
+ax[0,1].set(xlabel="Connections per GoC", ylabel='Count')
 ax[1,0].scatter(gocxy[:,0], gocxy[:,1], 100, cons_per_goc, '.')
+ax[1,0].set(xlabel="x (um)", ylabel="y (um)")
 ax[1,1].scatter(gocxy[:,1], gocxy[:,2], 100, cons_per_goc, '.')
+ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
 ```
 
 
 
 
-    <matplotlib.collections.PathCollection at 0x12e990ac8>
-
-
-
-
-![png](Check_AA_connections_files/Check_AA_connections_7_1.png)
-
-
-
-```python
-fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(16, 10))
-ax[0,0].plot(cons_per_pf, '.')
-_ = ax[0,1].hist(cons_per_pf, 200)
-ax[1,0].scatter(grcxy[:,0], grcxy[:,1], 0.5, cons_per_pf, '.')
-ax[1,1].scatter(grcxy[:,1], grcxy[:,2], 0.5, cons_per_pf, '.')
-```
-
-
-
-
-    <matplotlib.collections.PathCollection at 0x10bf71358>
+    [Text(0,0.5,'z (um)'), Text(0.5,0,'x (um)')]
 
 
 
@@ -151,7 +133,49 @@ ax[1,1].scatter(grcxy[:,1], grcxy[:,2], 0.5, cons_per_pf, '.')
 ![png](Check_AA_connections_files/Check_AA_connections_8_1.png)
 
 
-## New data
+
+```python
+print("Connections per GoC = {} ± {}".format(np.mean(cons_per_goc), np.std(cons_per_goc)/np.sqrt(cons_per_goc.size)))
+```
+
+    Connections per GoC = 6845.572932330827 ± 29.9543502455551
+
+
+
+```python
+fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(16, 10))
+ax[0,0].plot(cons_per_aa, '.')
+ax[0,0].set(xlabel="AA id", ylabel='Connections')
+ax[0,1].set(xlabel="Connections per AA", ylabel='Count')
+_ = ax[0,1].hist(cons_per_aa, 200)
+ax[1,0].scatter(grcxy[:,0], grcxy[:,1], 0.25, cons_per_aa, '.')
+ax[1,0].set(xlabel="x (um)", ylabel="y (um)")
+ax[1,1].scatter(grcxy[:,1], grcxy[:,2], 0.25, cons_per_aa, '.')
+ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
+```
+
+
+
+
+    [Text(0,0.5,'z (um)'), Text(0.5,0,'x (um)')]
+
+
+
+
+![png](Check_AA_connections_files/Check_AA_connections_10_1.png)
+
+
+
+```python
+print("Connections per AA = {} ± {}".format(np.mean(cons_per_aa), np.std(cons_per_aa)/np.sqrt(cons_per_aa.size)))
+```
+
+    Connections per AA = 17.11393233082707 ± 0.009195670721438755
+
+
+## PyBREP with a corrected diameter
+
+Here diameter = 15/sqrt(3) ~ 15/1.73 um.
 
 
 ```python
@@ -174,63 +198,72 @@ gocxy = np.loadtxt(output_path / 'GoCcoordinates.sorted.dat')
 df = dd.from_array(np.vstack((srcs, tgts)).T, columns=('src', 'tgt'))
 
 cons_per_goc = df.groupby('tgt').count().compute()
-cons_per_pf = df.groupby('src').count().compute()
+cons_per_aa = df.groupby('src').count().compute()
 
 cons_per_goc = convert_from_dd(cons_per_goc.src, gocxy.shape[0])
-cons_per_pf = convert_from_dd(cons_per_pf.tgt, grcxy.shape[0])
+cons_per_aa = convert_from_dd(cons_per_aa.tgt, grcxy.shape[0])
 ```
-
-
-    ---------------------------------------------------------------------------
-
-    TypeError                                 Traceback (most recent call last)
-
-    <ipython-input-24-4395aa57834b> in <module>()
-         20 cons_per_pf = df.groupby('src').count().compute()
-         21 
-    ---> 22 cons_per_goc = convert_from_dd(cons_per_goc.src, gocxy.shape[1])
-         23 cons_per_pf = convert_from_dd(cons_per_pf.tgt, grcxy.shape[1])
-
-
-    TypeError: convert_from_dd() takes 1 positional argument but 2 were given
-
 
 
 ```python
 fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(16, 10))
 ax[0,0].plot(cons_per_goc, '.')
+ax[0,0].set(xlabel="GoC id", ylabel='Connections')
 _ = ax[0,1].hist(cons_per_goc, 200)
+ax[0,1].set(xlabel="Connections per GoC", ylabel='Count')
 ax[1,0].scatter(gocxy[:,0], gocxy[:,1], 100, cons_per_goc, '.')
+ax[1,0].set(xlabel="x (um)", ylabel="y (um)")
 ax[1,1].scatter(gocxy[:,1], gocxy[:,2], 100, cons_per_goc, '.')
+ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
 ```
 
 
 
 
-    <matplotlib.collections.PathCollection at 0x31aa44da0>
+    [Text(0,0.5,'z (um)'), Text(0.5,0,'x (um)')]
 
 
 
 
-![png](Check_AA_connections_files/Check_AA_connections_11_1.png)
+![png](Check_AA_connections_files/Check_AA_connections_14_1.png)
+
+
+
+```python
+print("Connections per GoC = {} ± {}".format(np.mean(cons_per_goc), np.std(cons_per_goc)/np.sqrt(cons_per_goc.size)))
+```
+
+    Connections per GoC = 6854.341353383458 ± 27.7153968916873
 
 
 
 ```python
 fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(16, 10))
-ax[0,0].plot(cons_per_pf, '.')
-_ = ax[0,1].hist(cons_per_pf, 200)
-ax[1,0].scatter(grcxy[:,0], grcxy[:,1], 0.5, cons_per_pf, '.')
-ax[1,1].scatter(grcxy[:,1], grcxy[:,2], 0.5, cons_per_pf, '.')
+ax[0,0].plot(cons_per_aa, '.')
+ax[0,0].set(xlabel="AA id", ylabel='Connections')
+ax[0,1].set(xlabel="Connections per AA", ylabel='Count')
+_ = ax[0,1].hist(cons_per_aa, 200)
+ax[1,0].scatter(grcxy[:,0], grcxy[:,1], 0.25, cons_per_aa, '.')
+ax[1,0].set(xlabel="x (um)", ylabel="y (um)")
+ax[1,1].scatter(grcxy[:,1], grcxy[:,2], 0.25, cons_per_aa, '.')
+ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
 ```
 
 
 
 
-    <matplotlib.collections.PathCollection at 0x34910a978>
+    [Text(0,0.5,'z (um)'), Text(0.5,0,'x (um)')]
 
 
 
 
-![png](Check_AA_connections_files/Check_AA_connections_12_1.png)
+![png](Check_AA_connections_files/Check_AA_connections_16_1.png)
+
+
+
+```python
+print("Connections per AA = {} ± {}".format(np.mean(cons_per_aa), np.std(cons_per_aa)/np.sqrt(cons_per_aa.size)))
+```
+
+    Connections per AA = 17.135853383458645 ± 0.010239425359006333
 
