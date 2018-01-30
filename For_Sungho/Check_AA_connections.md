@@ -13,7 +13,7 @@ def convert_from_dd(x, size):
 
 ```
 
-## With original parameter
+## With original parameters
 
 Here we make AA-GoC connections with an original parameter _diameter_= 15 um.
 
@@ -87,7 +87,7 @@ ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
 ![png](Check_AA_connections_files/Check_AA_connections_5_1.png)
 
 
-## The BREP outputs
+## BREP outputs
 
 
 ```python

@@ -15,7 +15,7 @@ def convert_from_dd(x, size):
     return temp
 
 
-# ## With original parameter
+# ## With original parameters
 # 
 # Here we make AA-GoC connections with an original parameter _diameter_= 15 um.
 
@@ -70,7 +70,7 @@ ax[1,1].scatter(grcxy[:,1], grcxy[:,2], 0.25, cons_per_aa, '.')
 ax[1,1].set(xlabel="x (um)", ylabel="z (um)")
 
 
-# ## The BREP outputs
+# ## BREP outputs
 
 # In[6]:
 
