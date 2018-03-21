@@ -1,5 +1,5 @@
 """
-pyBREP.py
+BREPpy.py
 
 Finds distance-based connectivity between neurons with spatially extended
 dendritic and axonal morphology, mainly developed for a physiologically detailed
@@ -67,8 +67,7 @@ class Pseudo_hoc(object):
             print('Could not import neuron, go to a python environment with an installed neuron version and try again.')
             return
         neuron.h.xopen(config_fn)
-        #h = neuron.h
-        d = dir(neuron.h)
+        d = dir(h)
         h_dict = dict()
         #Transfer parameters from the hoc object to a python dictionary
         for n, el in enumerate(d):
@@ -76,13 +75,14 @@ class Pseudo_hoc(object):
                 try:
                     #The value has to be converted to its string representation to get rid of the hoc properties.
                     #Must be kept in mind when reading in though.
-                    h_dict[el] = repr(getattr(neuron.h,el))
+                    h_dict[el] = repr(getattr(h,el))
                 except:
                     pass
         # Dump the dictionary
         import pickle
-        with Path(output_fn).open('wb') as f:
+        with output_fn.open('wb') as f:
             pickle.dump(h_dict, f)
+
 
 def str_l(ar):
     '''make a space-seperated string from all elements in a 1D-array'''
@@ -99,7 +99,7 @@ def print_time_and_reset (t, comment = 'Finished block after '):
 ####################################################################
 
 class Connect_3D(object):
-    ''' Finds connections between structures described by 3D point datasets.'''
+    ''' Connects 3D point datasets.'''
 
     def __init__(self, qpts_src, qpts_tar, c_rad, prefix=''):
         '''Connect two 3D point datasets with a given critical radius.
@@ -159,7 +159,7 @@ class Connect_3D(object):
         src_in_tree = self.src_in_tree
         prefix = self.prefix
 
-        print('source_in_tree:', src_in_tree)
+        print('sit', src_in_tree)
 
         lam_qpt = lambda ids: parallel_util.find_connections_3dpar(kdt, spts, tpts, c_rad, src_in_tree, ids, prefix)
 
@@ -213,10 +213,10 @@ class Connect_2D(object):
         self.prefix = Path(prefix)
 
 
-    def connections_parallel(self, deparallelize=False, serial_fallback=False, req_lin_in_tree=[], nblocks=None):
-        '''searches connections, per default in parallel. Workers will get a copy of the tree, query points etc. 
+    def connections_parallel(self, deparallelize=False, serial_fallback=False, req_lin_in_tree=[], nblocks=None, run_only=[], debug=False):
+        '''searches connections, per default in parallel. Workers will get a copy of the tree, query points etc.
         and perform the search independently, each saving the result themself.
-        deparallelize: if set True, modules and functions tailored for a parallel process will be used, 
+        deparallelize: if set True, modules and functions tailored for a parallel process will be used,
         but all will be run in serial (no iPython cluster necessary)
         serial_fallback:  If set True, this function will call the older connect function
         nblocks: Number of blocks that the data should be partitioned into'''
@@ -258,18 +258,21 @@ class Connect_2D(object):
         lin_is_src = self.lin_is_src
         prefix = self.prefix
 
-        lam_qpt = lambda ids: parallel_util.find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix)
+        lam_qpt = lambda ids: parallel_util.find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, debug)
 
-        # split data into nblocks blocks       
+        # split data into nblocks blocks
         n_q_pts = len(q_pts)
         id_ar = np.array_split(np.arange(n_q_pts), nblocks)
-        id_ar = [(i, id_ar[i]) for i in range(nblocks)]
+        if run_only:
+            id_ar = [(i, id_ar[i]) for i in run_only]
+        else:
+            id_ar = [(i, id_ar[i]) for i in range(nblocks)]
         # print(id_ar) # Check what is in id_ar
 
         if not deparallelize:
             with self.dv.sync_imports():
                 import parallel_util
-            s = list(self.lv.map (lam_qpt, id_ar, block=True))
+            s = list(self.lv.map(lam_qpt, id_ar, block=True))
         else:
             # essentially the same as connections_pseudo_parallel
             import parallel_util
@@ -318,8 +321,7 @@ class Connect_2D(object):
 
     def get_tree_setup(self, return_lax=True, lin_in_tree=[]):
         '''Gets the setup for the connection.
-        return_lax: return values for the linear axis? -> the ones that were omitted for projection
-        lin_in_tree: 2D projected population in the 2D Tree or the other?
+        lin_in_tree determines whether
          '''
 
         # if not specified which of the point population is the query point population, take the smaller one and put the bigger one in the tree.
@@ -385,7 +387,7 @@ class Connect_2D(object):
         fn_segs = prefix + 'segments.dat'
         fn_dis = prefix + 'distances.dat'
 
-        with open(fn_tar, 'w') as f_tar, open(fn_tar, 'w') as f_src, open(fn_dis, 'w') as f_dis, open(fn_segs, 'w') as f_segs:
+        with open(fn_tar, 'w') as f_tar, open(fn_src, 'w') as f_src, open(fn_dis, 'w') as f_dis, open(fn_segs, 'w') as f_segs:
 
             for l,(cl, cl_l) in enumerate(zip(res, res_l)):
 
@@ -432,6 +434,7 @@ class Query_point(object):
         with the additional attributes IDs (cell, first dimenion of coord), and segs (second dimension of coord).
         It will be automatically checked whether the points can be linearized/projected, i.e. represented by a start, end, and 2-D projection'''
 
+        self.npts = len(coord)
         # check if lin -> then it can be used for the Connect_2D method. In that case it will not be 
         if not prevent_lin:
             self.lin = self.lin_check(coord)
@@ -479,21 +482,14 @@ class Query_point(object):
         if len(coord.shape) == 3:
             assert (IDs is None) == (segs is None), 'To avoid confusion, cell IDs and segment numbers must either be specified both, or neither'
             if (not (IDs is None)) and (not (segs is None)):
-                assert np.all(IDs.shape[:2] == coord.shape[:2]), 'First two dimensions of ID array should be '+str(coord.shape[:2])
-                assert np.all(segs.shape[:2] == coord.shape[:2]) , 'First two dimensions of segment array should be '+str(coord.shape[:2])
+                assert np.all(IDs.shape == coord.shape[:-1]) and np.all(segs.shape == coord.shape[:-1]) , 'Dimensions of ID and segment file should be '+str(coord.shape[:-1])
             else:
                 IDs = np.array([[[i] for j in range(coord.shape[1])] for i in range(coord.shape[0])])
                 segs = np.array([[[j] for j in range(coord.shape[1])] for i in range(coord.shape[0])])
-            
-            def flatten_cells(dat): # keep the last dimension(3, for spatial coordinates), ravel the first two(ncell*npts)
-                if len(dat.shape) == 2: dat = np.expand_dims(dat, axis = 2)
-                return dat.reshape(dat.shape[0]*dat.shape[1],dat.shape[2])
-
-            self.coo = flatten_cells(coord)
-            self.seg = flatten_cells(segs)
-            self.idx = flatten_cells(IDs)
-
-        self.npts = len(self.coo)
+            lam_res = lambda d: d.reshape(d.shape[0]*d.shape[1],d.shape[2])
+            self.coo = lam_res(coord)
+            self.seg = lam_res(np.expand_dims(segs, axis = 2))
+            self.idx = lam_res(np.expand_dims(IDs, axis = 2))
 
 
     #check if input array can be used for the projection method (Connect_2D) (-> the points have a start and an end point)
@@ -509,12 +505,16 @@ class Query_point(object):
         return False
 
 
+    def linearize(self):
+        pass
+        #this function should linearize points when they are in a higher structure than nx3, and the IDs and
+
+
 ####################################################################
 ## POPULATION PART                                                ##
 ####################################################################
 
 class Cell_pop(object):
-    '''Basis class for cell populations. The different cell types should inherit from it.'''
 
     def __init__(self, my_args):
         self.args = my_args
@@ -542,6 +542,7 @@ class Cell_pop(object):
         '''Save the soma coordinates'''
         prefix = Path(prefix)
         if fn == '': fn = type(self).__name__ + '_coords.dat'
+        '''Save the soma coordinates'''
         assert hasattr(self, 'som'), 'Cannot save soma coordinates, as apparently none have been added yet'
         with (prefix / fn).open('w') as f_out:
             f_out.write("\n".join(map(str_l, self.som)))
@@ -573,8 +574,6 @@ class Cell_pop(object):
         Thus, converts from an array with shape(#cells x(#pts*ndim)) to one with shape(#cells x #pts x ndim)'''
         dat = dat.reshape([dat.shape[0], int(dat.shape[1]/n_dim),n_dim])
         return dat
-
-
 
 
     def gen_random_cell_loc(self, n_cell, Gc_x = -1, Gc_y = -1, Gc_z = -1, sp_std = 2):
@@ -622,6 +621,7 @@ class Cell_pop(object):
 
         self.som = grc
         return grc
+
 
 
 class Golgi_pop(Cell_pop):
@@ -691,23 +691,25 @@ class Golgi_pop(Cell_pop):
         b_sgts[:,:,0] = np.floor(b_sgts[:,:,0]/self.args.GoC_Bd_nsegpts)+1
 
         # special concatenation function for apical and basal dendrite
-        def conc_ab(a, b):
-            def flatten_cells(dat): # keep the last dimension(3, for spatial coordinates), ravel the first two(ncell*npts)
-                if len(dat.shape) == 2: dat = np.expand_dims(dat, axis = 2)
-                return dat.reshape(dat.shape[0]*dat.shape[1],dat.shape[2])
-            return np.concatenate((flatten_cells(a), flatten_cells(b)))
+        # stack coords/segments of a and b dends when they are from the same cell
+        conc_ab_one = lambda i, a, b: np.vstack((a[a_idx==i], b[b_idx==i]))
+        # loop around all the cells
+        conc_ab = lambda a, b: np.vstack(conc_ab_one(i, a, b) for i in range(self.n_cell))
 
         #concatenated dendrite information(coords, cell indices, segment information)
         all_dends = conc_ab(a_dend, b_dend)
-        all_idx = conc_ab(a_idx, b_idx)
-        all_sgts = conc_ab(a_sgts, b_sgts)
+        all_sgts  = conc_ab(a_sgts, b_sgts)
+
+        # put a and b indices together and rearrange them in a row
+        all_idx = np.hstack((a_idx, b_idx))
+        all_idx = all_idx.reshape((np.prod(all_idx.shape),1))
+
+        # test code for the part above
+        # zz = all_dends[all_idx.flatten()==2,:]
+        # plt.plot(zz[:,1], zz[:,2],'.')
 
         self.a_dend = a_dend
         self.b_dend = b_dend
-        #self.b_dend_q = Query_point(flatten_cells(b_dend), flatten_cells(b_idx), flatten_cells(b_sgts))
-        print (b_idx.shape)
-        print (b_sgts.shape)
-        self.b_dend_q = Query_point(b_dend, b_idx, b_sgts)
         self.qpts = Query_point(all_dends, all_idx, all_sgts)
 
 
@@ -776,6 +778,7 @@ class Golgi_pop(Cell_pop):
         return np.array(b_res), np.array(idx), segs
 
 
+
 class Granule_pop(Cell_pop):
     '''Granule cell population. Generates point representations of ascending axon (aa) and parallel fiber(pf)
     Can either do so with 3D points or with 2D projections. AA length can be fixed or random'''
@@ -810,8 +813,9 @@ class Granule_pop(Cell_pop):
         self.pf_dots[:,1,0] = self.pf_dots[:,1,0] + pf_length/2
         self.qpts_pf = Query_point(self.pf_dots, lin_offset = self.aa_dots[:,1,2] - self.aa_dots[:,0,2], set_0 = pf_length/2)
 
+
     def add_3D_aa_and_pf(self):
-        '''Ádd 3-dimensional coordinates for ascending axons and parallel fiber to the granule cell objects.
+        '''adds 3-dimensional coordinates for ascending axons and parallel fiber to the granule cell objects.
         Both AA and PF are represented by regularly spaced dots'''
 
         aa_length = self.args.PCLdepth+ self.args.GLdepth
@@ -833,14 +837,12 @@ class Granule_pop(Cell_pop):
             self.aa_dots[i] = np.ones((aa_nd, 3))*som #copy soma location for each point of the aa
             self.aa_dots[i,:,2] = self.aa_dots[i,:,2] + aa_sp # add the z offsets
             aa_idx[i,:] = i #cell indices, for the query object
-            #aa_sgts[i,:] = np.arange(aa_nd) #segment points, for the query object
-            aa_sgts[i,:] = aa_sp
+            aa_sgts[i,:] = np.arange(aa_nd) #segment points, for the query object
 
             self.pf_dots[i] = np.ones((pf_nd,3))*self.aa_dots[i,-1, :] #uppermost aa point is the origin of the pf points
             self.pf_dots[i,:,0] = self.pf_dots[i,:,0] + pf_sp #this time, points differ only by their offset along the x direction
             pf_idx[i,:]  = i
-            #pf_sgts[i,:] = np.arange(pf_nd) #! Not necessarily nice
-            pf_sgts[i,:] = aa_length + abs(pf_sp)
+            pf_sgts[i,:] = np.arange(pf_nd) #! Not necessarily nice
 
         self.qpts_aa = Query_point(self.aa_dots, aa_idx, aa_sgts)
         self.qpts_pf = Query_point(self.pf_dots, pf_idx, pf_sgts)
