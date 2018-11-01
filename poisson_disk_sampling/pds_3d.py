@@ -6,11 +6,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+from datetime import datetime
+import pickle
 from mpl_toolkits.mplot3d import Axes3D
 
 # 3D version
 
-def Bridson_sampling(width=0.1, depth=0.1, height=0.1, radius=0.005, k=43000):
+def Bridson_sampling(width=0.1, depth=0.1, height=0.1, radius=0.005, k=1000):
     # References: Fast Poisson Disk Sampling in Arbitrary Dimensions
     #             Robert Bridson, SIGGRAPH, 2007
 
@@ -42,7 +44,7 @@ def Bridson_sampling(width=0.1, depth=0.1, height=0.1, radius=0.005, k=43000):
         return P
 
     def in_limits(p):
-        return 0 <= p[0] < width and 0 <= p[1] < depth and 0<= p[2] < height
+        return 0 <= p[0] < width and 0 <= p[1] < depth and 0 <= p[2] < height
 
     def neighborhood(shape, index, n):
         row, col, third = index
@@ -59,7 +61,7 @@ def Bridson_sampling(width=0.1, depth=0.1, height=0.1, radius=0.005, k=43000):
         if M[i, j, u]:
             return True
         for (i, j, u) in N[(i, j, u)]:
-            if M[i, j, u] and squared_distance(p, P[i, j, u]) < cubic_radius : #I changed cubic radius just radius.
+            if M[i, j, u] and squared_distance(p, P[i, j, u]) < cubic_radius :
                 return True
         return False
 
@@ -104,7 +106,7 @@ def Bridson_sampling(width=0.1, depth=0.1, height=0.1, radius=0.005, k=43000):
                 reject_count.append(reject)
                 count_count.append(count)
 
-    return P[M], count_count, reject_count, count_time, elapsed_time
+    return P[M], count_count, reject_count, count_time, elapsed_time, width, depth, height, k
 
 
 if __name__ == '__main__':
@@ -114,7 +116,20 @@ if __name__ == '__main__':
     reject_count = points1[2]
     count_time = points1[3]
     elapsed_time = points1[4]
+    width = points1[5]
+    depth = points1[6]
+    height = points1[7]
+    k = points1[8]
 
+    current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    #Data save
+    filename = ('[data]3D poisson disk sampling, width = %1.2f, depth = %1.2f, height=%1.2f, points = %d, %s' % (width, depth, height, k, current_time))
+    f = open(filename, 'wb')
+    pickle.dump(points1[0], f)
+    f.close()
+
+    #####Figure_Section#####
     plt.close('all')
     fig = plt.figure()
     #subplot setting
@@ -126,8 +141,11 @@ if __name__ == '__main__':
     Y = [y for (x, y, z) in points1[0]]
     Z = [z for (x, y, z) in points1[0]]
     #subplot data
-    X1 = count_count
-    Y1 = reject_count
+    X1 = count_count[1:]
+    #Y1 = reject_count
+    dx = np.diff(count_count)
+    dy = np.diff(reject_count)
+    Y1 = dy/dx
     X2 = count_time
     Y2 = elapsed_time
     #Another things..
@@ -148,5 +166,6 @@ if __name__ == '__main__':
     ax3.set_ylabel('Number of Count')
 
     plt.tight_layout()
-    plt.savefig('3D poisson-disk-sampling.png')
+    plt.savefig('[figure]3D poisson disk sampling, width = %1.2f, depth = %1.2f, height=%1.2f, points = %d, %s.eps' % (width, depth, height, k, current_time), format='eps', dpi=1000)
     plt.show()
+    quit()
