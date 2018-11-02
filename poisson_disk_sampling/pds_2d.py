@@ -7,13 +7,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
-def Bridson_sampling(width=1.0, height=1.0, radius=0.005, k=27300):
+def Bridson_sampling(width=1.0, height=1.0, radius=0.005, k=2700):
     # References: Fast Poisson Disk Sampling in Arbitrary Dimensions
     #             Robert Bridson, SIGGRAPH, 2007
 
     # Here `2` corresponds to the number of dimension
     cellsize = radius/np.sqrt(2)
     rows = int(np.ceil(width/cellsize))
+    #rows1 = rows/2
+    #rows2 =
     cols = int(np.ceil(height/cellsize))
 
     # Squared radius because we'll compare squared distance
@@ -61,10 +63,16 @@ def Bridson_sampling(width=1.0, height=1.0, radius=0.005, k=27300):
         i, j = int(p[0]/cellsize), int(p[1]/cellsize)
         P[i, j], M[i, j] = p, True
 
+    row_1 = int(rows/2)
+    col_1 = int(cols/2)
+
     # Cache generation for neighborhood #[i, j]만 주어지면 그에 대한 주변 영역을 바로 서치할 수 있게 미리 모든 i, j에 대해 만들어놓음.
     N = {}
-    for i in range(rows):
-        for j in range(cols):
+    for i in range(1, row_1):
+        for j in range(1, col_1):
+            N[(i, j)] = neighborhood(M.shape, (i, j), 2)  # So, the N has the informaiton of which grids are in near the point
+    for i in range(int(rows/2)+1, rows):
+        for j in range(int(cols/2)+1, cols):
             N[(i, j)] = neighborhood(M.shape, (i, j), 2)  # So, the N has the informaiton of which grids are in near the point
 
     # Main process
@@ -129,12 +137,12 @@ if __name__ == '__main__':
     ax1.set_ylim(0, 1)
     ax2.plot(X1, Y1)
     ax3.plot(Y2, X2)
-    ax1.set_xlabel('X')
-    ax1.set_ylabel('Y')
-    ax2.set_xlabel('Number of Previous count')
-    ax2.set_ylabel('Number of Rejection')
-    ax3.set_xlabel('Time')
-    ax3.set_ylabel('Number of Count')
+    ax1.set_xlabel('X', fontsize = 15)
+    ax1.set_ylabel('Y', fontsize = 15)
+    ax2.set_xlabel('Number of Previous count', fontsize = 15)
+    ax2.set_ylabel('Number of Rejection', fontsize = 15)
+    ax3.set_xlabel('Time', fontsize = 15)
+    ax3.set_ylabel('Number of Count', fontsize = 15)
     plt.tight_layout()
     plt.savefig('3D poisson-disk-sampling.png')
     plt.show()

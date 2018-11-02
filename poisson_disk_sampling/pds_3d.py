@@ -12,7 +12,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # 3D version
 
-def Bridson_sampling(width=0.1, depth=0.1, height=0.1, radius=0.005, k=1000):
+def Bridson_sampling(width=0.1, depth=0.1, height=0.1, radius=0.005, k=42874):
     # References: Fast Poisson Disk Sampling in Arbitrary Dimensions
     #             Robert Bridson, SIGGRAPH, 2007
 
@@ -86,27 +86,33 @@ def Bridson_sampling(width=0.1, depth=0.1, height=0.1, radius=0.005, k=1000):
     count_count = []
     elapsed_time = []
     count_time = []
+    #theta = []
     while (count < k):
-        l = np.random.randint(count)
-        p = points[l]
-        Q = random_point_around(p, 30)
-        for q in Q:
-            if in_limits(q) and not in_neighborhood(q):
-                add_point(q)
-                # t1_end = time.perf_counter()
-                print(count)
-                print(q)
-                count += 1
-                end_time = time.perf_counter()
-                # t1_start = time.perf_counter()
-                elapsed_time.append(np.abs(end_time - start_time))
-                count_time.append(count)
-            else:
-                reject += 1
-                reject_count.append(reject)
-                count_count.append(count)
-
-    return P[M], count_count, reject_count, count_time, elapsed_time, width, depth, height, k
+        #if theta < 0.8:
+            l = np.random.randint(count)
+            p = points[l]
+            Q = random_point_around(p, 30)
+            for q in Q:
+                if in_limits(q) and not in_neighborhood(q):
+                    add_point(q)
+                    # t1_end = time.perf_counter()
+                    print(count)
+                    print(q)
+                    count += 1
+                    end_time = time.perf_counter()
+                    # t1_start = time.perf_counter()
+                    elapsed_time.append(np.abs(end_time - start_time))
+                    count_time.append(count)
+                else:
+                    reject += 1
+                    reject_count.append(reject)
+                    count_count.append(count)
+                    #dx = np.diff(count_count)
+                    #dy = np.diff(reject_count)
+                    #theta = np.arctan(dy/dx)
+       # else:
+            #break
+    return P[M], count_count, reject_count, count_time, elapsed_time, width, depth, height, count
 
 
 if __name__ == '__main__':
@@ -119,12 +125,12 @@ if __name__ == '__main__':
     width = points1[5]
     depth = points1[6]
     height = points1[7]
-    k = points1[8]
+    count = points1[8]
 
     current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     #Data save
-    filename = ('[data]3D poisson disk sampling, width = %1.2f, depth = %1.2f, height=%1.2f, points = %d, %s' % (width, depth, height, k, current_time))
+    filename = ('[data]3D poisson disk sampling, width = %1.2f, depth = %1.2f, height=%1.2f, points = %d, %s' % (width, depth, height, count, current_time))
     f = open(filename, 'wb')
     pickle.dump(points1[0], f)
     f.close()
@@ -141,11 +147,11 @@ if __name__ == '__main__':
     Y = [y for (x, y, z) in points1[0]]
     Z = [z for (x, y, z) in points1[0]]
     #subplot data
-    X1 = count_count[1:]
-    #Y1 = reject_count
-    dx = np.diff(count_count)
-    dy = np.diff(reject_count)
-    Y1 = dy/dx
+    Y1 = reject_count
+    #dy = np.diff(reject_count)
+    #dx = np.ones(len(dy))
+    X1 = count_count
+    #Y1 = theta
     X2 = count_time
     Y2 = elapsed_time
     #Another things..
@@ -157,15 +163,15 @@ if __name__ == '__main__':
     ax1.set_ylabel('Y')
     ax1.set_zlabel('Z')
 
-    ax2.plot(X1, Y1)
-    ax2.set_xlabel('Number of Previous count')
-    ax2.set_ylabel('Number of Rejection')
+    ax2.scatter(X1, Y1, s = 1)
+    ax2.set_xlabel('Number of Previous count', fontsize = 15)
+    ax2.set_ylabel('Number of Rejection', fontsize = 15)
 
     ax3.plot(Y2, X2)
-    ax3.set_xlabel('Time')
-    ax3.set_ylabel('Number of Count')
+    ax3.set_xlabel('Time', fontsize = 15)
+    ax3.set_ylabel('Number of Count', fontsize = 15)
 
     plt.tight_layout()
-    plt.savefig('[figure]3D poisson disk sampling, width = %1.2f, depth = %1.2f, height=%1.2f, points = %d, %s.eps' % (width, depth, height, k, current_time), format='eps', dpi=1000)
+    plt.savefig('[figure]3D poisson disk sampling, width = %1.2f, depth = %1.2f, height=%1.2f, points = %d, %s.eps' % (width, depth, height, count, current_time), format='eps', dpi=1000)
     plt.show()
     quit()
