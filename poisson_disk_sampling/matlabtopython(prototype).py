@@ -29,6 +29,7 @@ def Bridson_sampling(sizeI=(1, 1, 1), spacing=0.005, nPts=100000, showIter=True)
     sGrid = np.array([sGrid_3d[i][:].flatten() for i in range(ndim)]).T
     del(sGrid_3d)
     sizeGrid = np.size(sGrid[0])
+    print('A grid is successfully created with size {}'.format(sizeGrid))
 
     #Thrown in a particular grid
     emptyGrid = np.ones(sGrid.shape[0], dtype=bool)
@@ -52,18 +53,23 @@ def Bridson_sampling(sizeI=(1, 1, 1), spacing=0.005, nPts=100000, showIter=True)
         availGrid,  = np.where(emptyGrid)
         dataPts = min(nEmptyGrid, ndarts)
         p = np.random.choice(availGrid, int(dataPts), replace=False)
+        print('Throw darts at {} points'.format(p.size))
         tempPts = sGrid[p, :] + dm * np.random.rand(len(p), ndim)
+        print('Dart positions generated.')
 
         # Find good dart throws
         D, _ = spatial.KDTree(np.vstack((pts, tempPts))).query(tempPts, k=2)
         #D = np.reshape(D[:, 1], (-1, 1))
         D = D[:, 1]
+        print('KDTree search complete')
 
         withinI = np.array([tempPts[:, i] < sizeI[i] for i in range(ndim)]).T
         withinI = np.array([np.prod(x) for x in withinI])
         eligiblePts = (withinI>0)*(D>spacing)
+        print('eligiblePTs is generated')
        # scorePts = tempPts[eligiblePts==False, :]
         tempPts = tempPts[eligiblePts, :]
+        print('tempPTs is generated')
         # Update empty Grid
     #     emptyPts = np.floor((tempPts + dm - 1) / dm)
     #     emptyPts_0 = emptyPts[0]
@@ -86,21 +92,27 @@ def Bridson_sampling(sizeI=(1, 1, 1), spacing=0.005, nPts=100000, showIter=True)
     #
         bad_dart_grid = p[eligiblePts==False]
         scoreGrid[bad_dart_grid] = scoreGrid[bad_dart_grid] + 1
-        # Update emptyGrid if scoreGrid has exceeded k dart throws
-
+        print('ScoreGrid update complete')
+    # Update emptyGrid if scoreGrid has exceeded k dart throws
+        emptyGrid = emptyGrid*(scoreGrid < k)
+        print('EmptyGrid update complete')
         # Update quantities for next iterations
         nEmptyGrid = emptyGrid.sum()
+        print('nEmptyGrid update complete')
         pts = np.vstack((pts, tempPts))
+        print('pts update is completed')
         ptsCreated = pts.shape[0]
+        print('ptsCreated is completed')
         iter += 1
+        print('Each parameters for next iteration is completed')
     # Cut down pts if more points are generated
-    if pts.shape[0] > nPts:
+    if np.size(pts, 1) > nPts:
         p = np.arange(pts.shape[0])
         p = np.random.choice(p, nPts, replace=False)
         pts = pts[p, :]
 
     if showIter:
-        print('Iteration: {}    Points Created: {}    EmptyGrid:{}'.format(iter,pts.shape[0],nEmptyGrid))
+        print('Iteration: {}    Points Created: {}    EmptyGrid:{}'.format(iter,ptsCreated,nEmptyGrid))
 
     return pts
 
