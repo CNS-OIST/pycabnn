@@ -10,12 +10,12 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # 3D version
 
-def Bridson_sampling(sizeI=(1, 1), spacing=0.005, nPts=4000, showIter=True):
+def Bridson_sampling(sizeI=(1, 1), spacing=0.005, nPts=5000, showIter=True):
     # References: Fast Poisson Disk Sampling in Arbitrary Dimensions
     #             Robert Bridson, SIGGRAPH, 2007
     # Previous points and the spacing
     pts1 = np.random.rand(30, 2) #Should be input value of this function
-    p_spacing = 0.02
+    p_spacing = 0.03
 
     #Setting properties of iteration
     ndim = len(sizeI)
