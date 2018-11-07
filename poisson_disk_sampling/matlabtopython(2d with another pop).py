@@ -10,12 +10,12 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # 3D version
 
-def Bridson_sampling(sizeI=(1, 1, 1), spacing=0.005, nPts=500, showIter=True):
+def Bridson_sampling(sizeI=(1, 1), spacing=0.005, nPts=4000, showIter=True):
     # References: Fast Poisson Disk Sampling in Arbitrary Dimensions
     #             Robert Bridson, SIGGRAPH, 2007
     # Previous points and the spacing
-    pts1 = np.random.rand(30, 3) #Should be input value of this function
-    p_spacing = 0.05
+    pts1 = np.random.rand(30, 2) #Should be input value of this function
+    p_spacing = 0.02
 
     #Setting properties of iteration
     ndim = len(sizeI)
@@ -27,9 +27,9 @@ def Bridson_sampling(sizeI=(1, 1, 1), spacing=0.005, nPts=500, showIter=True):
     dm = spacing/np.sqrt(ndim)
 
     # Make a grid and convert it into a nx3 array
-    sGrid_nd = np.mgrid[0:sizeI[0]:cellsize, 0:sizeI[1]:cellsize, 0:sizeI[2]:cellsize]
+    #sGrid_nd = np.mgrid[0:sizeI[0]:cellsize, 0:sizeI[1]:cellsize, 0:sizeI[2]:cellsize]
     #sGrid_nd = np.mgrid[0:sizeI[i]:cellsize for i in range(ndim)]
-
+    sGrid_nd = np.mgrid[0:sizeI[0]:cellsize, 0:sizeI[1]:cellsize]
     #patchwork
     #sGrid_nd_1 =
 
@@ -126,23 +126,26 @@ if __name__ == '__main__':
     plt.close('all')
     fig = plt.figure()
     #subplot setting
-    ax1 = fig.add_subplot(1, 1, 1, projection='3d')
-        #fig.subplots_adjust(hspace= 0.5, wspace = 0.3)
-    X = [x for (x, y, z) in points1[0]]
-    Y = [y for (x, y, z) in points1[0]]
-    Z = [z for (x, y, z) in points1[0]]
+    #ax1 = fig.add_subplot(1, 1, 1, projection='3d')
+    ax1 = fig.add_subplot(1, 1, 1)
+    #fig.subplots_adjust(hspace= 0.5, wspace = 0.3)
+    X = [x for (x, y) in points1[0]]
+    Y = [y for (x, y) in points1[0]]
+    #Z = [z for (x, y, z) in points1[0]]
 
-    X1 = [x for (x, y, z) in pts1]
-    Y1 = [y for (x, y, z) in pts1]
-    Z1 = [z for (x, y, z) in pts1]
+    X1 = [x for (x, y) in pts1]
+    Y1 = [y for (x, y) in pts1]
+    #Z1 = [z for (x, y, z) in pts1]
     #Another things..
-    ax1.scatter(X, Y, Z, s= 10)
-    ax1.scatter(X1, Y1, Z1, s=10, c='r')
+    #ax1.scatter(X, Y, Z, s= 10)
+    #ax1.scatter(X1, Y1, Z1, s=100, c='r')
+    ax1.scatter(X, Y, s=10)
+    ax1.scatter(X1, Y1, s=10, c='r')
     ax1.set_xlim(0, 1)
     ax1.set_ylim(0, 1)
-    ax1.set_zlim(0, 1)
+    #ax1.set_zlim(0, 1)
     ax1.set_xlabel('X')
     ax1.set_ylabel('Y')
-    ax1.set_zlabel('Z')
+    #ax1.set_zlabel('Z')
 
     plt.show()
