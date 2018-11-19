@@ -23,13 +23,13 @@ This project aims to replace current programs embedded in the CBX simulation to 
 
 | Begin | End |
 |:------|:----|
-|Monday, October 15, 2018| |
+|Monday, October 15, 2018|Monday, November 13, 2018|
 
 Here we try the [possion-disk sampling algorithm](https://www.jasondavies.com/poisson-disc/) for generating tightly packed soft spheres.
 
 - [x] Working prototypes for the 2d and 3d. Tuesday, October 30, 2018
-- [ ] Extension to a larger scale by a patchwork scheme.
-- [ ] Fill the entire 1500um x 750um x 350um volume with cells.
+- [x] Extension to a larger scale by a patchwork scheme.
+- [x] Fill the entire 1500um x 750um x 350um volume with cells.
 
 ### Comparison with the data
 
