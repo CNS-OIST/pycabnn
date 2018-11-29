@@ -7,7 +7,7 @@ import numpy as np
 from scipy import spatial
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-
+from scipy.stats import multivariate_normal
 
 # 3D version
 
@@ -15,14 +15,11 @@ def Bridson_sampling(sizeI, spacing, nPts, showIter):
     # References: Fast Poisson Disk Sampling in Arbitrary Dimensions
     #             Robert Bridson, SIGGRAPH, 2007
     # Previous points and the spacing
-    # pts1 = np.random.rand(30, 2) #Should be input value of this function
-    p_spacing = 10
-    #p_spacing1 = 15
     # Setting properties of iteration
     ndim = len(sizeI)
     cellsize = spacing / np.sqrt(ndim)
     k = 5
-    dartFactor = 10
+    dartFactor = 4
 
     # Make grid size such that there is just one pt in each grid
     dm = spacing / np.sqrt(ndim)
@@ -119,14 +116,23 @@ def Bridson_sampling(sizeI, spacing, nPts, showIter):
     return pts
 
 
-if __name__ == '__main__':
-    Longaxis = 1500
-    Shortaxis = 700
-    height = 200
-    numMF = 200000
-    #pts1 = np.loadtxt('test1.txt')
-    #pts2 = np.loadtxt('Glo1.txt')
-    points1 = Bridson_sampling((Longaxis, Shortaxis, height), 10, int(numMF), True)
+# if __name__ == '__main__':
+#     Longaxis = 1500
+#     Shortaxis = 700
+#     height = 200
+#     numMF = 200000
+#     fig = plt.figure()
+#     ax1 = fig.add_subplot(1, 1, 1, projection = '3d')
+#     #pts1 = np.loadtxt('test1.txt')
+#     #pts2 = np.loadtxt('Glo1.txt')
+#     points1 = Bridson_sampling((Longaxis, Shortaxis, height), 10, int(numMF), True)
+#     X = (x for (x, y, z) in points1)
+#     Y = (y for (x, y, z) in points1)
+#     Z = (z for (x, y, z) in points1
+#     ax1.scatter(X, Y, Z, s=10)
+#     add_noise = points1 + np.random.normal(scale = sigma/np.sqrt(3), size = (len(points1), 3))
+
+
 #     np.savetxt('test2.txt', points1)
 #
 #     X1 = [x for (x, y) in points1]
