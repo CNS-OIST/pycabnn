@@ -9,7 +9,7 @@ import time
 #Parameters(might be read in from the command line some day...)
 #Output path
 input_path = Path.cwd().parent.parent
-output_path = input_path.parent / 'model_pybrep_output'
+output_path = input_path.parent
 # config files: if you work in an environment where you want
 paramdir = input_path / 'params/set3005'
 config_hoc = paramdir / 'Parameters.hoc'
