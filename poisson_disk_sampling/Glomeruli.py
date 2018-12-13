@@ -1,9 +1,8 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from GL_poisson import Bridson_sampling
-from mpl_toolkits.mplot3d import Axes3D
+from testpoisson import Bridson_sampling_2
+from joblib import Parallel, delayed
 
-##Functions###
 def neighborhood(shape, index, n):
     row, col, third = index
     row0, row1 = max(row - n, 0), min(row + n + 1, shape[0])
@@ -17,12 +16,16 @@ def add_point(p):
     i, j, u = int(p[0] / cellsize), int(p[1] / cellsize), int(p[2] / cellsize)
     P[i, j, u] = p
 
+def add_point_grc(p):
+    i, j, u = int(p[0] / cellsize), int(p[1] / cellsize), int(p[2] / cellsize)
+    Grc_P[i, j, u] = p
+
 def in_limit(p):
     return 0 < p[0] < Horizontal_range and 0 < p[1] < Transverse_range and 0 < p[2] < Vertical_range
 
 def ifinEplipse(p, Ell_xo, Ell_yo, Ell_zo):
     ptin = ((p[0] - Ell_xo) ** 2 / (semi_x ** 2)) + ((p[1] - Ell_yo) ** 2 / (semi_y ** 2)) + (
-                (p[2] - Ell_zo) ** 2 / (semi_z ** 2))
+            (p[2] - Ell_zo) ** 2 / (semi_z ** 2))
     if ptin <= 1:
         return True
     else:
@@ -34,11 +37,74 @@ def in_neighborhood(Ell_xo, Ell_yo, Ell_zo):
     for (i, j, u) in N[(i, j, u)]:
         M[i, j, u] = True
     return P[M]
-def non_zero(p):
-    if p[0] != 0 and p[1] != 0 and p[2] != 0: return True
-    else: return False
 
-##Parameters ##
+def in_neighborhood_grc(Ell_xo, Ell_yo, Ell_zo):
+    i, j, u = int(Ell_xo / cellsize), int(Ell_yo / cellsize), int(Ell_zo / cellsize)
+    for (i, j, u) in N[(i, j, u)]:
+        return Grc_P[i, j, u]
+
+def non_zero(p):
+    if p[0] != 0 and p[1] != 0 and p[2] != 0:
+        return True
+    else:
+        return False
+
+def neighborhood_grc(shape, index, n):  # n이 7은 되어야 함. cuz 30/(6.72/sqrt(3)) = 7.732
+    row_grc, col_grc, third_grc = index
+    row0, row1 = max(row_grc - n, 0), min(row_grc + n + 1, shape[0])
+    col0, col1 = max(col_grc - n, 0), min(col_grc + n + 1, shape[1])
+    third0, third1 = max(third_grc - n, 0), min(third_grc + n + 1, shape[2])
+    I = np.stack(np.mgrid[row0:row1, col0:col1, third0:third1], axis=3)
+    I = I.reshape(I.size // 3, 3).tolist()
+    return I
+
+def ifinSphere(p, Sp_x, Sp_y, Sp_z):  # Grc dendrites rarely exceed 30 um
+    ptin = (Sp_x - p[0]) ** 2 + (Sp_y - p[1]) ** 2 + (Sp_z - p[2]) ** 2
+    if ptin <= 30 ** 2:
+        return True
+    else:
+        return False
+
+def connecting_MFGL(k):
+    count = 0
+    Ell_xo = MF_coordinates[k, 0]
+    Ell_yo = MF_coordinates[k, 1] + offset
+    Ell_zo = z_mid
+    print('Complete making {}th mossy fiber coordination'.format(k))
+    Exist_point = in_neighborhood(Ell_xo, Ell_yo, Ell_zo)
+    point_num = np.size(Exist_point[:, 0])
+    while point_num > 0:
+        candidate = Exist_point[point_num, :]
+        if non_zero(candidate) and ifinEplipse(candidate, Ell_xo, Ell_yo, Ell_zo) and in_limit(
+                candidate):  # 범위에 안드는녀석은 포함시키면 안될듯? 이건 connection을 만드는 행위니까
+            # if inside volume record the coor
+            print('{}'.format(candidate))
+            print('count number : {}'.format(count))
+            MF_GL[k, count, :] = candidate
+            print('k : {}, MF_GL(x): {}, MF_GL(y): {}, MF_GL(z): {}'.format(k, MF_GL[k, count, 0], MF_GL[k, count, 1], MF_GL[k, count, 2]))
+            count += 1
+        point_num -= 1
+
+def connecting_GRCGL(i):
+    count = 0
+    grc_x = grc_points[i, 0]
+    grc_y = grc_points[i, 1]
+    grc_z = grc_points[i, 2]
+    print('{}th granular cell coordination'.format(k))
+    Exist_glo = in_neighborhood_grc(grc_x, grc_y, grc_z)
+    glo_num = np.size(Exist_glo[:, 0])
+    while glo_num > 0:
+        grc_candidate = Exist_glo[glo_num, :]
+        if non_zero(grc_candidate) and ifinSphere(grc_candidate, grc_x, grc_y, grc_z) and in_limit(grc_candidate):  # 범위에 안드는녀석은 포함시키면 안될듯? 이건 connection을 만드는 행위니까
+            # if inside volume record the coor
+            print('{}'.format(grc_candidate))
+            print('count number : {}'.format(count))
+            GRC_GL[i, count, :] = grc_candidate
+            print('i : {}, GRC_GL(x): {}, GRC_GL(y): {}, GRC_GL(z): {}'.format(i, GRC_GL[i, count, 0], GRC_GL[i, count, 1], GRC_GL[i, count, 2]))
+            count += 1
+        glo_num -= 1
+    print('Its done')
+
 Transverse_range = 1500  # Y range
 Horizontal_range = 700  # X range
 Vertical_range = 200  # 140 for daria
@@ -64,152 +130,45 @@ numpmperMF_mu = 7
 numpmperMF_sd = 1
 select_point = []
 
-# Import MF coordinates
 MF_coordinates = np.loadtxt('readMF.txt')  # Importing MF coordinates
 nMF = len(MF_coordinates)
 MF_GL = np.zeros((nMF, 20, 3))
 
-##Searching parameters##
-cellsize = 18/np.sqrt(3)
+cellsize = 6/np.sqrt(3)
 rows = int(np.ceil(Horizontal_range / cellsize))
 cols = int(np.ceil(Transverse_range / cellsize))
 third = int(np.ceil(Vertical_range / cellsize))
-P = np.zeros((rows, cols, third, 3), dtype=np.float32)
+P = np.zeros((rows, cols, third, 3), dtype=np.float32) #Glo coordinates
+Grc_P = np.zeros((rows, cols, third, 3), dtype=np.float32) #Grc coordinates
 M = np.zeros((rows, cols, third), dtype=bool)
 
-#Define Searching Area 
 N = {}
-for i in range(rows):
-    for j in range(cols):
-        for u in range(third):
-            N[(i, j, u)] = neighborhood(M.shape, (i, j, u), 3)
-print('Complete area searching')
+N = Parallel(n_jobs=-1)(delayed(neighborhood)(M.shape, (i, j, u), 7) for u in range(third) for j in range(cols) for i in range(rows))
 
-#Generate Poisson sampling points
-points = Bridson_sampling((Horizontal_range, Transverse_range, Vertical_range), 20, 18000, True)
-#Marking the GL point cells
+
+points = Bridson_sampling((int(Horizontal_range/3), Transverse_range, Vertical_range), 6.614, 138600, True) #Glomeruli generation
+points[:, 0] = points[:, 0]*3 #x-axis extension
+
 for k in range(0, 18000):
     add_point(points[k, :])
     print('k is {}'.format(k))
 
-fig = plt.figure(1)
-ax1 = fig.add_subplot(1, 1, 1, projection = '3d')
-for k in range(0, int(nMF)):
-    count = 0
-    Ell_xo = MF_coordinates[k, 0]
-    Ell_yo = MF_coordinates[k, 1] + offset
-    Ell_zo = z_mid
-    print('Complete making {}th mossy fiber coordination'.format(k))
-    Exist_point = in_neighborhood(Ell_xo, Ell_yo, Ell_zo)
-    point_num = np.size(Exist_point[:, 0])
-    while point_num > 0:
-        candidate = Exist_point[point_num-1, :]
-        if non_zero(candidate) and ifinEplipse(candidate, Ell_xo, Ell_yo, Ell_zo) and in_limit(candidate): #범위에 안드는녀석은 포함시키면 안될듯? 이건 connection을 만드는 행위니까
-            # if inside volume record the coor
-            print('{}'.format(candidate))
-            print('count number : {}'.format(count))
-#             MF_GL[k, count, 0] = candidate[0, 0]
-#             MF_GL[k, count, 1] = candidate[0, 1]
-#             MF_GL[k, count, 2] = candidate[0, 2]
-            MF_GL[k, count, :] = candidate
-            print('k : {}, MF_GL(x): {}, MF_GL(y): {}, MF_GL(z): {}'.format(k, MF_GL[k, count, 0], MF_GL[k, count, 1], MF_GL[k, count, 2]))
-            # ax1.scatter(GLx, GLy, s=10, c='r')
-            ax1.scatter(MF_GL[k, 0, 0], MF_GL[k, 0, 1], MF_GL[k, 0, 2], s=10, c='r')
-            ax1.scatter(MF_GL[k, 1, 0], MF_GL[k, 1, 1], MF_GL[k, 1, 2], s=10, c='y')
-            ax1.scatter(MF_GL[k, 2, 0], MF_GL[k, 2, 1], MF_GL[k, 2, 2], s=10, c='green')
-            ax1.scatter(MF_GL[k, 3:, 0], MF_GL[k, 3:, 1], MF_GL[k, 3:, 2], s=10, c='blue')
-#                 MF_GL[k, count, 0] = P[M][0]
-#                 MF_GL[k, count, 1] = P[M][1]
-#                 MF_GL[k, count, 2] = P[M][2]
-#                 print('i : {}, MF_GL(x): {}, MF_GL(y): {}, MF_GL(z): {}'.format(i, MF_GL[k, count, 0], MF_GL[k, count, 1], MF_GL[k, count, 2]))
-#                 ax1.scatter(MF_GL[k, count, 0], MF_GL[k, count, 1], MF_GL[k, count, 2], s=10, c='black')
-#             ax1.scatter(candidate[:, 0], candidate[:, 1], candidate[:, 2], s=10, c='black')
-            count += 1
-        point_num -= 1
+Parallel(n_jobs=-1)(delayed(connecting_MFGL)(k) for k in range(int(nMF)-1))
 
-s = np.random.seed(1) # 1) 왜 seed를 고정하는지 질문하기
+del P[np.where(P==0)] # To delete meaningless data
 
-Shortaxis = 1500  # 185%eval (readParameters ('GoCxrange', 'Parameters.hoc'))  % um
-Longaxis = 700  # 185%eval (readParameters ('GoCxrange', 'Parameters.hoc'))  % um
-MFdensity = 1650  # 5000;%cells/mm2%190  추가확인필요
+grc_points = Bridson_sampling_2((Horizontal_range, Transverse_range, Vertical_range), 5, 415800, True, points) #Actually 399,000 but we can descard some grcs later.
 
-#fid = np.loadtxt('datasp.dat', delimiter = '\t')   #왜 필요한지? (아직은 필요x)
-box_fac = 2.5
-Xinstantiate = 64 + 40  # 297+40
-Yinstantiate = 84 + 40 * box_fac  # 474+40x*box_fac
-# numMF = (Longaxis + (2 * Xinstantiate)) * (Shortaxis + (2 * Yinstantiate)) * MFdensity * 1e-6
-numMF = 3009
-plotMF = 1
-fcoor = np.loadtxt('readMF.txt')
-dt = 0.025
+for i in range(0, np.grc_points[:, 0]):
+    add_point_grc(grc_points[i, :])
+    print('i is {}'.format(i))
 
-## Generate MF Coordinates ##
-MF_coordinates= np.loadtxt('readMF.txt')
+GRC_GL = np.zeros((np.size(grc_points[:, 0]), 10, 3))
 
-# plt.figure(2)
-# plt.scatter(pts[:, 0], pts[:, 1])
-# for i in range(0, int(numMF)):
-#     MF_coordinates[i, 0] = np.random.randint(0 - Xinstantiate, Longaxis + Xinstantiate)
-#     MF_coordinates[i, 1] = np.random.randint(0 - Yinstantiate, Shortaxis + Yinstantiate)
-#     print('{}, {}' .format(MF_coordinates[i, 0], MF_coordinates[i, 1]))
+Parallel(n_jobs=-1)(delayed(connecting_GRCGL)(i) for i in range(np.size(grc_points[:, 0])))
+del Grc_P[np.where(Grc_P==0)] # To delete meaningless data
 
-
-    # fcoor.close()
-#plt.scatter(MF_coordinates[:, 0], MF_coordinates[:, 1])
-#plt.show()
-
-centrey = Shortaxis / 2
-centrex = Longaxis / 2
-radius = 100
-finalMF = []
-finalMF = (MF_coordinates[:, 0] - centrex) ** 2 + (MF_coordinates[:, 1] - centrey) ** 2
-finalMF[finalMF <= radius ** 2] = 1 #activated
-finalMF[finalMF > radius ** 2] = 0  #inactivated
-
-    # Second spatial kernal 1250, 350
-finalMF1 = []
-centrex1 = Shortaxis / 2
-centrey1 = Longaxis / 2
-finalMF1 = (MF_coordinates[:, 0] - centrex1) ** 2 + (MF_coordinates[:, 1] - centrey1) ** 2
-finalMF1[finalMF1 <= radius ** 2] = 1 #activated
-finalMF1[finalMF1 > radius ** 2] = 0 #inactivated
-find_ac1 = np.where(finalMF1)
-finalMF1[find_ac1] = 1
-
-finalMF2 = []
-centrex2 = Shortaxis / 2
-centrey2 = Longaxis / 2
-finalMF2 = (MF_coordinates[:, 0] - centrex2) ** 2 + (MF_coordinates[:, 1] - centrey2) ** 2
-finalMF2[finalMF2 <= radius * radius] = 1
-finalMF2[finalMF2 > radius * radius] = 0
-find_ac2 = np.where(finalMF2)
-finalMF2[find_ac2] = 1
-
-fig1 = plt.figure(2)
-ax2 = fig1.add_subplot(1, 1, 1, projection = '3d')
-# Plot activatd and inactivated MF
-if plotMF ==1:
-    for i in range(0, int(numMF)):
-        if finalMF[i] ==1:
-            ax2.scatter(MF_coordinates[i, 0], MF_coordinates[i, 1], c = 'r')
-            ax2.scatter(MF_GL[i, :, 0], MF_GL[i, :, 1], MF_GL[i, :, 2], c='yellow')
-#             ax1.ylabel('long axis um')
-#             ax1.xlabel('short axis um')
-        else:
-            ax2scatter(MF_coordinates[i, 0], MF_coordinates[i, 1], c='blue')
-            ax2.scatter(MF_GL[i, :, 0], MF_GL[i, :, 1], MF_GL[i, :, 2], s=1, c='black')
-
-# Plot activatd and inactivated MF
-if plotMF ==1:
-    for i in range(0, int(numMF)):
-        if finalMF[i] ==1:
-            plt.figure(3)
-            plt.scatter(MF_coordinates[i, 0], MF_coordinates[i, 1], c = 'r')
-            plt.scatter(MF_GL[i, :, 0], MF_GL[i, :, 1], c='yellow')
-#             ax1.ylabel('long axis um')
-#             ax1.xlabel('short axis um')
-        else:
-            plt.scatter(MF_coordinates[i, 0], MF_coordinates[i, 1], c='blue')
-            plt.scatter(MF_GL[i, :, 0], MF_GL[i, :, 1], s=1, c='black')
-
-plt.show()
+np.savetxt('Glocoordinates', points)
+np.savetxt('Grccoordinates', grc_points)
+np.savetxt('MF_GL', MF_GL)
+np.savetxt('GRC_GL', GRC_GL)

@@ -112,7 +112,13 @@ def Bridson_sampling(sizeI, spacing, nPts, showIter):
 
     if showIter:
         print('Iteration: {}    (final)Points Created: {}    EmptyGrid:{}'.format(iter, pts.shape[0], nEmptyGrid))
-
+    iter += 1
+    itercount[iter, 0] = iter
+    itercount[iter, 1] = ptsCreated
+    iter += 1
+    if itercount[iter - 1, 1] == itercount[iter - 5, 1]:
+        print('I checked it')
+        break
     return pts
 
 
