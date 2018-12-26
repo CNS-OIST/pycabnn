@@ -217,3 +217,180 @@ plt.plot(dd)
 
 len(colx.keys())
 
+
+# In[278]:
+
+
+xyz = np.loadtxt(root / "GoCcoordinates.sorted.dat")
+
+
+# In[279]:
+
+
+from neuron import h
+
+
+# In[280]:
+
+
+h.load_file('/Users/shhong/Documents/cerebellar_cortex/Molecular_Layer/params/set3005/Parameters.hoc')
+
+
+# In[285]:
+
+
+width = []
+minp = []
+for k in ['X', 'Y', 'Z']:
+    amin = eval("h.GoC_Axon_{}min".format(k))
+    amax = eval("h.GoC_Axon_{}max".format(k))
+    width.append(amax-amin)
+    minp.append(amin)
+width, minp = np.array(width), np.array(minp)
+
+
+# In[327]:
+
+
+axon_coord = np.random.rand(ncell*20,3)
+axon_coord = axon_coord*width + minp
+
+
+# In[328]:
+
+
+naxon = int(h.numAxonGolgi)
+axon_base = np.zeros_like(axon_coord)
+for i in range(ncell):
+    axon_coord[(naxon*i):(naxon*(i+1))] = axon_coord[(naxon*i):(naxon*(i+1))] + xyz[i]
+    axon_base[(naxon*i):(naxon*(i+1))] = xyz[i]
+axon_coord
+
+
+# In[329]:
+
+
+axon_coord_file = np.hstack([axon_base, axon_coord])
+axon_coord_file
+
+
+# In[337]:
+
+
+temp = np.reshape(axon_coord_file, (ncell,  2*naxon*3))
+temp[0,:]
+np.savetxt('temp.dat', temp)
+
+
+# In[338]:
+
+
+axon_coord
+
+
+# In[363]:
+
+
+from tqdm import tqdm_notebook
+dist = []
+src = []
+tgt = []
+
+for i in tqdm_notebook(range(ncell)):
+    axon_coord1 = axon_coord[(i*naxon):((i+1)*naxon),:]
+    tree = cKDTree(axon_coord1)
+    for j in range(ncell):
+        if i!=j:
+            di, ii=tree.query(xyz[j])
+            axon_len = np.linalg.norm(axon_coord1[ii]-xyz[i])
+            if di<h.GoCtoGoCzone:
+                src.append(i)
+                tgt.append(j)
+                dist.append(axon_len + di)
+            
+
+
+# In[364]:
+
+
+dist
+
+
+# In[340]:
+
+
+axon_coord[0:2*naxon]
+
+
+# In[353]:
+
+
+np.savetxt('temp.dat', tgt, fmt='%d')
+
+
+# In[369]:
+
+
+np.savetxt('temp.dat', dist)
+
+
+# In[356]:
+
+
+from tqdm import tqdm_notebook
+dist = []
+src = []
+tgt = []
+for i in tqdm_notebook(range(ncell)):
+    for j in range(ncell):
+        if i!=j:
+            di = np.linalg.norm(xyz[j]-xyz[i])
+            if di<h.GoCtoGoCgapzone:
+                src.append(i)
+                tgt.append(j)
+                dist.append(di)
+
+
+# In[357]:
+
+
+dist
+
+
+# In[370]:
+
+
+z = h.File('temp.dat')
+z.ropen()
+
+
+# In[371]:
+
+
+v = h.Vector()
+v.scanf(z)
+
+
+# In[372]:
+
+
+v.x[0]
+
+
+# In[373]:
+
+
+z.close()
+
+
+# In[376]:
+
+
+v.x[1]
+
+
+# In[377]:
+
+
+get_ipython().system('open .')
+
