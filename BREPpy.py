@@ -429,25 +429,25 @@ class Connect_2D(object):
 class Query_point(object):
     def __init__(self, coord, IDs = None, segs = None, lin_offset = 0, set_0 = 0, prevent_lin = False):
         '''Make a Query_point object from a point array and any meta data:
-        The coord array should have either the shape (#points, point dimension) or 
+        The coord array should have either the shape (#points, point dimension) or
         (#cells, #points per cell, point dimenstion). In the second case the array will be reshaped to be like the first case,
         with the additional attributes IDs (cell, first dimenion of coord), and segs (second dimension of coord).
         It will be automatically checked whether the points can be linearized/projected, i.e. represented by a start, end, and 2-D projection'''
 
         self.npts = len(coord)
-        # check if lin -> then it can be used for the Connect_2D method. In that case it will not be 
+        # check if lin -> then it can be used for the Connect_2D method. In that case it will not be
         if not prevent_lin:
             self.lin = self.lin_check(coord)
-            if self.lin: 
+            if self.lin:
                 #lin_offset will be added to the distance for each connection (e.g. aa length for pf)
-                try: 
+                try:
                     lin_offset = float(np.array(lin_offset)) * np.ones(self.npts)
                 except:
                     assert(len(lin_offset) == self.npts), 'lin_offset should be a scalar or an array with length npts!'
-                finally: 
+                finally:
                     self.lin_offset = lin_offset
                 #set0 sets where 0 is defined along the elongated structure (e.g. branching point for PF)
-                try: 
+                try:
                     set_0 = float(np.array(set_0)) * np.ones(self.npts)
                 except:
                     assert(len(set_0) == self.npts), 'lin_offset should be a scalar or an array with length npts!'
@@ -470,7 +470,7 @@ class Query_point(object):
             if IDs is not None:
                 assert len(coord) == len(IDs), 'Length of ID list and length of coordinate file must be equal'
                 self.idx = IDs
-            if segs is None: 
+            if segs is None:
                 self.seg = np.ones(len(coord))
                 if IDs is None:
                     self.idx = np.arange(len(coord))
@@ -643,7 +643,7 @@ class Golgi_pop(Cell_pop):
             ar[:,:,i] = ar[:,:,i]*(high-low)+low
         ar[:,0,:] = ar[:,0,:]*0
         for i in range(len(ar)):
-            ar[i,:,:] = ar[i,:,:] + self.som[i,:] 
+            ar[i,:,:] = ar[i,:,:] + self.som[i,:]
         segs = np.linalg.norm(ar, axis = 2)
         idx = np.array([[j for k in range(len(ar[j]))] for j in range(len(ar))])
         self.axon = ar
@@ -854,7 +854,7 @@ class Granule_pop(Cell_pop):
         prefix = Path(prefix)
         assert hasattr(self, 'aa_dots'),  'No ascending axons added yet'
         gctp = self.aa_dots[:,-1,:]
-        filename = prefix / 'GCTcoordinates.dat'
+        filename = prefix / 'GCTcoordinates.sorted.dat'
         with filename.open('w') as f_out:
             f_out.write("\n".join(map(str_l, gctp)))
         print('Successfully wrote {}.'.format(filename))
