@@ -285,39 +285,6 @@ class Connect_2D(object):
         print('Exited process, saving as: {}.'.format(prefix))
         return s
 
-    def connections_pseudo_parallel(self, nblocks=120):
-        """Finds distance based connections between source and target points in
-        a pseudo-parallel way, i.e. going through a task queue one by one."""
-
-        import parallel_util
-
-        kdt, q_pts = self.get_tree_setup(return_lax=False)
-        pts = self.pts
-        lpts = self.lpts
-        c_rad = self.c_rad
-        lin_axis = self.lin_axis
-        lin_in_tree = self.lin_in_tree
-        lin_is_src = self.lin_is_src
-        prefix = self.prefix
-
-        lam_qpt = lambda ids: parallel_util.find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix)
-
-        print('Blocks = ', nblocks)
-        n_q_pts = len(q_pts)
-        id_ar = np.array_split(np.arange(n_q_pts), nblocks)
-        # print(id_ar) # Check what is in id_ar
-        id_ar = [(i, id_ar[i]) for i in range(nblocks)]
-        # print(id_ar) # Check what is in id_ar
-
-        # s = list(self.lv.map(lam_qpt, id_ar, block=True))
-        s = []
-        for id1 in id_ar:
-            print('Processing block:', id1[0])
-            print('Poins:', id1[1])
-            s.append(lam_qpt(id1))
-
-        print('Exited process, saving as: {}.'.format(prefix))
-        return s
 
     def get_tree_setup(self, return_lax=True, lin_in_tree=[]):
         '''Gets the setup for the connection.
@@ -429,25 +396,25 @@ class Connect_2D(object):
 class Query_point(object):
     def __init__(self, coord, IDs = None, segs = None, lin_offset = 0, set_0 = 0, prevent_lin = False):
         '''Make a Query_point object from a point array and any meta data:
-        The coord array should have either the shape (#points, point dimension) or 
+        The coord array should have either the shape (#points, point dimension) or
         (#cells, #points per cell, point dimenstion). In the second case the array will be reshaped to be like the first case,
         with the additional attributes IDs (cell, first dimenion of coord), and segs (second dimension of coord).
         It will be automatically checked whether the points can be linearized/projected, i.e. represented by a start, end, and 2-D projection'''
 
         self.npts = len(coord)
-        # check if lin -> then it can be used for the Connect_2D method. In that case it will not be 
+        # check if lin -> then it can be used for the Connect_2D method. In that case it will not be
         if not prevent_lin:
             self.lin = self.lin_check(coord)
-            if self.lin: 
+            if self.lin:
                 #lin_offset will be added to the distance for each connection (e.g. aa length for pf)
-                try: 
+                try:
                     lin_offset = float(np.array(lin_offset)) * np.ones(self.npts)
                 except:
                     assert(len(lin_offset) == self.npts), 'lin_offset should be a scalar or an array with length npts!'
-                finally: 
+                finally:
                     self.lin_offset = lin_offset
                 #set0 sets where 0 is defined along the elongated structure (e.g. branching point for PF)
-                try: 
+                try:
                     set_0 = float(np.array(set_0)) * np.ones(self.npts)
                 except:
                     assert(len(set_0) == self.npts), 'lin_offset should be a scalar or an array with length npts!'
@@ -470,7 +437,7 @@ class Query_point(object):
             if IDs is not None:
                 assert len(coord) == len(IDs), 'Length of ID list and length of coordinate file must be equal'
                 self.idx = IDs
-            if segs is None: 
+            if segs is None:
                 self.seg = np.ones(len(coord))
                 if IDs is None:
                     self.idx = np.arange(len(coord))
@@ -623,7 +590,6 @@ class Cell_pop(object):
         return grc
 
 
-
 class Golgi_pop(Cell_pop):
     '''Golgi cell population. Generates point representations of axons and dendrites as well as Query_point objects from them'''
 
@@ -643,7 +609,7 @@ class Golgi_pop(Cell_pop):
             ar[:,:,i] = ar[:,:,i]*(high-low)+low
         ar[:,0,:] = ar[:,0,:]*0
         for i in range(len(ar)):
-            ar[i,:,:] = ar[i,:,:] + self.som[i,:] 
+            ar[i,:,:] = ar[i,:,:] + self.som[i,:]
         segs = np.linalg.norm(ar, axis = 2)
         idx = np.array([[j for k in range(len(ar[j]))] for j in range(len(ar))])
         self.axon = ar
@@ -854,7 +820,7 @@ class Granule_pop(Cell_pop):
         prefix = Path(prefix)
         assert hasattr(self, 'aa_dots'),  'No ascending axons added yet'
         gctp = self.aa_dots[:,-1,:]
-        filename = prefix / 'GCTcoordinates.dat'
+        filename = prefix / 'GCTcoordinates.sorted.dat'
         with filename.open('w') as f_out:
             f_out.write("\n".join(map(str_l, gctp)))
         print('Successfully wrote {}.'.format(filename))

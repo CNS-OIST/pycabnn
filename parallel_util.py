@@ -12,8 +12,8 @@ def str_l(ar):
     return (' '.join(str(ar[i]) for i in range(len(ar))))
 
 
-def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, debut=False):
-    ''' 
+def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, debug=False):
+    '''
     Performs distance-based searches for the linearized version of pyBREP (currently Connect_2D)
     kdt: 2D Tree with points
     pts: Query_point object for the 3D data points
@@ -114,7 +114,7 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
 
 
 def find_connections_3dpar(kdt, spts, tpts, c_rad,  src_in_tree, ids, prefix):
-    ''' 
+    '''
     Performs distance-based searches between two populations of 3 dimensional point cloud structures
     spts: Query_point object for the source structure
     tpts: Query_point object for the target structure
