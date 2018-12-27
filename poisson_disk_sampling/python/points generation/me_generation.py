@@ -11,7 +11,7 @@ from scipy import spatial
 #import time
 # 3D version
 
-def Bridson_sampling_3(sizeI, spacing, nPts, showIter, pts1, pts2):
+def Bridson_sampling_me(sizeI, spacing, nPts, showIter, pts1, pts2, me):
     # References: Fast Poisson Disk Sampling in Arbitrary Dimensions
     #             Robert Bridson, SIGGRAPH, 2007
     # Previous points and the spacing
@@ -64,7 +64,7 @@ def Bridson_sampling_3(sizeI, spacing, nPts, showIter, pts1, pts2):
         tempPts = sGrid[p, :] + dm * np.random.rand(len(p), ndim)
 
         # Find good dart throws
-        D, _ = spatial.cKDTree(np.vstack((pts2, pts1, pts, tempPts))).query(tempPts, k=2)
+        D, _ = spatial.cKDTree(np.vstack((me, pts2, pts1, pts, tempPts))).query(tempPts, k=2)
         #D = np.reshape(D[:, 1], (-1, 1))
         D = D[:, 1]
 
@@ -76,10 +76,9 @@ def Bridson_sampling_3(sizeI, spacing, nPts, showIter, pts1, pts2):
         Dist1, _ = spatial.KDTree(np.vstack((pts2, tempPts))).query(tempPts, k=2) #This is a gap between glo
         Dist1 = Dist1[:, 1]
 
-
         withinI = np.array([tempPts[:, i] < sizeI[i] for i in range(ndim)]).T
         withinI = np.array([np.prod(x) for x in withinI])
-        eligiblePts = (withinI>0)*(D>spacing)*(Dist > 16.75)*(Dist1>5.75)
+        eligiblePts = (withinI>0)*(D>spacing)*(Dist > 9.25)*(Dist1>5.25)
         #(Dist > p_spacing) * (Dist1 > p_spacing1)
 
        # scorePts = tempPts[eligiblePts==False, :]

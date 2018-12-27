@@ -2,13 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from GL_poisson import Bridson_sampling
 
-s = np.random.seed(1) # 1) 왜 seed를 고정하는지 질문하기
-
+s = np.random.seed(1) #
 Longaxis = 1500  # 185%eval (readParameters ('GoCxrange', 'Parameters.hoc'))  % um
 Shortaxis = 700  # 185%eval (readParameters ('GoCxrange', 'Parameters.hoc'))  % um
-MFdensity = 1650  # 5000;%cells/mm2%190  추가확인필요
+MFdensity = 1650  # 5000;%cells/mm2%190
 
-#fid = np.loadtxt('datasp.dat', delimiter = '\t')   #왜 필요한지? (아직은 필요x)
+#fid = np.loadtxt('datasp.dat', delimiter = '\t')
 box_fac = 2.5
 Xinstantiate = 64 + 40  # 297+40
 Yinstantiate = 84 + 40 * box_fac  # 474+40x*box_fac

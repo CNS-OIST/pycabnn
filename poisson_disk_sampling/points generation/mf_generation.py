@@ -5,14 +5,10 @@
 # -----------------------------------------------------------------------------
 import numpy as np
 from scipy import spatial
-#import matplotlib.pyplot as plt
-#from mpl_toolkits.mplot3d import Axes3D
-from scipy.stats import multivariate_normal
 
+# 2D version
 
-# 3D version
-
-def Bridson_sampling(sizeI, spacing, nPts, showIter):
+def Bridson_sampling_mf(sizeI, spacing, nPts, showIter):
     # References: Fast Poisson Disk Sampling in Arbitrary Dimensions
     #             Robert Bridson, SIGGRAPH, 2007
     # Previous points and the spacing
@@ -28,7 +24,7 @@ def Bridson_sampling(sizeI, spacing, nPts, showIter):
     # Make a grid and convert it into a nx3 array
     # sGrid_nd = np.mgrid[0:sizeI[0]:cellsize, 0:sizeI[1]:cellsize, 0:sizeI[2]:cellsize]
     # sGrid_nd = np.mgrid[0:sizeI[i]:cellsize for i in range(ndim)]
-    sGrid_nd = np.mgrid[0:sizeI[0]:cellsize, 0:sizeI[1]:cellsize, 0:sizeI[2]:cellsize]
+    sGrid_nd = np.mgrid[0:sizeI[0]:cellsize, 0:sizeI[1]:cellsize]
     # patchwork
     # sGrid_nd_1 =
 

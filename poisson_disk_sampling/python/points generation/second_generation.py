@@ -11,7 +11,7 @@ from scipy import spatial
 #import time
 # 3D version
 
-def Bridson_sampling_3(sizeI, spacing, nPts, showIter, pts1, pts2):
+def Bridson_sampling_second(sizeI, spacing, nPts, showIter, pts1):
     # References: Fast Poisson Disk Sampling in Arbitrary Dimensions
     #             Robert Bridson, SIGGRAPH, 2007
     # Previous points and the spacing
@@ -64,22 +64,21 @@ def Bridson_sampling_3(sizeI, spacing, nPts, showIter, pts1, pts2):
         tempPts = sGrid[p, :] + dm * np.random.rand(len(p), ndim)
 
         # Find good dart throws
-        D, _ = spatial.cKDTree(np.vstack((pts2, pts1, pts, tempPts))).query(tempPts, k=2)
+        D, _ = spatial.cKDTree(np.vstack((pts1, pts, tempPts))).query(tempPts, k=2)
         #D = np.reshape(D[:, 1], (-1, 1))
         D = D[:, 1]
 
         #Check with previous points
-        Dist, _ = spatial.KDTree(np.vstack((pts1, tempPts))).query(tempPts, k=2) #This is a gap between goc
+        Dist, _ = spatial.KDTree(np.vstack((pts1, tempPts))).query(tempPts, k=2)
         Dist = Dist[:, 1]
 
-        #Check with previous points (one more!)
-        Dist1, _ = spatial.KDTree(np.vstack((pts2, tempPts))).query(tempPts, k=2) #This is a gap between glo
-        Dist1 = Dist1[:, 1]
-
+        #Check with previous points
+        #Dist1, _ = spatial.KDTree(np.vstack((pts2, tempPts))).query(tempPts, k=2)
+        #Dist1 = Dist1[:, 1]
 
         withinI = np.array([tempPts[:, i] < sizeI[i] for i in range(ndim)]).T
         withinI = np.array([np.prod(x) for x in withinI])
-        eligiblePts = (withinI>0)*(D>spacing)*(Dist > 16.75)*(Dist1>5.75)
+        eligiblePts = (withinI>0)*(D>spacing)*(Dist > 10)
         #(Dist > p_spacing) * (Dist1 > p_spacing1)
 
        # scorePts = tempPts[eligiblePts==False, :]
@@ -135,3 +134,53 @@ def Bridson_sampling_3(sizeI, spacing, nPts, showIter, pts1, pts2):
     if showIter:
         print('Iteration: {}    (final)Points Created: {}    EmptyGrid:{}'.format(iter,pts.shape[0],nEmptyGrid))
     return pts
+
+# if __name__ == '__main__':
+#     # start_time = time.perf_counter()
+#     #pts1 = np.loadtxt('GoC.txt')
+#     #pts2 = np.loadtxt('GoC and MF.txt')
+#     points1 = Bridson_sampling((700, 1500, 430), 20, 2300000, True)
+#     # count_time = points1[2]
+#     # elapsed_time = points1[1]
+
+    # fig = plt.figure()
+    # # #subplot setting
+    # ax1 = fig.add_subplot(111)
+    # ax1.plot(count_time, elapsed_time)
+    # ax1.set_xlabel('count', fontsize = 15)
+    # ax1.set_ylabel('time',  fontsize = 15)
+    # plt.show()
+
+#5
+#     # Data save
+    #np.savetxt('GrcReal.txt', points1)
+    #
+    #####Figure_Section#####
+    #plt.close('all')
+    #fig = plt.figure()
+    # subplot setting
+    #ax1 = fig.add_subplot(1, 1, 1, projection='3d')
+    # fig.subplots_adjust(hspace= 0.5, wspace = 0.3)
+#     X = [x for (x, y, z) in points1]
+#     Y = [y for (x, y, z) in points1]
+#     Z = [z for (x, y, z) in points1]
+#
+#     X1 = [x for (x, y, z) in pts1]
+#     Y1 = [y for (x, y, z) in pts1]
+#     Z1 = [z for (x, y, z) in pts1]
+#
+#     X2 = [x for (x, y, z) in pts2]
+#     Y2 = [y for (x, y, z) in pts2]
+#     Z2 = [z for (x, y, z) in pts2]
+# # Another things..
+#     ax1.scatter(X, Y, Z, s=10)
+#     ax1.scatter(X1, Y1, Z1, s=20, c='r')
+#     ax1.scatter(X2, Y2, Z2, s=20, c= 'g')
+#     ax1.scatter
+# ax1.set_xlim(0, 0.3)
+     #ax1.set_ylim(0.15, 0.3)
+     #ax1.set_zlim(0, 0.3)
+     # ax1.set_xlabel('X')
+     # ax1.set_ylabel('Y')
+     # ax1.set_zlabel('Z')
+

@@ -11,7 +11,7 @@ from scipy import spatial
 #import time
 # 3D version
 
-def Bridson_sampling_3(sizeI, spacing, nPts, showIter, pts1, pts2):
+def Bridson_sampling_third(sizeI, spacing, nPts, showIter, pts1, pts2):
     # References: Fast Poisson Disk Sampling in Arbitrary Dimensions
     #             Robert Bridson, SIGGRAPH, 2007
     # Previous points and the spacing
