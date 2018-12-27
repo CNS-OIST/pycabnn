@@ -1,9 +1,30 @@
+
+'''
+parallel_util.py
+
+Contains functions that will be imported to each worker in the parallel version of pyBREP.
+Queries given points in a given tree, saves results.
+'''
+
+
 def str_l(ar):
     '''make a space-seperated string from all elements in a 1D-array'''
     return (' '.join(str(ar[i]) for i in range(len(ar))))
 
 
 def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, debug=False):
+    '''
+    Performs distance-based searches for the linearized version of pyBREP (currently Connect_2D)
+    kdt: 2D Tree with points
+    pts: Query_point object for the 3D data points
+    lpts: Query_point object for the 2D projected points
+    c_rad: critical radius, i.e. maximum distance between points to consider them connected
+    lin_axis: axis along which the data is projected
+    lin_in_tree: whether the linear structure is in the tree or not
+    lin_is_src: whether the linear structure should be saved in the source file
+    ids: IDs of the query points that this particular worker should deal with
+    prefix: Path and prefix of the files under which the worker should save the data
+    '''
 
     import numpy
 
@@ -93,7 +114,16 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
 
 
 def find_connections_3dpar(kdt, spts, tpts, c_rad,  src_in_tree, ids, prefix):
-
+    '''
+    Performs distance-based searches between two populations of 3 dimensional point cloud structures
+    spts: Query_point object for the source structure
+    tpts: Query_point object for the target structure
+    c_rad: critical radius, i.e. maximum distance between points to consider them connected
+    lin_axis: axis along which the data is projected
+    src_in_tree: whether the source population is in the tree or not
+    ids: IDs of the query points that this particular worker should deal with
+    prefix: Path and prefix of the files under which the worker should save the data
+    '''
     import numpy
 
     if src_in_tree:
@@ -123,21 +153,21 @@ def find_connections_3dpar(kdt, spts, tpts, c_rad,  src_in_tree, ids, prefix):
             if len(cl)>0:
                 #depending on which population should be source and which should be target, save cell IDs accordingly.
                 if src_in_tree:
-                    f_tar.write("\n".join(map(str, (numpy.ones(len(cl)) * tpts.idx[l]).astype('int')  )))
-                    f_src.write("\n".join(map(str, (spts.idx[cl.astype('int')].ravel()).astype('int'))))
+                    f_tar.write("\n".join(map(str, numpy.ones(len(cl)) * tpts.idx[l])))
+                    f_src.write("\n".join(map(str, spts.idx[cl.astype('int')])))
 
                     f_tseg.write("\n".join(map(str_l, [tpts.seg[l,:].astype('int') for i in range(len(cl))] )))
                     f_sseg.write("\n".join(map(str_l, spts.seg[cl.astype('int')].astype('int'))))
                 else:
-                    f_tar.write("\n".join(map(str, (tpts.idx[cl].ravel()).astype('int') )))
-                    f_src.write("\n".join(map(str, (numpy.ones(len(cl)) * spts.idx[l]).astype('int'))))
+                    f_tar.write("\n".join(map(str, tpts.idx[cl])))
+                    f_src.write("\n".join(map(str, numpy.ones(len(cl)) * spts.idx[l])))
 
-                    f_tseg.write("\n".join(map(str_l, tpts.seg[cl.astype('int')].astype('int'))))
-                    f_sseg.write("\n".join(map(str_l, [spts.seg[l,:].astype('int') for i in range(len(cl))] )))
+                    f_tseg.write("\n".join(map(str, tpts.seg[cl.astype('int')])))
+                    f_sseg.write("\n".join(map(str, [spts.seg[l].astype('int') for i in range(len(cl))] )))
                 #need to attach one more line here or we get two elements per line
-                f_tseg.write("\n")
+                f_dis.write("\n")
                 f_src.write("\n")
                 f_tar.write("\n")
-                f_sseg.write("\n")
+                f_segs.write("\n")
 
     return [ids[0], res]

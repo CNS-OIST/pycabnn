@@ -3,15 +3,16 @@ from pathlib import Path
 import BREPpy as brp
 import numpy as np
 import time
+from tqdm import tqdm
 
 
 ######### Please feed with data!!
 #Parameters(might be read in from the command line some day...)
 #Output path
-input_path = Path('/Users/shhong/Dropbox/network_data/model/')
-output_path = Path.cwd().parent.parent / 'output_1'
+input_path =  Path.cwd().parent / "test_merge/BREP_INPUT_Molecular_Layer.Thu13Dec2018_1608"
+output_path = input_path.parent
 # config files: if you work in an environment where you want
-paramdir = input_path / 'params/set3005'
+paramdir = input_path.parent / 'set3005'
 config_hoc = paramdir / 'Parameters.hoc'
 config_pseudo_hoc = Path.cwd() / 'pseudo_hoc.pkl'
 # Coordinate input files
@@ -79,7 +80,7 @@ print(' ')
 ########### CONNECTIONS
 
 # you might want to change the radii
-c_rad_aa = h.AAtoGoCzone
+c_rad_aa = h.AAtoGoCzone/1.73
 print("R for AA: {}".format(c_rad_aa))
 
 cc = brp.Connect_2D(gp.qpts_aa, gg.qpts, c_rad_aa, output_path / 'AAtoGoC')
@@ -88,7 +89,7 @@ t5 = time.time()
 print('AA: Found and saved after', t5-t4)
 print(' ')
 
-c_rad_pf = h.PFtoGoCzone
+c_rad_pf = h.PFtoGoCzone/1.113
 print("R for PF: {}".format(c_rad_pf))
 
 cc = brp.Connect_2D(gp.qpts_pf, gg.qpts, c_rad_pf, output_path / 'PFtoGoC')
@@ -96,3 +97,49 @@ _ = cc.connections_parallel(deparallelize=False, nblocks=120, debug=True)
 t6 = time.time()
 print('PF: Found and saved after', t6-t5)
 print(' ')
+
+
+##### GoC-to-GoC connections
+from scipy.spatial import cKDTree
+
+gg.add_axon()
+naxon = len(gg.axon[0])-1
+dist = []
+src = []
+tgt = []
+
+for i in tqdm(range(gg.n_cell)):
+    axon_coord1 = gg.axon[i]
+    tree = cKDTree(axon_coord1)
+    for j in range(gg.n_cell):
+        if i != j:
+            di, ii = tree.query(gg.som[j])
+            axon_len = np.linalg.norm(axon_coord1[ii]-gg.som[i])
+            if di < h.GoCtoGoCzone:
+                src.append(i)
+                tgt.append(j)
+                dist.append(axon_len + di) # putative path length along the axon
+
+np.savetxt(output_path / 'GoCtoGoCsources.dat', src, fmt='%d')
+np.savetxt(output_path / 'GoCtoGoCtargets.dat', tgt, fmt='%d')
+np.savetxt(output_path / 'GoCtoGoCdistances.dat', dist)
+
+
+##### GoC-to-GoC GAP connections
+
+dist = []
+src = []
+tgt = []
+
+for i in tqdm(range(gg.n_cell)):
+    for j in range(gg.n_cell):
+        if i != j:
+            di = np.linalg.norm(gg.som[j]-gg.som[i])
+            if di < h.GoCtoGoCzone:
+                src.append(i)
+                tgt.append(j)
+                dist.append(di)
+
+np.savetxt(output_path / 'GoCtoGoCgapsources.dat', src, fmt='%d')
+np.savetxt(output_path / 'GoCtoGoCgaptargets.dat', tgt, fmt='%d')
+np.savetxt(output_path / 'GoCtoGoCgapdistances.dat', dist)
