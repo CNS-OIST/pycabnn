@@ -22,11 +22,11 @@ total = np.vstack((points, grc_points))
 total_MF = np.vstack((MF, points))
 semi_y = 64/2 #1500 / 2  # 64 / 2
 semi_x = 84/2 #700 / 2  # 84 / 2
-semi_z = 50/2 #50/2 #50 / 2  # 50 왜 50으로 잡았는지 알아야 함
+semi_z = 50/2 #50/2 #50 / 2
 # for i in range(0, np.size(points[:, 0])):
 #     add_point_grc(points[i, :])
 
-# MF_GL kdtree_query_ball(x, total)
+# Mossy fiber to Glomeruli connectivity
 prob = 1
 r_MF = semi_x
 MF_GL = []
@@ -55,7 +55,7 @@ for i in range(0, len(MF)):  # Go to each central point
     # print('i : {}, count: {}, MF_GL(x): {}, MF_GL(y): {}, MF_GL(z): {}'.format(i, count, new[count][0], new[count][1], new[count][2]))
     MF_GL.append(new)
 
-#GRC_GL mapping
+#Granular cell to glomeruli connectivity
 r_grc = 18
 GRC_GL = []
 temp_grc = []
@@ -84,11 +84,7 @@ for i in range(0, len(grc_points)):  # Go to each central point
         new_grc = np.random.choice(new_grc[:, 0], size=int(len(new_grc)*prob), replace = False, p= distance_grc)
         GRC_GL.append(new_grc)
 
-print(MF_GL)
-print(GRC_GL)
-print(goooooood)
-
-#MF_GOC mapping
+#Mossy fiber to golgi cell mapping (Optional)
 prob_MGOC = 1
 r_MGOC = 13.7
 MF_GOC = []
