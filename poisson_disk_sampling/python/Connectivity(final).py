@@ -26,6 +26,7 @@ semi_z = 50/2 #50/2 #50 / 2  # 50 왜 50으로 잡았는지 알아야 함
 # for i in range(0, np.size(points[:, 0])):
 #     add_point_grc(points[i, :])
 
+
 # MF_GL kdtree_query_ball(x, total)
 prob = 1
 r_MF = semi_x

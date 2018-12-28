@@ -79,7 +79,7 @@ def Bridson_sampling_3(sizeI, spacing, nPts, showIter, pts1, pts2):
 
         withinI = np.array([tempPts[:, i] < sizeI[i] for i in range(ndim)]).T
         withinI = np.array([np.prod(x) for x in withinI])
-        eligiblePts = (withinI>0)*(D>spacing)*(Dist > 17)*(Dist1>6)
+        eligiblePts = (withinI>0)*(D>spacing)*(Dist > 16.75)*(Dist1>5.75)
         #(Dist > p_spacing) * (Dist1 > p_spacing1)
 
        # scorePts = tempPts[eligiblePts==False, :]
