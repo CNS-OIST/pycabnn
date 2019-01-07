@@ -34,19 +34,26 @@ n_glo = int(d_glo * Volume * 1e-9)
 n_grc = int(d_grc * Volume * 1e-9)
 
 ##Points Generation
+
+#Mossy fiber
 mf_points = Bridson_sampling_mf((Horizontal_range, Transverse_range), spacing_mf, n_mf, True)
 mf_points = np.hstack((mf_points, np.reshape(np.random.uniform(50, 150, len(mf_points)), (-1, 1)))) # Randomly make z coordinates
 
+#Golgi Cell
 goc_points = Bridson_sampling_first((Horizontal_range, Transverse_range, Vertical_range), spacing_goc, n_goc, True)
 goc_points = goc_points + np.random.normal(0, 1, size=(len(goc_points), 3)) #Gaussian noise
 
+#Glomerulus (Rosettes)
 glo_points = Bridson_sampling_second((Horizontal_range//3, Transverse_range, Vertical_range), spacing_glo, n_glo, True, goc_points)
-#Since glomerulus is stretched for Horizontal section, we will generate coordinates in small area at first, and then multiply it with 3. (Billings et al., 2014)
+
+    #Since glomerulus is stretched for Horizontal section, we will generate coordinates in small area at first, and then multiply it with 3. (Billings et al., 2014)
 glo_points[:, 0] = glo_points[:, 0]*3
 glo_points = glo_points+np.random.normal(0, 1, size=(len(glo_points), 3))
 
+#Granular Cell
 grc_points = Bridson_sampling_third((Horizontal_range, Transverse_range, Vertical_range), spacing_grc, n_grc, True, goc_points, glo_points)
 grc_points = grc_points+np.random.normal(0, 1, size=(len(grc_points), 3))
+
 
 np.savetxt('mf_coordinates.txt', mf_points)
 np.savetxt('goc_coordinates.txt', goc_points)
