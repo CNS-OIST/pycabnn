@@ -13,86 +13,15 @@ import numpy as np
 import datetime
 import csv
 import warnings
+
+from tqdm import tqdm
 from pathlib import Path
 from sklearn.neighbors import KDTree
 
 ####################################################################
 ## GENERAL UTILS PART                                                 ##
 ####################################################################
-
-class Pseudo_hoc(object):
-    '''Up to now, the program depends on a hoc object that contains the parameters for the simulation.
-    However, as in the cluster, neuron is not installed for python 3, this class is a workaround:
-    First, a dict has to be generated(and probably pickled) from the hoc file in a python distribution that has neuron installed.
-    This dict(or the file containing it) is then read in in this class, and an empty object with no other functionalities gets
-    assigned all the parameters from the dict as attributes. The resulting object can then be used as a parameter carrier just as the hoc file.'''
-
-    def __init__(self, ad_or_fn=None):
-        '''Add parameters from dict or filename to pseudo_hoc object'''
-        # Make a pseudo-hoc object
-        if ad_or_fn is None:
-            return
-        elif type(ad_or_fn) != dict:
-            try:
-                ad_or_fn = Path(ad_or_fn)
-                #print (ad_or_fn.exists())
-                #print (ad_or_fn.is_file())
-                #print (ad_or_fn.absolute())
-
-                import pickle
-                with ad_or_fn.open('rb') as f_in:
-                    ad_or_fn = pickle.load(f_in)
-            except:
-                print('Tried to read in ', ad_or_fn, ' as a file, failed')
-                return
-        else:
-            assert type(ad_or_fn) == dict, 'Could not read in {}'.format(ad_or_fn)
-        # Add all elements from the read in file as arguments to the pseudo-hoc object
-        for k, v in ad_or_fn.items():
-            #As for the pickling process, all values had to be declared as strings, try to convert them back to a number
-            try:
-                v = float(v)
-            except:
-                pass
-            try:
-                setattr(self, k, v)
-            except:
-                pass
-
-    def convert_hoc_to_pickle(self, config_fn, output_fn = 'pseudo_hoc.pkl'):
-        '''Take a .hoc config file and pickle it as a neuron-independent python dict.'''
-        try:
-            import neuron
-        except ModuleNotFoundError:
-            print('Could not import neuron, go to a python environment with an installed neuron version and try again.')
-            return
-        neuron.h.xopen(config_fn)
-        d = dir(h)
-        h_dict = dict()
-        #Transfer parameters from the hoc object to a python dictionary
-        for n, el in enumerate(d):
-            if el[0].isupper() or el[0].islower():
-                try:
-                    #The value has to be converted to its string representation to get rid of the hoc properties.
-                    #Must be kept in mind when reading in though.
-                    h_dict[el] = repr(getattr(h,el))
-                except:
-                    pass
-        # Dump the dictionary
-        import pickle
-        with output_fn.open('wb') as f:
-            pickle.dump(h_dict, f)
-
-
-def str_l(ar):
-    '''make a space-seperated string from all elements in a 1D-array'''
-    return(' '.join(str(ar[i]) for i in range(len(ar))))
-
-def print_time_and_reset (t, comment = 'Finished block after '):
-    import time
-    t_new = time.time()
-    print (comment, t_new-t)
-    return t_new
+from util import str_l
 
 ####################################################################
 ## CONNECTOR PART                                                 ##
@@ -187,7 +116,7 @@ class Connect_2D(object):
     '''Finds connections between one structure that can be projected to a 2D plane and another structure
     that is represented by 3D coordinate points.'''
 
-    def __init__(self, qpts_src, qpts_tar, c_rad, prefix=''):
+    def __init__(self, qpts_src, qpts_tar, c_rad, prefix='', table_name='connection', save_mode='sqlite'):
         '''Initialize the Connect_2D object. Source population, target population, critical radius.
         The source and target population can either be of the Query_point class or arrays'''
 
@@ -210,7 +139,9 @@ class Connect_2D(object):
             print('Failure to initialize connector, there is not one linearized and one regular point set')
         self.lin_is_src = qpts_src.lin
         self.c_rad = c_rad
+        self.save_mode = save_mode
         self.prefix = Path(prefix)
+        self.table_name = table_name
 
 
     def connections_parallel(self, deparallelize=False, serial_fallback=False, req_lin_in_tree=[], nblocks=None, run_only=[], debug=False):
@@ -241,6 +172,7 @@ class Connect_2D(object):
         else:
             if nblocks is None:
                 nblocks = 1
+
         print('Blocks = ', nblocks)
 
         # Get tree setup
@@ -256,9 +188,20 @@ class Connect_2D(object):
         lin_axis = self.lin_axis
         lin_in_tree = self.lin_in_tree
         lin_is_src = self.lin_is_src
-        prefix = self.prefix
+        save_mode = self.save_mode
+        prefix = str(self.prefix)
+        table_name = self.table_name
 
-        lam_qpt = lambda ids: parallel_util.find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, debug)
+        if save_mode=='sqlite':
+            import sqlite3
+            conn = sqlite3.connect(prefix+'.db')
+            c = conn.cursor()
+            warnings.warn('Pre-existing table ' + table_name + ' will be destroyed.')
+            c.execute('DROP TABLE IF EXISTS ' + table_name)
+            conn.commit()
+            conn.close()
+
+        lam_qpt = lambda ids: parallel_util.find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, table_name, save_mode, debug)
 
         # split data into nblocks blocks
         n_q_pts = len(q_pts)
@@ -277,8 +220,8 @@ class Connect_2D(object):
             # essentially the same as connections_pseudo_parallel
             import parallel_util
             s = []
-            for id1 in id_ar:
-                print('Processing block:', id1[0])
+            for id1 in tqdm(id_ar):
+                # print('Processing block:', id1[0])
                 #print('Points:', id1[1])
                 s.append(lam_qpt(id1))
 
