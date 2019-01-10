@@ -77,7 +77,7 @@ print('Granule cell processing:', t4-t3)
 print(' ')
 
 
-########### CONNECTIONS
+########## CONNECTIONS
 
 # you might want to change the radii
 c_rad_aa = h.AAtoGoCzone/1.73
@@ -89,57 +89,57 @@ t5 = time.time()
 print('AA: Found and saved after', t5-t4)
 print(' ')
 
-# c_rad_pf = h.PFtoGoCzone/1.113
-# print("R for PF: {}".format(c_rad_pf))
+c_rad_pf = h.PFtoGoCzone/1.113
+print("R for PF: {}".format(c_rad_pf))
 
-# cc = brp.Connect_2D(gp.qpts_pf, gg.qpts, c_rad_pf, output_path / 'PFtoGoC')
-# _ = cc.connections_parallel(deparallelize=False, nblocks=120, debug=True)
-# t6 = time.time()
-# print('PF: Found and saved after', t6-t5)
-# print(' ')
-
-
-# ##### GoC-to-GoC connections
-# from scipy.spatial import cKDTree
-
-# gg.add_axon()
-# naxon = len(gg.axon[0])-1
-# dist = []
-# src = []
-# tgt = []
-
-# for i in tqdm(range(gg.n_cell)):
-#     axon_coord1 = gg.axon[i]
-#     tree = cKDTree(axon_coord1)
-#     for j in range(gg.n_cell):
-#         if i != j:
-#             di, ii = tree.query(gg.som[j])
-#             axon_len = np.linalg.norm(axon_coord1[ii]-gg.som[i])
-#             if di < h.GoCtoGoCzone:
-#                 src.append(i)
-#                 tgt.append(j)
-#                 dist.append(axon_len + di) # putative path length along the axon
-
-# np.savetxt(output_path / 'GoCtoGoCsources.dat', src, fmt='%d')
-# np.savetxt(output_path / 'GoCtoGoCtargets.dat', tgt, fmt='%d')
-# np.savetxt(output_path / 'GoCtoGoCdistances.dat', dist)
+cc = brp.Connect_2D(gp.qpts_pf, gg.qpts, c_rad_pf, output_path / 'PFtoGoC')
+_ = cc.connections_parallel(deparallelize=True, nblocks=120, debug=False)
+t6 = time.time()
+print('PF: Found and saved after', t5-t4)
+print(' ')
 
 
-# ##### GoC-to-GoC GAP connections
+##### GoC-to-GoC connections
+from scipy.spatial import cKDTree
 
-# dist = []
-# src = []
-# tgt = []
+gg.add_axon()
+naxon = len(gg.axon[0])-1
+dist = []
+src = []
+tgt = []
 
-# for i in tqdm(range(gg.n_cell)):
-#     for j in range(gg.n_cell):
-#         if i != j:
-#             di = np.linalg.norm(gg.som[j]-gg.som[i])
-#             if di < h.GoCtoGoCzone:
-#                 src.append(i)
-#                 tgt.append(j)
-#                 dist.append(di)
+for i in tqdm(range(gg.n_cell)):
+    axon_coord1 = gg.axon[i]
+    tree = cKDTree(axon_coord1)
+    for j in range(gg.n_cell):
+        if i != j:
+            di, ii = tree.query(gg.som[j])
+            axon_len = np.linalg.norm(axon_coord1[ii]-gg.som[i])
+            if di < h.GoCtoGoCzone:
+                src.append(i)
+                tgt.append(j)
+                dist.append(axon_len + di) # putative path length along the axon
 
-# np.savetxt(output_path / 'GoCtoGoCgapsources.dat', src, fmt='%d')
-# np.savetxt(output_path / 'GoCtoGoCgaptargets.dat', tgt, fmt='%d')
-# np.savetxt(output_path / 'GoCtoGoCgapdistances.dat', dist)
+np.savetxt(output_path / 'GoCtoGoCsources.dat', src, fmt='%d')
+np.savetxt(output_path / 'GoCtoGoCtargets.dat', tgt, fmt='%d')
+np.savetxt(output_path / 'GoCtoGoCdistances.dat', dist)
+
+
+##### GoC-to-GoC GAP connections
+
+dist = []
+src = []
+tgt = []
+
+for i in tqdm(range(gg.n_cell)):
+    for j in range(gg.n_cell):
+        if i != j:
+            di = np.linalg.norm(gg.som[j]-gg.som[i])
+            if di < h.GoCtoGoCzone:
+                src.append(i)
+                tgt.append(j)
+                dist.append(di)
+
+np.savetxt(output_path / 'GoCtoGoCgapsources.dat', src, fmt='%d')
+np.savetxt(output_path / 'GoCtoGoCgaptargets.dat', tgt, fmt='%d')
+np.savetxt(output_path / 'GoCtoGoCgapdistances.dat', dist)
