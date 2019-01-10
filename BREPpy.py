@@ -19,7 +19,7 @@ from sklearn.neighbors import KDTree
 ####################################################################
 ## GENERAL UTILS PART                                                 ##
 ####################################################################
-
+from util import str_l, print_time_and_reset
 class Pseudo_hoc(object):
     '''Up to now, the program depends on a hoc object that contains the parameters for the simulation.
     However, as in the cluster, neuron is not installed for python 3, this class is a workaround:
@@ -83,16 +83,6 @@ class Pseudo_hoc(object):
         with output_fn.open('wb') as f:
             pickle.dump(h_dict, f)
 
-
-def str_l(ar):
-    '''make a space-seperated string from all elements in a 1D-array'''
-    return(' '.join(str(ar[i]) for i in range(len(ar))))
-
-def print_time_and_reset (t, comment = 'Finished block after '):
-    import time
-    t_new = time.time()
-    print (comment, t_new-t)
-    return t_new
 
 ####################################################################
 ## CONNECTOR PART                                                 ##
@@ -187,7 +177,7 @@ class Connect_2D(object):
     '''Finds connections between one structure that can be projected to a 2D plane and another structure
     that is represented by 3D coordinate points.'''
 
-    def __init__(self, qpts_src, qpts_tar, c_rad, prefix=''):
+    def __init__(self, qpts_src, qpts_tar, c_rad, prefix='', table_name='connection'):
         '''Initialize the Connect_2D object. Source population, target population, critical radius.
         The source and target population can either be of the Query_point class or arrays'''
 
@@ -211,6 +201,7 @@ class Connect_2D(object):
         self.lin_is_src = qpts_src.lin
         self.c_rad = c_rad
         self.prefix = Path(prefix)
+        self.table_name = table_name
 
 
     def connections_parallel(self, deparallelize=False, serial_fallback=False, req_lin_in_tree=[], nblocks=None, run_only=[], debug=False):
@@ -241,6 +232,7 @@ class Connect_2D(object):
         else:
             if nblocks is None:
                 nblocks = 1
+
         print('Blocks = ', nblocks)
 
         # Get tree setup
@@ -256,9 +248,17 @@ class Connect_2D(object):
         lin_axis = self.lin_axis
         lin_in_tree = self.lin_in_tree
         lin_is_src = self.lin_is_src
-        prefix = self.prefix
+        prefix = str(self.prefix)
+        table_name = self.table_name
 
-        lam_qpt = lambda ids: parallel_util.find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, debug)
+        import sqlite3
+        conn = sqlite3.connect(prefix+'.db')
+        c = conn.cursor()
+        c.execute('DROP TABLE IF EXISTS ' + table_name)
+        conn.commit()
+        conn.close()
+
+        lam_qpt = lambda ids: parallel_util.find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, table_name, debug)
 
         # split data into nblocks blocks
         n_q_pts = len(q_pts)

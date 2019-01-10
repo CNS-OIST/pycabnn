@@ -5,14 +5,11 @@ parallel_util.py
 Contains functions that will be imported to each worker in the parallel version of pyBREP.
 Queries given points in a given tree, saves results.
 '''
+import pandas as pd
+import sqlite3
+from util import str_l
 
-
-def str_l(ar):
-    '''make a space-seperated string from all elements in a 1D-array'''
-    return (' '.join(str(ar[i]) for i in range(len(ar))))
-
-
-def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, debug=False):
+def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, table_name, debug=False):
     '''
     Performs distance-based searches for the linearized version of pyBREP (currently Connect_2D)
     kdt: 2D Tree with points
@@ -58,57 +55,80 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
         res.append(ind.astype('int'))
 
     prefix  = str(prefix)
-    fn_tar  = prefix + 'targets'   + str(ids[0]) + '.dat'
-    fn_src  = prefix + 'sources'   + str(ids[0]) + '.dat'
-    fn_segs = prefix + 'segments'  + str(ids[0]) + '.dat'
-    fn_dis  = prefix + 'distances' + str(ids[0]) + '.dat'
+    # fn_tar  = prefix + 'targets'   + str(ids[0]) + '.dat'
+    # fn_src  = prefix + 'sources'   + str(ids[0]) + '.dat'
+    # fn_segs = prefix + 'segments'  + str(ids[0]) + '.dat'
+    # fn_dis  = prefix + 'distances' + str(ids[0]) + '.dat'
+    # if debug:
+    #     fn_coords = prefix + 'coords' + str(ids[0])+'.dat'
+    #     f_coords = open(fn_coords, 'w')
 
-    if debug:
-        fn_coords = prefix + 'coords' + str(ids[0])+'.dat'
-        f_coords = open(fn_coords, 'w')
+    conn = sqlite3.connect(prefix+'.db')
 
-    with open(fn_tar, 'w') as f_tar, open(fn_src, 'w') as f_src, open(fn_dis, 'w') as f_dis, open(fn_segs, 'w') as f_segs:
+    # with open(fn_tar, 'w') as f_tar, open(fn_src, 'w') as f_src, open(fn_dis, 'w') as f_dis, open(fn_segs, 'w') as f_segs:
 
-        for (l, cl, cl_l) in zip(list(ids[1]), res, res_l):
+    dfs = []
+    for (l, cl, cl_l) in zip(list(ids[1]), res, res_l):
 
-            assert len(cl) == len(cl_l), 'Something went wrong, all corresponding lists in your input arguments should have the same length'
+        assert len(cl) == len(cl_l), 'Something went wrong, all corresponding lists in your input arguments should have the same length'
 
-            if len(cl_l)>0:
-                f_dis.write("\n".join(map(str, cl_l)))
-                #first, get the cell IDS of the query and tree points (for the linear points, that is just the point ID,
-                #for the other points this information has to be extracted from the corresponding Query_points object.
-                #Segments also corresponds to the 3D point population, right value is acquired from Query-points object.
-                if lin_in_tree:
-                    s_ar = pts.seg[l,:].astype('int')
-                    f_segs.write("\n".join(map(str_l, [s_ar for i in range(len(cl))])))#*numpy.ones((len(cl), len (s_ar))))))
+        if len(cl_l) > 0:
+            dist_data = cl_l
+            #first, get the cell IDS of the query and tree points (for the linear points, that is just the point ID,
+            #for the other points this information has to be extracted from the corresponding Query_points object.
+            #Segments also corresponds to the 3D point population, right value is acquired from Query-points object.
+            if lin_in_tree:
+                s_ar = pts.seg[l,:].astype('int')
+                seg_data = [s_ar for i in range(len(cl))]
+                # f_segs.write("\n".join(map(str_l, seg_data)))#*numpy.ones((len(cl), len (s_ar))))))
 
-                    q_id = (numpy.ones(len(cl))*pts.idx[l]).astype('int')
-                    tr_id = cl
-                else:
-                    f_segs.write("\n".join(map(str_l, pts.seg[cl].astype('int'))))
-                    q_id = pts.idx[cl].ravel()
-                    tr_id = (numpy.ones(len(cl))*l).astype('int')
+                q_id = (numpy.ones(len(cl))*pts.idx[l]).astype('int')
+                tr_id = cl
+            else:
+                seg_data = pts.seg[cl].astype('int')
+                # f_segs.write("\n".join(map(str_l, seg_data)))
+                q_id = pts.idx[cl].ravel()
+                tr_id = (numpy.ones(len(cl))*l).astype('int')
+            seg_data = numpy.array(seg_data)
 
-                #depending on which population should be source and which should be target, save cell IDs accordingly.
-                #if l == 1: print (lin_in_tree, lin_is_src)
-                if lin_is_src:
-                    f_src.write("\n".join(map(str, tr_id)))
-                    f_tar.write("\n".join(map(str, q_id)))
-                else:
-                    f_src.write("\n".join(map(str, q_id)))
-                    f_tar.write("\n".join(map(str, tr_id)))
+            #depending on which population should be source and which should be target, save cell IDs accordingly.
+            #if l == 1: print (lin_in_tree, lin_is_src)
+            if lin_is_src:
+                src_data = tr_id
+                tgt_data = q_id
+            else:
+                src_data = q_id
+                tgt_data = tr_id
+            # f_src.write("\n".join(map(str, src_data)))
+            # f_tar.write("\n".join(map(str, tgt_data)))
 
-                if debug:
-                    f_coords.write((' '.join(map(str, pts.coo[l]))+'\n')*len(cl))
+            df = pd.DataFrame()
+            df['source'] = src_data
+            df['target'] = tgt_data
+            df['segment'] = seg_data[:, 0]
+            df['branch'] = seg_data[:, 1]
+            df['distance'] = dist_data
 
-                #need to attach one more line here or we get two elements per line
-                f_dis.write("\n")
-                f_src.write("\n")
-                f_tar.write("\n")
-                f_segs.write("\n")
+            if debug:
+                # f_coords.write((' '.join(map(str, pts.coo[l]))+'\n')*len(cl))
+                df['x'] = pts.coo[l][0]
+                df['y'] = pts.coo[l][1]
+                df['z'] = pts.coo[l][2]
 
-    if debug:
-        f_coords.close()
+            dfs.append(df)
+
+    #         #need to attach one more line here or we get two elements per line
+    #         f_dis.write("\n")
+    #         f_src.write("\n")
+    #         f_tar.write("\n")
+    #         f_segs.write("\n")
+
+    # if debug:
+    #     f_coords.close()
+    dfs = pd.concat(dfs, ignore_index=True)
+    dfs.to_sql(table_name, conn, if_exists='append')
+    conn.commit()
+    conn.close()
 
     return [ids[0], res, res_l]
 
