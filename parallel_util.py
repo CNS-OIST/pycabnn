@@ -9,7 +9,7 @@ import pandas as pd
 import sqlite3
 from util import str_l
 
-def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, table_name, debug=False):
+def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, table_name, save_mode, debug=False):
     '''
     Performs distance-based searches for the linearized version of pyBREP (currently Connect_2D)
     kdt: 2D Tree with points
@@ -62,8 +62,6 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
     # if debug:
     #     fn_coords = prefix + 'coords' + str(ids[0])+'.dat'
     #     f_coords = open(fn_coords, 'w')
-
-    conn = sqlite3.connect(prefix+'.db')
 
     # with open(fn_tar, 'w') as f_tar, open(fn_src, 'w') as f_src, open(fn_dis, 'w') as f_dis, open(fn_segs, 'w') as f_segs:
 
@@ -125,10 +123,19 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
 
     # if debug:
     #     f_coords.close()
+
     dfs = pd.concat(dfs, ignore_index=True)
-    dfs.to_sql(table_name, conn, if_exists='append')
-    conn.commit()
-    conn.close()
+
+    if save_mode=='sqlite':
+        conn = sqlite3.connect(prefix+'.db')
+        dfs.to_sql(table_name, conn, if_exists='append')
+        conn.commit()
+        conn.close()
+
+    if save_mode=='hdf':
+        store = pd.HDFStore(prefix+'.h5', 'a')
+        store.append(table_name, dfs)
+        store.close()
 
     return [ids[0], res, res_l]
 

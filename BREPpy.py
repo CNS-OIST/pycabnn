@@ -177,7 +177,7 @@ class Connect_2D(object):
     '''Finds connections between one structure that can be projected to a 2D plane and another structure
     that is represented by 3D coordinate points.'''
 
-    def __init__(self, qpts_src, qpts_tar, c_rad, prefix='', table_name='connection'):
+    def __init__(self, qpts_src, qpts_tar, c_rad, prefix='', table_name='connection', save_mode='sqlite'):
         '''Initialize the Connect_2D object. Source population, target population, critical radius.
         The source and target population can either be of the Query_point class or arrays'''
 
@@ -200,6 +200,7 @@ class Connect_2D(object):
             print('Failure to initialize connector, there is not one linearized and one regular point set')
         self.lin_is_src = qpts_src.lin
         self.c_rad = c_rad
+        self.save_mode = save_mode
         self.prefix = Path(prefix)
         self.table_name = table_name
 
@@ -248,17 +249,20 @@ class Connect_2D(object):
         lin_axis = self.lin_axis
         lin_in_tree = self.lin_in_tree
         lin_is_src = self.lin_is_src
+        save_mode = self.save_mode
         prefix = str(self.prefix)
         table_name = self.table_name
 
-        import sqlite3
-        conn = sqlite3.connect(prefix+'.db')
-        c = conn.cursor()
-        c.execute('DROP TABLE IF EXISTS ' + table_name)
-        conn.commit()
-        conn.close()
+        if save_mode=='sqlite':
+            import sqlite3
+            conn = sqlite3.connect(prefix+'.db')
+            c = conn.cursor()
+            warnings.warn('Pre-existing table ' + table_name + ' will be destroyed.')
+            c.execute('DROP TABLE IF EXISTS ' + table_name)
+            conn.commit()
+            conn.close()
 
-        lam_qpt = lambda ids: parallel_util.find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, table_name, debug)
+        lam_qpt = lambda ids: parallel_util.find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, table_name, save_mode, debug)
 
         # split data into nblocks blocks
         n_q_pts = len(q_pts)
