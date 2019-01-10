@@ -129,7 +129,6 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
     if save_mode=='sqlite':
         conn = sqlite3.connect(prefix+'.db')
         dfs.to_sql(table_name, conn, if_exists='append')
-        conn.commit()
         conn.close()
 
     if save_mode=='hdf':
