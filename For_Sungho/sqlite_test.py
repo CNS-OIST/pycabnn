@@ -104,3 +104,70 @@ conn.close()
 
 get_ipython().system('open .')
 
+
+# In[22]:
+
+
+import numpy as np
+import pandas as pd
+import sqlite3
+
+
+# In[21]:
+
+
+for k in range(120):
+    x = np.loadtxt('/Users/shhong/Dropbox/network_data/output_brep_2/PFtoGoCtargets%d.dat' % k).astype(int)
+    y = np.arange(k, 1995, 120)
+    print(x.max(), y.max())
+
+
+# In[23]:
+
+
+i = 0
+
+
+# In[52]:
+
+
+db = '/Users/shhong/Dropbox/network_data/output_pybrep_2/AAtoGoC.db'
+Path(db).parent
+ntargets = 1995
+nblocks = 120
+
+# def run_block(i):
+i = 0
+
+
+# In[83]:
+
+
+z = np.vstack([df['segment'].values, df['branch'].values])
+np.savetxt('test.dat', z.T, delimiter=' ', fmt='%d')
+
+
+# In[67]:
+
+
+from pathlib import Path
+Path(db).parent
+
+
+# In[73]:
+
+
+df
+
+
+# In[93]:
+
+
+Path(db)
+
+
+# In[90]:
+
+
+db
+
