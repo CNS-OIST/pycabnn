@@ -13,9 +13,14 @@ import numpy as np
 import datetime
 import csv
 import warnings
+
+from tqdm import tqdm
 from pathlib import Path
 from sklearn.neighbors import KDTree
 
+####################################################################
+## GENERAL UTILS PART                                                 ##
+####################################################################
 from util import str_l
 
 ####################################################################
@@ -215,8 +220,8 @@ class Connect_2D(object):
             # essentially the same as connections_pseudo_parallel
             import parallel_util
             s = []
-            for id1 in id_ar:
-                print('Processing block:', id1[0])
+            for id1 in tqdm(id_ar):
+                # print('Processing block:', id1[0])
                 #print('Points:', id1[1])
                 s.append(lam_qpt(id1))
 
