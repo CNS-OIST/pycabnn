@@ -44,8 +44,8 @@ def main(db, nblocks, ntargets):
                 ignore_index=True
             )
 
-        fn_src =  prefix + ('source' + str(i) + '.dat')
-        fn_tar =  prefix + ('target' + str(i) + '.dat')
+        fn_src =  prefix + ('sources' + str(i) + '.dat')
+        fn_tar =  prefix + ('targets' + str(i) + '.dat')
         fn_segs = prefix + ('segments' + str(i) + '.dat')
         fn_dis  = prefix + ('distances' + str(i) + '.dat')
 
