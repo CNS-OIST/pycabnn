@@ -1,7 +1,7 @@
 import numpy as np
 from pathlib import Path
-from util import str_l
-
+import csv
+from .util import str_l, Query_point
 
 class Cell_pop(object):
 
@@ -30,8 +30,8 @@ class Cell_pop(object):
     def save_somata(self, prefix='', fn=''):
         '''Save the soma coordinates'''
         prefix = Path(prefix)
-        if fn == '': fn = type(self).__name__ + '_coords.dat'
-        '''Save the soma coordinates'''
+        if fn == '':
+            fn = type(self).__name__ + '_coords.dat'
 
         assert hasattr(self, 'som'), 'Cannot save soma coordinates, as apparently none have been added yet'
 
@@ -39,12 +39,13 @@ class Cell_pop(object):
             f_out.write("\n".join(map(str_l, self.som)))
         print('Successfully wrote {}.'.format(prefix / fn))
 
-    def read_in_soma_file(self, fn, parse_ignore = True):
+    def read_in_soma_file(self, fn, parse_ignore=True):
         ''' Reads in files such as the ones that BREP returns.
         Represents lines as rows, nth element in each line as column.
         fn = Filename
         parse_ignore: If something cannot be parsed, it will be ignored. If this parameter is set false, it will complain
         returns: 2d-array of floats'''
+
         res = []
         with open(fn, 'r', newline='') as f:
             rr = csv.reader(f, delimiter=' ')
@@ -57,7 +58,7 @@ class Cell_pop(object):
                     except:
                         err.append(line[j])
                 res.append(np.asarray(ar))
-        if len(err)> 0 and not parse_ignore:
+        if len(err) > 0 and not parse_ignore:
             print('Could not parse on {} instances: {}'.format(len(err), set(err)))
         self.som = np.asarray(res)
         self.n_cell = len(self.som)

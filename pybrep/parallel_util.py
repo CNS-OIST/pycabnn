@@ -8,7 +8,8 @@ Queries given points in a given tree, saves results.
 
 import pandas as pd
 import sqlite3
-from util import str_l
+from .util import str_l
+
 
 def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, table_name, save_mode, debug=False):
     '''
