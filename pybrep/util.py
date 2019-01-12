@@ -77,7 +77,7 @@ class Pseudo_hoc(object):
 
 
 class Query_point(object):
-    def __init__(self, coord, IDs=None, segs=None, lin_offset=0, set_0=0, prevent_lin=False):
+    def __init__(self, coord, IDs=None, segs=None, lin_offset=0, set_0=0, prevent_lin=False, dists=None):
         '''Make a Query_point object from a point array and any meta data:
         The coord array should have either the shape (#points, point dimension) or
         (#cells, #points per cell, point dimenstion). In the second case the array will be reshaped to be like the first case,
@@ -147,7 +147,7 @@ class Query_point(object):
         if len(coord.shape) == 3:
             if coord.shape[1] == 2 and coord.shape[2] == 3:
                 sm = sum(abs(coord[:,0,:] - coord[:,1,:]))
-                no_dif = [np.isclose(sm[i],0) for i in range(len(sm))]
+                no_dif = [np.isclose(sm[i], 0) for i in range(len(sm))]
                 if sum(no_dif) == 2: # 2 coordinates are the same, one is not
                     self.lin_axis = np.invert(no_dif) #this one is the axis that cn be linearized
                     return True
