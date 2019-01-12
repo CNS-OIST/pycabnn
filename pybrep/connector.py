@@ -31,7 +31,7 @@ class Connect_3D(object):
         self.c_rad = c_rad
         self.prefix = prefix
 
-    def connections_parallel(self, deparallelize=False, src_in_tree=[]):
+    def connections_parallel(self, deparallelize=False, src_in_tree=[], use_distance='add', avoid_self=True):
         ''' Finds the connections in parallel, depending on a running IPython cluster.
         The deparallelize option switches to a serial mode independent of the Ipython cluster.
         src_in_tree determines whether the source or target population will go into the tree.
@@ -78,10 +78,12 @@ class Connect_3D(object):
 
         print('sit', src_in_tree)
 
-        lam_qpt = lambda ids: parallel_util.find_connections_3dpar(kdt, spts, tpts, c_rad, src_in_tree, ids, prefix)
+        lam_qpt = lambda ids: parallel_util.find_connections_3dpar(kdt, spts, tpts, c_rad, src_in_tree, ids, use_distance, avoid_self)
 
-        if src_in_tree: nqpts = tpts.npts
-        else: nqpts = spts.npts
+        if src_in_tree:
+            nqpts = tpts.npts
+        else:
+            nqpts = spts.npts
 
         if not deparallelize:
             #chunk the query points so that each worker gets roughly the same amount of points to query in the KDTree

@@ -107,7 +107,7 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
     return dfs
 
 
-def find_connections_3dpar(kdt, spts, tpts, c_rad,  src_in_tree, ids, prefix):
+def find_connections_3dpar(kdt, spts, tpts, c_rad,  src_in_tree, ids, use_distance, avoid_self):
     '''
     Performs distance-based searches between two populations of 3 dimensional point cloud structures
     spts: Query_point object for the source structure
@@ -126,42 +126,25 @@ def find_connections_3dpar(kdt, spts, tpts, c_rad,  src_in_tree, ids, prefix):
         q_pts = spts.coo
 
     res = []
-
+    res_l = []
     # iterate through the query points
     for i, pt in enumerate(q_pts[ids[1]]):
         # find the points within the critical radius
         ind, = kdt.query_radius(numpy.expand_dims(pt, axis=0), r=c_rad)
         res.append(ind.astype('int'))
 
-    prefix = str(prefix)
+    dfs = []
+    for (l, cl) in zip(list(ids[1].astype('int')), res):
+        if len(cl)>0:
+            #depending on which population should be source and which should be target, save cell IDs accordingly.
+            if src_in_tree:
+                tgt_data = numpy.ones(len(cl)) * tpts.idx[l])
+                src_data = spts.idx[cl.astype('int')]
+                seg_data = [tpts.seg[l,:].astype('int') for i in range(len(cl))]
+            else:
+                tgt_data = tpts.idx[cl]
+                src_data = numpy.ones(len(cl)) * spts.idx[l]
+                seg_data = tpts.seg[cl.astype('int')]
 
-    fn_tar = prefix + 'target' + str(ids[0]) + '.dat'
-    fn_src = prefix + 'source' + str(ids[0]) + '.dat'
-    fn_sseg = prefix + 'source_segments' + str(ids[0]) + '.dat'
-    fn_tseg = prefix + 'target_segments' + str(ids[0]) + '.dat'
-
-    with open(fn_tar, 'w') as f_tar, open(fn_src, 'w') as f_src, open(fn_sseg, 'w') as f_sseg, open(fn_tseg, 'w') as f_tseg:
-
-        for (l, cl) in zip(list(ids[1].astype('int')), res):
-
-            if len(cl)>0:
-                #depending on which population should be source and which should be target, save cell IDs accordingly.
-                if src_in_tree:
-                    f_tar.write("\n".join(map(str, numpy.ones(len(cl)) * tpts.idx[l])))
-                    f_src.write("\n".join(map(str, spts.idx[cl.astype('int')])))
-
-                    f_tseg.write("\n".join(map(str_l, [tpts.seg[l,:].astype('int') for i in range(len(cl))] )))
-                    f_sseg.write("\n".join(map(str_l, spts.seg[cl.astype('int')].astype('int'))))
-                else:
-                    f_tar.write("\n".join(map(str, tpts.idx[cl])))
-                    f_src.write("\n".join(map(str, numpy.ones(len(cl)) * spts.idx[l])))
-
-                    f_tseg.write("\n".join(map(str, tpts.seg[cl.astype('int')])))
-                    f_sseg.write("\n".join(map(str, [spts.seg[l].astype('int') for i in range(len(cl))] )))
-                #need to attach one more line here or we get two elements per line
-                f_dis.write("\n")
-                f_src.write("\n")
-                f_tar.write("\n")
-                f_segs.write("\n")
-
-    return [ids[0], res]
+    dfs = pd.concat(dfs, ignore_index=True)
+    return dfs
