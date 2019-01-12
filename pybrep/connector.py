@@ -6,6 +6,7 @@ import numpy as np
 from tqdm import tqdm
 from sklearn.neighbors import KDTree
 from .util import str_l, Query_point
+import warnings
 
 
 class Connect_3D(object):
@@ -63,9 +64,9 @@ class Connect_3D(object):
         if not deparallelize:
             self.dv.block = True
             with self.dv.sync_imports():
-                import parallel_util
+                from . import parallel_util
         else:
-            import parallel_util
+            from . import parallel_util
 
         # Using cloudpickle, the variables used in the worker methods have to be in the workspace
         spts = self.spts
@@ -198,11 +199,11 @@ class Connect_2D(object):
 
         if not deparallelize:
             with self.dv.sync_imports():
-                import parallel_util
+                from . import parallel_util
             s = list(self.lv.map(lam_qpt, id_ar, block=True))
         else:
             # essentially the same as connections_pseudo_parallel
-            import parallel_util
+            from . import parallel_util
             s = []
             for id1 in tqdm(id_ar):
                 s.append(lam_qpt(id1))
