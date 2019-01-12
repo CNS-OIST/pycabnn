@@ -102,7 +102,8 @@ print(' ')
 
 
 ##### GoC-to-GoC connections
-from scipy.spatial import cKDTree
+##### TODO: need to be reimplemented by pybrep
+from sklearn.neighbors import KDTree
 
 gg.add_axon()
 naxon = len(gg.axon[0])-1
@@ -112,12 +113,16 @@ tgt = []
 
 for i in tqdm(range(gg.n_cell)):
     axon_coord1 = gg.axon[i]
-    tree = cKDTree(axon_coord1)
+    tree = KDTree(axon_coord1)
     for j in range(gg.n_cell):
         if i != j:
-            di, ii = tree.query(gg.som[j])
-            axon_len = np.linalg.norm(axon_coord1[ii]-gg.som[i])
-            if di < h.GoCtoGoCzone:
+            ii, di = tree.query_radius(np.expand_dims(gg.som[j], axis=0),
+                                       r=h.GoCtoGoCzone,
+                                       return_distance=True)
+            if ii[0].size > 0:
+                temp = di[0].argmin()
+                ii, di = ii[0][temp], di[0][temp]
+                axon_len = np.linalg.norm(axon_coord1[ii]-gg.som[i])
                 src.append(i)
                 tgt.append(j)
                 dist.append(axon_len + di) # putative path length along the axon
@@ -137,7 +142,7 @@ for i in tqdm(range(gg.n_cell)):
     for j in range(gg.n_cell):
         if i != j:
             di = np.linalg.norm(gg.som[j]-gg.som[i])
-            if di < h.GoCtoGoCzone:
+            if di < h.GoCtoGoCgapzone:
                 src.append(i)
                 tgt.append(j)
                 dist.append(di)
