@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-import BREPpy as brp
+import pybrep as brp
 import numpy as np
 import time
 from tqdm import tqdm
@@ -10,7 +10,7 @@ from tqdm import tqdm
 #Parameters(might be read in from the command line some day...)
 #Output path
 input_path = Path("/Users/shhong/Dropbox/network_data/input_brep_2")
-output_path = input_path.parent / "output_pybrep_2"
+output_path = input_path.parent / "output_pybrep_2r"
 # config files: if you work in an environment where you want
 paramdir = input_path.parent / 'model/params/set3005'
 config_hoc = paramdir / 'Parameters.hoc'
@@ -52,7 +52,7 @@ print('Import finished:', t2-t1)
 # # ######### POPULATION SETUP(to do here: change to random generation of cells)
 
 # Set up the Golgi population, render dendrites
-gg = brp.Golgi_pop(h)
+gg = brp.create_population('Golgi', h)
 gg.load_somata(gol_in)
 # # gg.gen_random_cell_loc(1995, 1500, 700, 200)
 gg.add_dendrites()
@@ -64,7 +64,7 @@ print('Golgi cell processing:', t3-t2)
 
 
 #Set up Granule population including aa and pf
-gp = brp.Granule_pop(h)
+gp = brp.create_population('Granule', h)
 gp.load_somata(gran_in)
 #gp.gen_random_cell_loc(798000, 1500, 700, 200)
 gp.add_aa_endpoints_fixed()
