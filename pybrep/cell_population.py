@@ -137,10 +137,10 @@ class Golgi_pop(Cell_pop):
         ar[:,0,:] = ar[:,0,:]*0
         for i in range(len(ar)):
             ar[i,:,:] = ar[i,:,:] + self.som[i,:]
-        segs = np.linalg.norm(ar, axis=2)
+        dists = np.linalg.norm(ar, axis=2)
         idx = np.array([[j for k in range(len(ar[j]))] for j in range(len(ar))])
         self.axon = ar
-        self.axon_q = Query_point(ar, idx, segs)
+        self.axon_q = Query_point(ar, idx, segs=dists) # TODO: this is weird
 
     def save_axon_coords(self, prefix=''):
         ''' Save the coordinates of the dendrites, BREP style
@@ -178,8 +178,9 @@ class Golgi_pop(Cell_pop):
         b_dend, b_idx, b_sgts = self.gen_dendrite(b_rad, b_h, b_ang, b_std, b_n)
 
         #The apical dendrites have higher numbers than the basal ones:
-        a_sgts[:,:,1] = a_sgts[:,:,1] + len(b_ang)
-        #Taking into account that there are several points per segment and the first segment has index 1
+        a_sgts[:,:,1] = a_sgts[:,:,1] + len(b_ang) # TODO: should add the number of basal dendrites instead
+        # Taking into account that there are several points per segment
+        # and the first segment has index 1
         a_sgts[:,:,0] = np.floor(a_sgts[:,:,0]/self.args.GoC_Ad_nsegpts)+1
         b_sgts[:,:,0] = np.floor(b_sgts[:,:,0]/self.args.GoC_Bd_nsegpts)+1
 
