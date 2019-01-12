@@ -11,7 +11,7 @@ import sqlite3
 from .util import str_l
 
 
-def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, table_name, save_mode, debug=False):
+def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, debug=False):
     '''
     Performs distance-based searches for the linearized version of pyBREP (currently Connect_2D)
     kdt: 2D Tree with points
@@ -56,17 +56,6 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
 
         res.append(ind.astype('int'))
 
-    prefix  = str(prefix)
-    # fn_tar  = prefix + 'targets'   + str(ids[0]) + '.dat'
-    # fn_src  = prefix + 'sources'   + str(ids[0]) + '.dat'
-    # fn_segs = prefix + 'segments'  + str(ids[0]) + '.dat'
-    # fn_dis  = prefix + 'distances' + str(ids[0]) + '.dat'
-    # if debug:
-    #     fn_coords = prefix + 'coords' + str(ids[0])+'.dat'
-    #     f_coords = open(fn_coords, 'w')
-
-    # with open(fn_tar, 'w') as f_tar, open(fn_src, 'w') as f_src, open(fn_dis, 'w') as f_dis, open(fn_segs, 'w') as f_segs:
-
     dfs = []
     for (l, cl, cl_l) in zip(list(ids[1]), res, res_l):
 
@@ -80,7 +69,6 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
             if lin_in_tree:
                 s_ar = pts.seg[l,:].astype('int')
                 seg_data = [s_ar for i in range(len(cl))]
-                # f_segs.write("\n".join(map(str_l, seg_data)))#*numpy.ones((len(cl), len (s_ar))))))
 
                 q_id = (numpy.ones(len(cl))*pts.idx[l]).astype('int')
                 tr_id = cl
@@ -99,8 +87,6 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
             else:
                 src_data = q_id
                 tgt_data = tr_id
-            # f_src.write("\n".join(map(str, src_data)))
-            # f_tar.write("\n".join(map(str, tgt_data)))
 
             df = pd.DataFrame()
             df['source'] = src_data
@@ -110,35 +96,15 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
             df['distance'] = dist_data
 
             if debug:
-                # f_coords.write((' '.join(map(str, pts.coo[l]))+'\n')*len(cl))
                 df['x'] = pts.coo[l][0]
                 df['y'] = pts.coo[l][1]
                 df['z'] = pts.coo[l][2]
 
             dfs.append(df)
 
-    #         #need to attach one more line here or we get two elements per line
-    #         f_dis.write("\n")
-    #         f_src.write("\n")
-    #         f_tar.write("\n")
-    #         f_segs.write("\n")
-
-    # if debug:
-    #     f_coords.close()
-
     dfs = pd.concat(dfs, ignore_index=True)
 
-    if save_mode=='sqlite':
-        conn = sqlite3.connect(prefix+'.db')
-        dfs.to_sql(table_name, conn, if_exists='append')
-        conn.close()
-
-    if save_mode=='hdf':
-        store = pd.HDFStore(prefix+'.h5', 'a')
-        store.append(table_name, dfs)
-        store.close()
-
-    return [ids[0], res, res_l]
+    return dfs
 
 
 def find_connections_3dpar(kdt, spts, tpts, c_rad,  src_in_tree, ids, prefix):

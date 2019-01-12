@@ -3,6 +3,7 @@
 ####################################################################
 
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 from sklearn.neighbors import KDTree
 from .util import str_l, Query_point
@@ -101,7 +102,7 @@ class Connect_2D(object):
     '''Finds connections between one structure that can be projected to a 2D plane and another structure
     that is represented by 3D coordinate points.'''
 
-    def __init__(self, qpts_src, qpts_tar, c_rad, prefix='', table_name='connection', save_mode='sqlite'):
+    def __init__(self, qpts_src, qpts_tar, c_rad):
         '''Initialize the Connect_2D object. Source population, target population, critical radius.
         The source and target population can either be of the Query_point class or arrays'''
 
@@ -124,10 +125,6 @@ class Connect_2D(object):
             print('Failure to initialize connector, there is not one linearized and one regular point set')
         self.lin_is_src = qpts_src.lin
         self.c_rad = c_rad
-        self.save_mode = save_mode
-        self.prefix = prefix
-        self.table_name = table_name
-
 
     def connections_parallel(self, deparallelize=False, serial_fallback=False, req_lin_in_tree=[], nblocks=None, run_only=[], debug=False):
         '''searches connections, per default in parallel. Workers will get a copy of the tree, query points etc.
@@ -173,20 +170,8 @@ class Connect_2D(object):
         lin_axis = self.lin_axis
         lin_in_tree = self.lin_in_tree
         lin_is_src = self.lin_is_src
-        save_mode = self.save_mode
-        prefix = self.prefix
-        table_name = self.table_name
 
-        if save_mode == 'sqlite':
-            import sqlite3
-            conn = sqlite3.connect(prefix+'.db')
-            c = conn.cursor()
-            warnings.warn('Pre-existing table ' + table_name + ' will be destroyed.')
-            c.execute('DROP TABLE IF EXISTS ' + table_name)
-            conn.commit()
-            conn.close()
-
-        lam_qpt = lambda ids: parallel_util.find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, table_name, save_mode, debug)
+        lam_qpt = lambda ids: parallel_util.find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, debug)
 
         # split data into nblocks blocks
         n_q_pts = len(q_pts)
@@ -208,8 +193,7 @@ class Connect_2D(object):
             for id1 in tqdm(id_ar):
                 s.append(lam_qpt(id1))
 
-        print('Exited process, saving as: {}.'.format(prefix))
-        return s
+        self.result = pd.concat(s, ignore_index=True)
 
     def get_tree_setup(self, return_lax=True, lin_in_tree=[]):
         '''Gets the setup for the connection.
@@ -262,8 +246,7 @@ class Connect_2D(object):
 
         return res, l_res
 
-
-    def save_results(self, res, res_l, prefix=''):
+    def save_result(self, prefix='', table_name='connection', save_mode='sqlite'):
         '''Saves the results as produced by the query_x_in_y method similarly as BREP.
         res = result(containing a list of arrays/lists with the found IDs
             -> first index = query point ID
@@ -273,46 +256,26 @@ class Connect_2D(object):
         With the two last bools different 4 different modes can be created to have flexibility.'''
 
         prefix = str(prefix)
-        # file names
-        fn_tar = prefix + 'targets.dat'
-        fn_src = prefix + 'sources.dat'
-        fn_segs = prefix + 'segments.dat'
-        fn_dis = prefix + 'distances.dat'
+        if save_mode == 'sqlite':
+            import sqlite3
+            conn = sqlite3.connect(prefix + '.db')
+            c = conn.cursor()
+            warnings.warn('Pre-existing table ' + table_name + ' will be destroyed.')
+            c.execute('DROP TABLE IF EXISTS ' + table_name)
+            conn.commit()
+            conn.close()
 
-        with open(fn_tar, 'w') as f_tar, open(fn_src, 'w') as f_src, open(fn_dis, 'w') as f_dis, open(fn_segs, 'w') as f_segs:
+        print('Begin writing the results.')
+        if save_mode == 'sqlite':
+            foutname = prefix+'.db'
+            conn = sqlite3.connect(foutname)
+            self.result.to_sql(table_name, conn, if_exists='append', index=False)
+            conn.close()
 
-            for l,(cl, cl_l) in enumerate(zip(res, res_l)):
+        if save_mode == 'hdf':
+            foutname = prefix+'.h5'
+            store = pd.HDFStore(foutname, 'w')
+            store.append(table_name, self.result)
+            store.close()
 
-                assert len(cl) == len(cl_l), 'Something went wrong, all corresponding lists in your input arguments should have the same length'
-                assert hasattr(self, 'lin_in_tree'), 'Attribute lin_in_tree must be set, this should happen in the get_tree_setup method!'
-                assert hasattr(self, 'lin_is_src'), 'Attribute lin_is_src must be set, this should happen at initialization depending on the order of the query point arguments!'
-
-                if len(cl_l)>0:
-                    f_dis.write("\n".join(map(str, cl_l)))
-                    #first, get the cell IDS of the query and tree points(for the linear points, that is just the point ID,
-                    #for the other points this information has to be extracted from the corresponding Query_points object.
-                    #Segments also corresponds to the 3D point population, right value is acquired from Query-points object.
-                    if self.lin_in_tree:
-                        s_ar = self.pts.seg[l,:].astype('int')
-                        f_segs.write("\n".join(map(str_l, [s_ar for i in range(len(cl))])))#*np.ones((len(cl), len(s_ar))))))
-
-                        q_id = (np.ones(len(cl))*self.pts.idx[l]).astype('int')
-                        tr_id = cl
-                    else:
-                        f_segs.write("\n".join(map(str_l, self.pts.seg[cl].astype('int'))))
-                        q_id = self.pts.idx[cl].ravel()
-                        tr_id = (np.ones(len(cl))*l).astype('int')
-
-                    #depending on which population should be source and which should be target, save cell IDs accordingly.
-                    if self.lin_is_src:
-                        f_src.write("\n".join(map(str, tr_id)))
-                        f_tar.write("\n".join(map(str, q_id)))
-                    else:
-                        f_src.write("\n".join(map(str, q_id)))
-                        f_tar.write("\n".join(map(str, tr_id )))
-
-                    #need to attach one more line here or we get two elements per line
-                    f_dis.write("\n")
-                    f_src.write("\n")
-                    f_tar.write("\n")
-                    f_segs.write("\n")
+        print('Done writing, saving as: {}.'.format(prefix))
