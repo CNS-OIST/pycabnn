@@ -5,6 +5,7 @@ parallel_util.py
 Contains functions that will be imported to each worker in the parallel version of pyBREP.
 Queries given points in a given tree, saves results.
 '''
+
 import pandas as pd
 import sqlite3
 from util import str_l
