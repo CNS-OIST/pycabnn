@@ -135,10 +135,10 @@ def find_connections_3dpar(kdt, spts, tpts, c_rad,  src_in_tree, ids, use_distan
 
     dfs = []
     for (l, cl) in zip(list(ids[1].astype('int')), res):
-        if len(cl)>0:
+        if len(cl) > 0:
             #depending on which population should be source and which should be target, save cell IDs accordingly.
             if src_in_tree:
-                tgt_data = numpy.ones(len(cl)) * tpts.idx[l])
+                tgt_data = numpy.ones(len(cl)) * tpts.idx[l]
                 src_data = spts.idx[cl.astype('int')]
                 seg_data = [tpts.seg[l,:].astype('int') for i in range(len(cl))]
             else:
