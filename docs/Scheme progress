@@ -1,0 +1,131 @@
+Scheme progress
+
+installed chicken by running
+# apt install chicken-bin libchicken-dev 
+from root
+-> got that hint from
+https://packages.debian.org/source/wheezy/chicken
+
+README on chicken, including a more complicated installation instruction: 
+https://code.call-cc.org/cgi-bin/gitweb.cgi?p=chicken-core.git;a=blob;f=README;h=97888053ca98704d761ac944ec555885391d7d9a;hb=6ea24b60e7ef93e2f7c668bdb0437c0189e47dcd 
+
+for f2c, ran 
+suddo apt install f2c
+
+for mpi, ran
+sudo apt-get install libcr-dev mpich mpich-doc
+inspired by https://jetcracker.wordpress.com/2012/03/01/how-to-install-mpi-in-ubuntu/
+
+Found out that 'the home' of your packages is actually until the folder before the bin
+
+Will uninstall chicken, reinstall and then see what happens
+sudo apt purge chicken
+sudo apt autoremove
+
+ideas right now: wrong mpi environment that cannot be installed by chicken
+-> probably. Reading the shell code, it seems as if this mpi thing was a chicken extension: https://wiki.call-cc.org/eggs
+
+Ideas: Try to install chicken in a bin where you have writing permissions.
+To do:
+-> Research about installation locations and the different bins
+-> Read the BREP paper anyway
+ 
+####### 
+installed chicken againsudo chicken-install bvsp-spline
+
+sudo apt install chicken-bin
+sudo chicken-install mpi
+
+installed loooads of packages, all root.
+sudo chicken-install matchable datatype typeclass cis kd-tree \
+random-mtzig  getopt-long srfi-4-utils srfi-63 records bind srfi-42 srfi-4-comprehensions mathh lalr parametric-curve
+sudo chicken-install bvsp-spline
+
+
+deployed everything, root again (not sure if this is stupid...)
+### note: yes, it was stupid, next lines are just kept for error tracing, see below.###
+
+sudo chicken-install -deploy -prefix /usr/ mpi
+sudo chicken-install -deploy -prefix /usr/ bvsp-spline
+sudo chicken-install -deploy -prefix /usr/ matchable datatype typeclass cis kd-tree random-mtzig  getopt-long srfi-4-utils srfi-63 records bind srfi-42 srfi-4-comprehensions mathh lalr parametric-curve
+
+Tried compiling
+sudo csc -deploy -O3 -d0 -o /usr/ <path-to-file>/brep.scm
+Problem: did not find the file mathh-constants.scm
+But at least it started reading the code!!
+
+Todo: See where this file should come from and what should be in it.
+##### end mistake
+
+
+-> you actually have to add a path:
+
+csc -deploy -O3 -d0 -o /usr/ -include-path . brep.scm
+
+Still does not work, because so far I tried to deploy stuff in the /usr/bin/ folder, where writing permissions are somewhat tricky. After reading this:
+
+https://wiki.call-cc.org/man/4/Deployment
+
+I think that I got a hint of an idea why there is a deployment folder and what to do with it.
+
+So, next try:
+sudo chicken-install -deploy -prefix ./brep_deploy/ mpi
+sudo chicken-install -deploy -prefix ./brep_deploy/ bvsp-spline
+sudo chicken-install -deploy -prefix ./brep_deploy/ matchable datatype typeclass cis kd-tree random-mtzig  getopt-long srfi-4-utils srfi-63 records bind srfi-42 srfi-4-comprehensions mathh lalr parametric-curve
+
+
+And
+csc -deploy -O3 -d0 -o ./brep_deploy/test -include-path ./brep_deploy/ brep.scm
+
+
+--> IT COMPILED!!! whooop. It is in the folder test now.
+
+So, next I checked the lower section on this csc compiler:
+https://wiki.call-cc.org/man/4/Using%20the%20compiler
+
+here is what the short parameters mean:
+-d -> print debug information at runtime (probably in debug mode 0)
+-o -> disables the detection of stack overflows at runtime.
+-O3 -> optimize level 3
+
+
+#####
+
+Getting to know scheme
+
+I started with this youtube tutorial
+https://www.youtube.com/watch?v=AqBxU-Zmx00
+
+And then decided to install the IDE that guy is using:
+sudo apt-get install racket
+start with drracket in terminal.
+Set Scheme as language by the following clicks: Language -> Choose Language -> Other language -> R5RS -> Click the green run button.
+
+Then I found this in the documentation
+https://www.cs.utah.edu/plt/snapshots/current/doc/racket-cheat/index.html
+
+which might be helpful 
+
+
+
+
+
+
+####### On the eggs and srfis we use
+
+srfi-1: https://srfi.schemers.org/srfi-1/srfi-1.html 
+List library. -> Different select, access, .. functions for lists
+
+srfi-4: https://srfi.schemers.org/srfi-4/srfi-4.html 
+Datatypes (homogeneous numeric vectors) -> scheme vectors are only of one kind and might use ressources inefficiently. This package allows for predefinition of most datatypes in order to prevent that. Nomenclature is usually (s/u)(2ex)vector, e.g. s16vector = signed integer in range + -> - 2e15. First letter f = inexact datatype, float vector
+
+srfi-13: https://srfi.schemers.org/srfi-13/srfi-13.html 
+String library -> allows searching, various kinds of accessing, ... Strings. Most commands either include the keyword string or substring.
+
+
+srfi-63: https://srfi.schemers.org/srfi-63/srfi-63.html
+Homogeneous and Heterogeneouss Arrays. Most commands that operate on arrays contain the keyword array, the ones that construct arrays from rather specific prototypes use a-(flor/floc/fixn)-2^x-b
+
+
+
+
