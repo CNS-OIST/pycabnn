@@ -1,7 +1,7 @@
 import numpy as np
 from pathlib import Path
 import csv
-from .util import str_l, Query_point
+from util import str_l, Query_point
 
 
 class Cell_pop(object):
@@ -270,6 +270,7 @@ class Golgi_pop(Cell_pop):
         return np.array(b_res), np.array(idx), segs
 
 
+
 class Granule_pop(Cell_pop):
     '''Granule cell population. Generates point representations of ascending axon (aa) and parallel fiber(pf)
     Can either do so with 3D points or with 2D projections. AA length can be fixed or random'''
@@ -344,3 +345,197 @@ class Granule_pop(Cell_pop):
         with filename.open('w') as f_out:
             f_out.write("\n".join(map(str_l, gctp)))
         print('Successfully wrote {}.'.format(filename))
+
+
+class MLI_pop(Cell_pop):
+    '''Golgi cell population. Generates point representations of axons and dendrites as well as Query_point objects from them'''
+
+    def __init__(self, my_args):
+        Cell_pop.__init__(self, my_args)
+
+    def add_axon(self):
+        raise NotImplementedError("This part is not implemented yet.")
+
+    def save_axon_coords(self, prefix=''):
+        ''' Save the coordinates of the dendrites, BREP style
+        -> each line of the output file corresponds to one cell, and contains all its dendrites sequentially'''
+
+        assert hasattr(self, 'axon'), 'Could not find axons, please generate them first'
+
+        prefix = Path(prefix)
+        axon_file = prefix / 'MLIaxoncoordinates_test.dat'
+        with axon_file.open('w') as f_out:
+            for ax in self.axon:
+                flad = np.array([a for l in ax for a in l])
+                f_out.write(str_l(flad) + "\n")
+            print('Successfully wrote {}.'.format(axon_file))
+
+    def add_dendrites(self):
+        coords, idx, segs = self.gen_dendrite()
+
+        all_dends = coords
+        all_idx = idx
+        all_sgts = segs
+        self.qpts = Query_point(all_dends, all_idx, all_sgts)
+
+    def save_dend_coords(self, prefix=''):
+        ''' Save the coordinates of the dendrites, BREP style
+        -> each line of the output file corresponds to one cell, and contains all its dendrites sequentially'''
+
+        assert hasattr(self, "dend", 'Could not find any added dendrites')
+
+        prefix = Path(prefix)
+
+        dend_file = prefix / 'MLIdendcoordinates.dat'
+        with dend_file.open('w') as f_out:
+            for ad in self.dend:
+                flad = np.array([a for l in ad for a in l])
+                f_out.write(str_l(flad) + "\n")
+        print('Successfully wrote {}.'.format(dend_file))
+
+    def gen_dendrite(self):
+        # TODO: read parameters from self.args
+        soma_xyz = self.som
+
+        cell_ind = 0
+        mid_temp = []
+        center_candi = soma_xyz
+
+        def y_inters(z):  # To get the intersection between z axis and The y coordinate
+            result = np.sqrt(np.abs(max_length ** 2 - (z - center[1]) ** 2))
+            return [center[0] + result, center[0] + (-1) * result]
+
+        for center in center_candi:
+            # Let's make angle and length
+            den_num = 4  # parameter
+            max_length = 100  # parameter: Maximum dendrite length
+            den_len = np.random.uniform(low=70, high=100, size=4)  # There is no reason for min length, parameter
+            seg_inval = 2  # parameter : Segment points interval length
+            seg_num = 10  # parameter : Segmentation number of each dendrite
+            angle_total = np.arange(0, 360, 1) * 180 / (2 * np.pi)
+
+            # Let's draw a circle
+            y_total = max_length * np.cos(angle_total) + center[1]  # To draw boarder line(circle)
+            z_total = max_length * np.sin(angle_total) + center[2]
+            no_point = []  # Let's check the angle we should avoid
+            for i in range(0, len(y_total)):
+                if not 0 < z_total[i] < 200:
+                    if z_total[i] < 0:
+                        if (center[1] - max_length < y_inters(0)[0] < center[1] + max_length):
+                            no_point.append((y_inters(0)[0], 0))
+                        if (center[1] - max_length < y_inters(0)[1] < center[1] + max_length):
+                            no_point.append((y_inters(0)[1], 0))
+                    elif 200 < z_total[i]:
+                        if (center[1] - max_length < y_inters(200)[0] < center[1] + max_length):
+                            no_point.append((y_inters(200)[0], 200))
+                        if (center[1] - max_length < y_inters(200)[1] < center[1] + max_length):
+                            no_point.append((y_inters(200)[1], 200))
+
+            if len(no_point) != 0:
+                no_point = np.unique(np.reshape(no_point, (-1, 2)), axis=0)
+                if len(no_point) == 2:
+                    print('no_point : {}'.format(no_point))
+                    line_a = np.sqrt((center[1] - no_point[0][0]) ** 2 + (center[2] - no_point[0][1]) ** 2)
+                    line_b = np.sqrt((center[1] - no_point[1][0]) ** 2 + (center[2] - no_point[1][1]) ** 2)
+                    line_c = np.sqrt((no_point[0][0] - no_point[1][0]) ** 2 + (no_point[0][1] - no_point[1][1]) ** 2)
+                    #         line_d = np.sqrt((no_point[0]-center[1])**2)
+                    line_d = np.sqrt((no_point[0][1] - center[2]) ** 2)
+
+                    angle_a = np.clip(np.arccos(1 - (line_c ** 2 / (2 * max_length ** 2))), 0, np.pi)  # Law of cosines
+                    angle_b = np.clip(np.arcsin(line_d / max_length), -np.pi / 2,
+                                      np.pi / 2)  # Law of sines (angle_b will indicate the angle which angle_a will start)
+                    if no_point[0, 1] == 0:
+                        angle_b = (2 * np.pi - (angle_a + angle_b))[0]
+
+            # Let's draw
+            angle_pre = np.arange(0, 2 * np.pi - 0.349, 0.349)
+            angle_candi = []
+            x_candi = np.arange(0, np.pi - 0.349, 0.349)
+            x_candi = np.random.choice(x_candi, replace=False, size=4)
+
+            if len(no_point) == 2:
+                for i in range(0, len(angle_pre)):
+                    if not (angle_b <= angle_pre[i] <= (angle_a + angle_b)):
+                        angle_candi.append(angle_pre[i])
+            else:
+                angle_candi = angle_pre
+
+            angle = np.random.choice(angle_candi, replace=False, size=4)
+
+            y = den_len * np.sin(x_candi) * np.cos(angle) + center[1]
+            z = den_len * np.sin(x_candi) * np.sin(angle) + center[2]
+            x = den_len * np.cos(x_candi) + center[0]
+
+            # Let's make output
+            ''' We will make two files: coordinates and index. Each column of index file is dendrite index and segment index'''
+            x0 = []
+            y0 = []
+            z0 = []
+            seg = []
+            for i in range(0, 4):
+                x0.append(np.arange(0, den_len[i], seg_inval) * np.cos(x_candi[i]) + center[0])
+                y0.append(np.arange(0, den_len[i], seg_inval) * np.sin(x_candi[i]) * np.cos(angle[i]) + center[1])
+                z0.append(np.arange(0, den_len[i], seg_inval) * np.sin(x_candi[i]) * np.sin(angle[i]) + center[2])
+            for i in range(0, den_num):
+                temp = []
+                for j in range(0, len(x0[i])):
+                    temp.append(np.vstack((x0[i][j], y0[i][j], z0[i][j], i)))
+                temp = np.reshape(temp, (-1, 4))
+                seg.append(np.array_split(temp, seg_num))
+            del temp
+            for i in range(0, 4):
+                for j in range(0, 10):
+                    for k in range(0, len(seg[i][j])):
+                        mid_temp.append(np.hstack((seg[i][j][k], j, cell_ind, center[0], center[1], center[2])))
+            final_temp = np.reshape(mid_temp, (-1, 9))
+            cell_ind += 1
+            coords = final_temp[:, 0:3]
+            idx = final_temp[:, 3]
+            segs = final_temp[:, 4]
+            idx += 1
+            segs += 1
+            return coords, idx, segs
+
+# class Map(dict):
+#     """
+#     Example:
+#     m = Map({'first_name': 'Eduardo'}, last_name='Pool', age=24, sports=['Soccer'])
+#     """
+#     def __init__(self, *args, **kwargs):
+#         super(Map, self).__init__(*args, **kwargs)
+#         for arg in args:
+#             if isinstance(arg, dict):
+#                 for k, v in iter(arg.items()):
+#                     self[k] = v
+#
+#         if kwargs:
+#             for k, v in iter(kwargs.items()):
+#                 self[k] = v
+#
+#     def __getattr__(self, attr):
+#         return self.get(attr)
+#
+#     def __setattr__(self, key, value):
+#         self.__setitem__(key, value)
+#
+#     def __setitem__(self, key, value):
+#         super(Map, self).__setitem__(key, value)
+#         self.__dict__.update({key: value})
+#
+#     def __delattr__(self, item):
+#         self.__delitem__(item)
+#
+#     def __delitem__(self, key):
+#         super(Map, self).__delitem__(key)
+#         del self.__dict__[key]
+#
+# if __name__ == "__main__":
+#     x = Map({'test': 1})
+#     print(x.test)
+#     a = Cell_pop(1)
+#     som_coord = a.gen_random_cell_loc(10, 1500, 750, 200, 2)
+#     print(som_coord)
+#     mlis = MLI_pop([])
+#     print(mlis)
+#     print(a.load_somata(som_coord))
+#     print(mlis.add_dendrites())
