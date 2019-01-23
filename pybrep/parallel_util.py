@@ -5,11 +5,13 @@ parallel_util.py
 Contains functions that will be imported to each worker in the parallel version of pyBREP.
 Queries given points in a given tree, saves results.
 '''
+
 import pandas as pd
 import sqlite3
-from util import str_l
+from .util import str_l
 
-def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, prefix, table_name, save_mode, debug=False):
+
+def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, debug=False):
     '''
     Performs distance-based searches for the linearized version of pyBREP (currently Connect_2D)
     kdt: 2D Tree with points
@@ -54,17 +56,6 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
 
         res.append(ind.astype('int'))
 
-    prefix  = str(prefix)
-    # fn_tar  = prefix + 'targets'   + str(ids[0]) + '.dat'
-    # fn_src  = prefix + 'sources'   + str(ids[0]) + '.dat'
-    # fn_segs = prefix + 'segments'  + str(ids[0]) + '.dat'
-    # fn_dis  = prefix + 'distances' + str(ids[0]) + '.dat'
-    # if debug:
-    #     fn_coords = prefix + 'coords' + str(ids[0])+'.dat'
-    #     f_coords = open(fn_coords, 'w')
-
-    # with open(fn_tar, 'w') as f_tar, open(fn_src, 'w') as f_src, open(fn_dis, 'w') as f_dis, open(fn_segs, 'w') as f_segs:
-
     dfs = []
     for (l, cl, cl_l) in zip(list(ids[1]), res, res_l):
 
@@ -78,7 +69,6 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
             if lin_in_tree:
                 s_ar = pts.seg[l,:].astype('int')
                 seg_data = [s_ar for i in range(len(cl))]
-                # f_segs.write("\n".join(map(str_l, seg_data)))#*numpy.ones((len(cl), len (s_ar))))))
 
                 q_id = (numpy.ones(len(cl))*pts.idx[l]).astype('int')
                 tr_id = cl
@@ -97,8 +87,6 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
             else:
                 src_data = q_id
                 tgt_data = tr_id
-            # f_src.write("\n".join(map(str, src_data)))
-            # f_tar.write("\n".join(map(str, tgt_data)))
 
             df = pd.DataFrame()
             df['source'] = src_data
@@ -108,38 +96,18 @@ def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_
             df['distance'] = dist_data
 
             if debug:
-                # f_coords.write((' '.join(map(str, pts.coo[l]))+'\n')*len(cl))
                 df['x'] = pts.coo[l][0]
                 df['y'] = pts.coo[l][1]
                 df['z'] = pts.coo[l][2]
 
             dfs.append(df)
 
-    #         #need to attach one more line here or we get two elements per line
-    #         f_dis.write("\n")
-    #         f_src.write("\n")
-    #         f_tar.write("\n")
-    #         f_segs.write("\n")
-
-    # if debug:
-    #     f_coords.close()
-
     dfs = pd.concat(dfs, ignore_index=True)
 
-    if save_mode=='sqlite':
-        conn = sqlite3.connect(prefix+'.db')
-        dfs.to_sql(table_name, conn, if_exists='append', index=False)
-        conn.close()
-
-    if save_mode=='hdf':
-        store = pd.HDFStore(prefix+'.h5', 'a')
-        store.append(table_name, dfs)
-        store.close()
-
-    return [ids[0], res, res_l]
+    return dfs
 
 
-def find_connections_3dpar(kdt, spts, tpts, c_rad,  src_in_tree, ids, prefix):
+def find_connections_3dpar(kdt, spts, tpts, c_rad,  src_in_tree, ids, use_distance, avoid_self):
     '''
     Performs distance-based searches between two populations of 3 dimensional point cloud structures
     spts: Query_point object for the source structure
@@ -158,42 +126,25 @@ def find_connections_3dpar(kdt, spts, tpts, c_rad,  src_in_tree, ids, prefix):
         q_pts = spts.coo
 
     res = []
-
+    res_l = []
     # iterate through the query points
     for i, pt in enumerate(q_pts[ids[1]]):
         # find the points within the critical radius
         ind, = kdt.query_radius(numpy.expand_dims(pt, axis=0), r=c_rad)
         res.append(ind.astype('int'))
+    dfs = []
 
-    prefix = str(prefix)
+    for (l, cl) in zip(list(ids[1].astype('int')), res):
+        if len(cl) > 0:
+            #depending on which population should be source and which should be target, save cell IDs accordingly.
+            if src_in_tree:
+                tgt_data = numpy.ones(len(cl)) * tpts.idx[l]
+                src_data = spts.idx[cl.astype('int')]
+                seg_data = [tpts.seg[l,:].astype('int') for i in range(len(cl))]
+            else:
+                tgt_data = tpts.idx[cl]
+                src_data = numpy.ones(len(cl)) * spts.idx[l]
+                seg_data = tpts.seg[cl.astype('int')]
 
-    fn_tar = prefix + 'target' + str(ids[0]) + '.dat'
-    fn_src = prefix + 'source' + str(ids[0]) + '.dat'
-    fn_sseg = prefix + 'source_segments' + str(ids[0]) + '.dat'
-    fn_tseg = prefix + 'target_segments' + str(ids[0]) + '.dat'
-
-    with open(fn_tar, 'w') as f_tar, open(fn_src, 'w') as f_src, open(fn_sseg, 'w') as f_sseg, open(fn_tseg, 'w') as f_tseg:
-
-        for (l, cl) in zip(list(ids[1].astype('int')), res):
-
-            if len(cl)>0:
-                #depending on which population should be source and which should be target, save cell IDs accordingly.
-                if src_in_tree:
-                    f_tar.write("\n".join(map(str, numpy.ones(len(cl)) * tpts.idx[l])))
-                    f_src.write("\n".join(map(str, spts.idx[cl.astype('int')])))
-
-                    f_tseg.write("\n".join(map(str_l, [tpts.seg[l,:].astype('int') for i in range(len(cl))] )))
-                    f_sseg.write("\n".join(map(str_l, spts.seg[cl.astype('int')].astype('int'))))
-                else:
-                    f_tar.write("\n".join(map(str, tpts.idx[cl])))
-                    f_src.write("\n".join(map(str, numpy.ones(len(cl)) * spts.idx[l])))
-
-                    f_tseg.write("\n".join(map(str, tpts.seg[cl.astype('int')])))
-                    f_sseg.write("\n".join(map(str, [spts.seg[l].astype('int') for i in range(len(cl))] )))
-                #need to attach one more line here or we get two elements per line
-                f_dis.write("\n")
-                f_src.write("\n")
-                f_tar.write("\n")
-                f_segs.write("\n")
-
-    return [ids[0], res]
+    dfs = pd.concat(dfs, ignore_index=True)
+    return dfs
