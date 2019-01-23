@@ -1,8 +1,8 @@
 import numpy as np
 from pathlib import Path
 import csv
-from util import str_l, Query_point
-
+from .util import str_l, Query_point
+from tqdm import tqdm
 
 class Cell_pop(object):
 
@@ -396,7 +396,6 @@ class MLI_pop(Cell_pop):
         # TODO: read parameters from self.args
         soma_xyz = self.som
 
-        cell_ind = 0
         mid_temp = []
         center_candi = soma_xyz
 
@@ -404,7 +403,7 @@ class MLI_pop(Cell_pop):
             result = np.sqrt(np.abs(max_length ** 2 - (z - center[2]) ** 2))
             return [center[1] + result, center[1] + (-1) * result]
 
-        for center in center_candi:
+        for cell_ind, center in tqdm(enumerate(center_candi)):
             # Let's make angle and length
             den_num = 4  # parameter
             max_length = 100  # parameter: Maximum dendrite length
@@ -485,11 +484,9 @@ class MLI_pop(Cell_pop):
                         mid_temp.append(np.hstack((seg[i][j][k], j, cell_ind, center[0], center[1], center[2])))
             final_temp = np.reshape(mid_temp, (-1, 9))
 
-            cell_ind += 1
             coords = final_temp[:, 0:3]
             idx = final_temp[:, 5]
             segs = final_temp[:, [4, 3]]
-            idx += 1
             segs += 1
         return coords, idx, segs
 
