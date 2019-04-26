@@ -113,5 +113,5 @@ ENV/
 # mypy
 .mypy_cache/
 
-# intelligent idea
+# pycharm
 .idea/
