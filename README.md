@@ -20,7 +20,7 @@ python setup.py install
 
 ## Authors
 
-* **Ines Wiechert** - *Connectivity*
+* **Ines Wichert** - *Connectivity*
 * **Sanghun Jee** - *Cell population*
 * [**Sungho Hong**](http://shhong.github.io) - *Enjoyed working with two great interns!*
 
