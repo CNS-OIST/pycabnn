@@ -22,7 +22,7 @@ def Bridson_sampling_second(sizeI, spacing, nPts, showIter, pts1):
     #Setting properties of iterati
     ndim = len(sizeI)
     cellsize = spacing / np.sqrt(ndim)
-    k = 5
+    # k = 5
     dartFactor = 4
 
     #Make grid size such that there is just one pt in each grid
@@ -183,4 +183,3 @@ def Bridson_sampling_second(sizeI, spacing, nPts, showIter, pts1):
      # ax1.set_xlabel('X')
      # ax1.set_ylabel('Y')
      # ax1.set_zlabel('Z')
-

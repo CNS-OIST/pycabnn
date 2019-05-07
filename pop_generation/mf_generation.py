@@ -21,7 +21,7 @@ def make_3d_grid(sizeI, cellsize):
 def Bridson_sampling_1(fgrid, sizeI, spacing, nPts, showIter):
     ndim = len(sizeI)
     cellsize = spacing / np.sqrt(ndim)
-    k = 5
+    # k = 5
     dartFactor = 4
 
     # Make grid size such that there is just one pt in each grid
@@ -30,9 +30,6 @@ def Bridson_sampling_1(fgrid, sizeI, spacing, nPts, showIter):
     # Make a grid and convert it into a nx3 array
     # sGrid_nd = np.mgrid[0:sizeI[i]:cellsize for i in range(ndim)]
     sGrid_nd = fgrid(sizeI, cellsize)
-
-    # patchwork
-    # sGrid_nd_1 =
 
     sGrid = np.array([sGrid_nd[i][:].flatten() for i in range(ndim)]).T
     del (sGrid_nd)
@@ -124,6 +121,6 @@ def Bridson_sampling_1(fgrid, sizeI, spacing, nPts, showIter):
 Bridson_sampling_2d = partial(Bridson_sampling_1,
                               make_2d_grid)
 
-Bridson_sampling_firstp = partial(Bridson_sampling_1,
+Bridson_sampling_first = partial(Bridson_sampling_1,
                                  make_3d_grid)
 
