@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import spatial
 from functools import partial
+from tqdm import tqdm
 
 # References: Fast Poisson Disk Sampling in Arbitrary Dimensions
 #             Robert Bridson, SIGGRAPH, 2007
@@ -52,6 +53,7 @@ def Bridson_sampling_1(fgrid, sizeI, spacing, nPts, showIter):
     iter = 0
 
     # Start Iterative process
+    pbar = tqdm(total=nPts)
     while ptsCreated < nPts and nEmptyGrid > 0:
         # Thrown darts in eligible grids
         availGrid, = np.where(emptyGrid)
@@ -102,9 +104,12 @@ def Bridson_sampling_1(fgrid, sizeI, spacing, nPts, showIter):
         # Update quantities for next iterations
         nEmptyGrid = emptyGrid.sum()
         pts = np.vstack((pts, tempPts))
+        pts_newly_created = pts.shape[0] - ptsCreated
         ptsCreated = pts.shape[0]
         if showIter:
-            print('Iteration: {}    Points Created: {}    EmptyGrid:{}'.format(iter, pts.shape[0], nEmptyGrid))
+            # print('Iteration: {}    Points Created: {}    EmptyGrid:{}'.format(iter, pts.shape[0], nEmptyGrid))
+            pbar.update(pts_newly_created)
+
         iter += 1
     # Cut down pts if more points are generated
     if pts.shape[0] > nPts:
@@ -113,9 +118,11 @@ def Bridson_sampling_1(fgrid, sizeI, spacing, nPts, showIter):
         pts = pts[p, :]
 
     if showIter:
+        pbar.close()
         print('Iteration: {}    (final)Points Created: {}    EmptyGrid:{}'.format(iter, pts.shape[0], nEmptyGrid))
 
     return pts
+
 
 
 Bridson_sampling_2d = partial(Bridson_sampling_1,
@@ -123,4 +130,3 @@ Bridson_sampling_2d = partial(Bridson_sampling_1,
 
 Bridson_sampling_first = partial(Bridson_sampling_1,
                                  make_3d_grid)
-

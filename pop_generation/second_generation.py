@@ -9,6 +9,8 @@ from scipy import spatial
 #from mpl_toolkits.mplot3d import Axes3D
 #import pickle
 #import time
+from tqdm import tqdm
+
 # 3D version
 
 def Bridson_sampling_second(sizeI, spacing, nPts, showIter, pts1):
@@ -56,6 +58,7 @@ def Bridson_sampling_second(sizeI, spacing, nPts, showIter, pts1):
     iter = 0
     itercount = np.zeros(shape=(10000, 2))
     # Start Iterative process
+    pbar = tqdm(total=nPts)
     while ptsCreated < nPts and nEmptyGrid > 0:
         # Thrown darts in eligible grids
         availGrid,  = np.where(emptyGrid)
@@ -110,9 +113,12 @@ def Bridson_sampling_second(sizeI, spacing, nPts, showIter, pts1):
         # Update quantities for next iterations
         nEmptyGrid = emptyGrid.sum()
         pts = np.vstack((pts, tempPts))
+        pts_newly_created = pts.shape[0] - ptsCreated
         ptsCreated = pts.shape[0]
         if showIter:
-            print('Iteration: {}    Points Created: {}    EmptyGrid:{}'.format(iter, pts.shape[0], nEmptyGrid))
+            # print('Iteration: {}    Points Created: {}    EmptyGrid:{}'.format(iter, pts.shape[0], nEmptyGrid))
+            pbar.update(pts_newly_created)
+
         iter += 1
         itercount[iter, 0] = iter
         itercount[iter, 1] = ptsCreated
@@ -132,7 +138,8 @@ def Bridson_sampling_second(sizeI, spacing, nPts, showIter, pts1):
 
 
     if showIter:
-        print('Iteration: {}    (final)Points Created: {}    EmptyGrid:{}'.format(iter,pts.shape[0],nEmptyGrid))
+        pbar.close()
+        print('Iteration: {}    (final)Points Created: {}    EmptyGrid:{}'.format(iter, pts.shape[0], nEmptyGrid))
     return pts
 
 # if __name__ == '__main__':
