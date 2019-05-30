@@ -1,5 +1,5 @@
 # %%
-%matplotlib widget
+#%matplotlib widget
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -33,6 +33,7 @@ def add_soma(ax, somc, r=15):
 
     ax.plot_surface(xdata, ydata, zdata, rstride=3, cstride=3, color=ncol, shade=0)
 
+
 def add_soma_p(ax, somc, r=15):
 
     import scipy.ndimage
@@ -49,8 +50,9 @@ def add_soma_p(ax, somc, r=15):
     ydata = scipy.ndimage.zoom(y, 3)
     zdata = scipy.ndimage.zoom(z, 3)
 
-    ax.plot_surface(xdata*0+475, ydata, zdata, rstride=3, cstride=3, color=ncol, shade=0)
-
+    ax.plot_surface(
+        xdata * 0 + 475, ydata, zdata, rstride=3, cstride=3, color=ncol, shade=0
+    )
 
 
 def pt3dadd(ax, pt1, pt2, r):
@@ -67,6 +69,7 @@ def pt3dadd_p(ax, pt1, pt2, r):
         return np.array(pt2)
     else:
         return pt2
+
 
 def plot_dends(ax, somc):
     main_dend_end = dend_plot(ax, somc, [somc[0], somc[1], somc[2] + 50], 6)
@@ -139,24 +142,34 @@ endpoint(
 crosspoint([775], [378 + yshift], [322])
 falsecrosspoint([775], [308 + yshift], [300])
 
-projectedpoint = lambda ys, zs: ax.scatter(np.tile(475, len(ys)), ys, zs, s=30, marker='x', c="k", depthshade=False)
+projectedpoint = lambda ys, zs: ax.scatter(
+    np.tile(475, len(ys)), ys, zs, s=30, marker="x", c="k", depthshade=False
+)
 
-projectedpoint(np.array([240, 330, 350, 390])+yshift, [300, 290, 310, 350])
+projectedpoint(np.array([240, 330, 350, 390]) + yshift, [300, 290, 310, 350])
 
-projectedpoint = lambda ys, zs: ax.scatter(np.tile(475, len(ys)), ys, zs, s=30, marker='x', c="r", depthshade=False)
-projectedpoint(np.array([305, 375])+yshift, [300, 325])
+projectedpoint = lambda ys, zs: ax.scatter(
+    np.tile(475, len(ys)), ys, zs, s=30, marker="x", c="r", depthshade=False
+)
+projectedpoint(np.array([305, 375]) + yshift, [300, 325])
 
 
-ax.set(xlim=[550, 950], ylim=[175, 475], zlim=[150, 450],
-       xticklabels=[], yticklabels=[], zticklabels=[])
-ax.w_xaxis.line.set_color('w')
-ax.w_yaxis.line.set_color('w')
-ax.w_zaxis.line.set_color('w')
-ax.xaxis._axinfo['tick']['color']='w'
-ax.yaxis._axinfo['tick']['color']='w'
-ax.zaxis._axinfo['tick']['color']='w'
+ax.set(
+    xlim=[550, 950],
+    ylim=[175, 475],
+    zlim=[150, 450],
+    xticklabels=[],
+    yticklabels=[],
+    zticklabels=[],
+)
+
+ax.w_xaxis.line.set_color("w")
+ax.w_yaxis.line.set_color("w")
+ax.w_zaxis.line.set_color("w")
+ax.xaxis._axinfo["tick"]["color"] = "w"
+ax.yaxis._axinfo["tick"]["color"] = "w"
+ax.zaxis._axinfo["tick"]["color"] = "w"
 
 plt.tight_layout()
-plt.savefig('project.jpg', dpi=300)
-
-# %%
+plt.savefig("project.jpg", dpi=300)
+plt.savefig("project.pdf", dpi=300)
