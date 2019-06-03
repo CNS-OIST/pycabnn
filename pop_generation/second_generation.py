@@ -1,192 +1,140 @@
-# -----------------------------------------------------------------------------
-# From Numpy to Python
-# Copyright (2017) Nicolas P. Rougier - BSD license
-# More information at https://github.com/rougier/numpy-book
-# -----------------------------------------------------------------------------
+# References: Fast Poisson Disk Sampling in Arbitrary Dimensions
+#             Robert Bridson, SIGGRAPH, 2007
+
 import numpy as np
-from scipy import spatial
-#import matplotlib.pyplot as plt
-#from mpl_toolkits.mplot3d import Axes3D
-#import pickle
-#import time
-from tqdm import tqdm
+
+# from scipy import spatial
+from functools import partial
+from tqdm.autonotebook import tqdm
+from sklearn.neighbors import KDTree
+
+
+def make_2d_grid(sizeI, cellsize):
+    return np.mgrid[0 : sizeI[0] : cellsize, 0 : sizeI[1] : cellsize]
+
+
+def make_3d_grid(sizeI, cellsize):
+    return np.mgrid[
+        0 : sizeI[0] : cellsize, 0 : sizeI[1] : cellsize, 0 : sizeI[2] : cellsize
+    ]
+
+
+def set_nDarts(nPts, n_pts_created, nEmptyGrid, dartFactor=4):
+    n_to_create = nPts - n_pts_created
+
+    ndarts = np.min([np.round(nPts / dartFactor), nEmptyGrid])
+    # ndarts = np.round(nPts / dartFactor)
+    return int(np.round(ndarts))
 
 # 3D version
+fgrid = make_3d_grid
 
-def Bridson_sampling_second(sizeI, spacing, nPts, showIter, pts1):
-    # References: Fast Poisson Disk Sampling in Arbitrary Dimensions
-    #             Robert Bridson, SIGGRAPH, 2007
-    # Previous points and the spacing
-    #pts1 = np.random.rand(30, 3) #Should be input value of this function
+def Bridson_sampling_2(sizeI, spacing, nPts, showIter, ftests=[],discount_factor=0.75):
     count = 0
     count_time = []
     elapsed_time= []
+
     #Setting properties of iterati
     ndim = len(sizeI)
     cellsize = spacing / np.sqrt(ndim)
-    # k = 5
-    dartFactor = 4
 
-    #Make grid size such that there is just one pt in each grid
-    dm = spacing/np.sqrt(ndim)
+    # Make grid size such that there is just one pt in each grid
+    dgrid = spacing / np.sqrt(ndim)
 
-    # Make a grid and convert it into a nx3 array
-    sGrid_nd = np.mgrid[0:sizeI[0]:cellsize, 0:sizeI[1]:cellsize, 0:sizeI[2]:cellsize]
-    #sGrid_nd = np.mgrid[0:sizeI[i]:cellsize for i in range(ndim)]
-
-    #patchwork
-    #sGrid_nd_1 =
+    # Make a grid and convert it into a nxD array
+    sGrid_nd = fgrid(sizeI, cellsize)
 
     sGrid = np.array([sGrid_nd[i][:].flatten() for i in range(ndim)]).T
     del(sGrid_nd)
-    #sizeGrid = np.size(sGrid[0])
 
-    #Thrown in a particular grid
-    emptyGrid = np.ones(sGrid.shape[0], dtype=bool)
-    nEmptyGrid = emptyGrid.sum()
-    scoreGrid = np.zeros(sGrid.shape[0])
-
-    # Darts to be thrown per iterations
-    if nPts == 0:
-        nPts = nEmptyGrid
-        ndarts = np.round(nEmptyGrid / dartFactor)
-    ndarts = np.round(nPts / dartFactor)
+    # Thrown in a particular grid
+    is_grid_empty = np.ones(sGrid.shape[0], dtype=bool)
+    nEmptyGrid = is_grid_empty.sum()
+    scoreGrid = np.ones(sGrid.shape[0])
+    scoreGrid = scoreGrid
 
     # Initialize Parameters
-    ptsCreated = 0
+    if nPts == 0:
+        nPts = nEmptyGrid
+    n_pts_created = 0
     pts = np.empty(shape=(1, ndim))
     iter = 0
+
     itercount = np.zeros(shape=(10000, 2))
+
     # Start Iterative process
     pbar = tqdm(total=nPts)
-    while ptsCreated < nPts and nEmptyGrid > 0:
+
+    if ftests==[]:
+        is_safe_to_continue = 1
+
+    while n_pts_created < nPts and nEmptyGrid > 0:
         # Thrown darts in eligible grids
-        availGrid,  = np.where(emptyGrid)
-        dataPts = min(nEmptyGrid, ndarts)
-        p = np.random.choice(availGrid, int(dataPts), replace=False)
-        tempPts = sGrid[p, :] + dm * np.random.rand(len(p), ndim)
+        availGrid, = np.where(is_grid_empty)
+        score_availGrid = scoreGrid[availGrid]
+        score_availGrid = score_availGrid / score_availGrid.sum()
 
-        # Find good dart throws
-        D, _ = spatial.cKDTree(np.vstack((pts1, pts, tempPts))).query(tempPts, k=2)
-        #D = np.reshape(D[:, 1], (-1, 1))
-        D = D[:, 1]
+        ndarts = set_nDarts(nPts, n_pts_created, nEmptyGrid)
+        p = np.random.choice(availGrid, ndarts, replace=False, p=score_availGrid)
+        tempPts = sGrid[p, :] + dgrid * np.random.rand(len(p), ndim)
 
         #Check with previous points
-        Dist, _ = spatial.KDTree(np.vstack((pts1, tempPts))).query(tempPts, k=2)
-        Dist = Dist[:, 1]
+        # withinI = np.array([tempPts[:, i] < sizeI[i] for i in range(ndim)]).T
+        # withinI = np.array([np.prod(x) for x in withinI])
+        # eligiblePts = (withinI>0)*(D>spacing)*(Dist > 10)
 
-        #Check with previous points
-        #Dist1, _ = spatial.KDTree(np.vstack((pts2, tempPts))).query(tempPts, k=2)
-        #Dist1 = Dist1[:, 1]
+        if ftests!=[]:
+            is_safe_with_prev_pts = np.ones(len(p), dtype=bool)
+            for ftest in ftests:
+                is_safe_with_prev_pts = is_safe_with_prev_pts * ftest(tempPts)
 
-        withinI = np.array([tempPts[:, i] < sizeI[i] for i in range(ndim)]).T
-        withinI = np.array([np.prod(x) for x in withinI])
-        eligiblePts = (withinI>0)*(D>spacing)*(Dist > 10)
-        #(Dist > p_spacing) * (Dist1 > p_spacing1)
+            rejected_grids = p[~is_safe_with_prev_pts]
+            scoreGrid[rejected_grids] = scoreGrid[rejected_grids] * discount_factor
+            is_safe_to_continue = np.sum(is_safe_with_prev_pts)
+            p = p[is_safe_with_prev_pts]
+            tempPts = tempPts[is_safe_with_prev_pts, :]
 
-       # scorePts = tempPts[eligiblePts==False, :]
-        tempPts = tempPts[eligiblePts, :]
-        # Update empty Grid
-    #     emptyPts = np.floor((tempPts + dm - 1) / dm)
-    #     emptyPts_0 = emptyPts[0]
-    #     emptyPts_1 = emptyPts[1]
-    #     emptyPts_2 = emptyPts[2]
-    #     emptyPts = (emptyPts_0, emptyPts_1, emptyPts_2)
-    #     emptyIdx = np.ravel(sizeGrid, emptyPts)  # 이거 좀 더 유심히
-    #     emptyGrid[emptyIdx] = 0
-        # alternatively,
-        emptyGrid[p[eligiblePts]] = False
+        if is_safe_to_continue>0:
+            # Find good dart throws
+            # D, _ = KDTree(np.vstack((pts, tempPts))).query(tempPts, k=2)
+            # D = D[:, 1]
+            # is_eligible = (D > spacing)
+            is_eligible = (KDTree(np.vstack((pts, tempPts))).query_radius(tempPts, r=spacing, count_only=True) < 2)
 
-    #     # Update score pts
-    #     scorePts = floor((scorePts + dm - 1) / dm)
-    #     scorePts_0 = scorePts[0]
-    #     scorePts_1 = scorePts[1]
-    #     scorePts_2 = scorePts[2]
-    #     scorePts = [scorePts_0, scorePts_1, scorePts_2]
-    #     scoreIdx = np.ravel(sizeGrid, scorePts)
-    #     scoreGrid[scoreIdx]= scoreGrid([scoreIdx] + 1
-    #
-        bad_dart_grid = p[eligiblePts==False]
-        scoreGrid[bad_dart_grid] = scoreGrid[bad_dart_grid] + 1
-        # Update emptyGrid if scoreGrid has exceeded k dart throws
+            accepted_pts = tempPts[is_eligible, :]
 
-        # Update quantities for next iterations
-        nEmptyGrid = emptyGrid.sum()
-        pts = np.vstack((pts, tempPts))
-        pts_newly_created = pts.shape[0] - ptsCreated
-        ptsCreated = pts.shape[0]
-        if showIter:
-            # print('Iteration: {}    Points Created: {}    EmptyGrid:{}'.format(iter, pts.shape[0], nEmptyGrid))
-            pbar.update(pts_newly_created)
+            accepted_grids = p[is_eligible]
+            rejected_grids = p[~is_eligible]
+
+            is_grid_empty[accepted_grids] = False
+
+            scoreGrid[rejected_grids] = scoreGrid[rejected_grids] * discount_factor
+
+            # Update quantities for next iterations
+            nEmptyGrid = is_grid_empty.sum()
+            if n_pts_created==0:
+                pts = accepted_pts
+            else:
+                pts = np.vstack((pts, accepted_pts))
+            n_pts_newly_created = accepted_pts.shape[0]
+            n_pts_created = pts.shape[0]
+
+            if showIter:
+                pbar.update(n_pts_newly_created)
 
         iter += 1
-        itercount[iter, 0] = iter
-        itercount[iter, 1] = ptsCreated
-        iter += 1
-        if itercount[iter - 1, 1] == itercount[iter - 5, 1]:
-            print('I checked it')
-            break
-        # count_time.append(count)
-        # end_time = time.perf_counter()
-        # elapsed_time.append(np.abs(end_time - start_time))
-        count += 1
-    # Cut down pts if more points are generated
+
     if pts.shape[0] > nPts:
         p = np.arange(pts.shape[0])
         p = np.random.choice(p, nPts, replace=False)
         pts = pts[p, :]
 
-
     if showIter:
         pbar.close()
-        print('Iteration: {}    (final)Points Created: {}    EmptyGrid:{}'.format(iter, pts.shape[0], nEmptyGrid))
+        print(
+            "Iteration: {}, (final)Points Created: {}, is_grid_empty:{} ({}%)".format(
+                iter, pts.shape[0], nEmptyGrid, nEmptyGrid / sGrid.shape[0] * 100
+            )
+        )
     return pts
 
-# if __name__ == '__main__':
-#     # start_time = time.perf_counter()
-#     #pts1 = np.loadtxt('GoC.txt')
-#     #pts2 = np.loadtxt('GoC and MF.txt')
-#     points1 = Bridson_sampling((700, 1500, 430), 20, 2300000, True)
-#     # count_time = points1[2]
-#     # elapsed_time = points1[1]
-
-    # fig = plt.figure()
-    # # #subplot setting
-    # ax1 = fig.add_subplot(111)
-    # ax1.plot(count_time, elapsed_time)
-    # ax1.set_xlabel('count', fontsize = 15)
-    # ax1.set_ylabel('time',  fontsize = 15)
-    # plt.show()
-
-#5
-#     # Data save
-    #np.savetxt('GrcReal.txt', points1)
-    #
-    #####Figure_Section#####
-    #plt.close('all')
-    #fig = plt.figure()
-    # subplot setting
-    #ax1 = fig.add_subplot(1, 1, 1, projection='3d')
-    # fig.subplots_adjust(hspace= 0.5, wspace = 0.3)
-#     X = [x for (x, y, z) in points1]
-#     Y = [y for (x, y, z) in points1]
-#     Z = [z for (x, y, z) in points1]
-#
-#     X1 = [x for (x, y, z) in pts1]
-#     Y1 = [y for (x, y, z) in pts1]
-#     Z1 = [z for (x, y, z) in pts1]
-#
-#     X2 = [x for (x, y, z) in pts2]
-#     Y2 = [y for (x, y, z) in pts2]
-#     Z2 = [z for (x, y, z) in pts2]
-# # Another things..
-#     ax1.scatter(X, Y, Z, s=10)
-#     ax1.scatter(X1, Y1, Z1, s=20, c='r')
-#     ax1.scatter(X2, Y2, Z2, s=20, c= 'g')
-#     ax1.scatter
-# ax1.set_xlim(0, 0.3)
-     #ax1.set_ylim(0.15, 0.3)
-     #ax1.set_zlim(0, 0.3)
-     # ax1.set_xlabel('X')
-     # ax1.set_ylabel('Y')
-     # ax1.set_zlabel('Z')
