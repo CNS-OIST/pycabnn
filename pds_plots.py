@@ -8,8 +8,12 @@ def plot_circles(mf_points, box, r, color, ax=None):
     if ax is None:
         _, ax = plt.subplots(figsize=(7, 7))
 
-    for p in mf_points:
-        ax.add_artist(Circle((p[0], p[1]), radius=r, color=color))
+    if type(r)==np.ndarray:
+        for i, p in enumerate(mf_points):
+            ax.add_artist(Circle((p[0], p[1]), radius=r[i], color=color))
+    else:
+        for p in mf_points:
+            ax.add_artist(Circle((p[0], p[1]), radius=r, color=color))
     # ax.scatter(mf_points[:, 0], mf_points[:, 1], 50, 'k')
     ax.set(xlim=[0, Horizontal_range],
            ylim=[0, Transverse_range])
@@ -40,11 +44,13 @@ def plot_mf_2(mf_points, box):
     plt.savefig('mf_vor.png', dpi=300)
 
 
-def plot_slice(points, box, slice, r, color='k', ax=None):
+def plot_slice(points, box, z_focal, r, color='k', ax=None):
     z = points[:, 2]
-    indc = np.logical_and(z>slice[0], z<slice[1])
+    zdist = np.abs(z-z_focal)
+    indc = (zdist < r)
     spoints = points[indc, :]
-    return plot_circles(spoints[:,:2], box[:2], r, color=color, ax=ax)
+    r_focal = np.sqrt(r**2 - zdist[indc]**2)
+    return plot_circles(spoints[:,:2], box[:2], r_focal, color=color, ax=ax)
 
 
 def plot_goc(points, box, slice, r):

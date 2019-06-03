@@ -1,6 +1,6 @@
 # %%
-# %load_ext autoreload
-# %autoreload 2
+%load_ext autoreload
+%autoreload 2
 import numpy as np
 from neuron import h
 import pds_plots as ppl
@@ -10,8 +10,10 @@ from pop_generation.mf_generation import Bridson_sampling_2d
 h.load_file('test/set3005/Parameters.hoc')
 
 # %%
+h.MFxrange = 740
+h.MFyrange = 740
+h.GLdepth = 240
 
-h.MFxrange = h.MFyrange = 700
 
 def compute_mf_params(h):
     Transverse_range = h.MFyrange
@@ -31,7 +33,7 @@ def compute_mf_params(h):
 
 mf_box, n_mf = compute_mf_params(h)
 
-spacing_mf = 14
+spacing_mf = 14.2
 mf_points = Bridson_sampling_2d(mf_box, spacing_mf, n_mf, True)
 
 # %%
@@ -42,7 +44,7 @@ ppl.plot_mf_2(mf_points, mf_box)
 def compute_goc_params(h):
     Transverse_range = h.MFyrange
     Horizontal_range = h.MFxrange
-    Vertical_range = h.GoCzrange
+    Vertical_range = h.GoCzrange + 50
 
     Volume = Transverse_range * Horizontal_range * Vertical_range
 
@@ -62,22 +64,25 @@ goc_box, n_goc = compute_goc_params(h)
 # d_glo = 6.6 * 1e5 #(Billings et al., 2014)
 # d_grc = 1.9 * 1e6 #(Billings et al., 2014)
 
-spacing_goc = 32 #40 #(NH Barmack, V Yakhnitsa, 2008)
+spacing_goc = 42 #40 #(NH Barmack, V Yakhnitsa, 2008)
 
 from pop_generation.mf_generation import Bridson_sampling_first
 goc_points = Bridson_sampling_first(goc_box, spacing_goc, n_goc, True)
 goc_points = goc_points + np.random.normal(0, 1, size=(len(goc_points), 3)) #Gaussian noise
+goc_points = goc_points-np.array([20, 20, 20])
 
 # %%
-ppl.plot_goc(goc_points, goc_box, np.array([0, 20])+100, 12)
+ppl.plot_goc(goc_points, goc_box, 0, 20)
 
 # %%
-plt.hist(goc_points[:, 2], 50)
+_ = plt.hist(goc_points[:, 2], 200)
 
-#%%
+# %%
+
+# %%
 print(n_goc, ' ', goc_points.shape[0])
 
-#%%
+# %%
 def compute_glo_params(h):
     Transverse_range = h.MFyrange
     Horizontal_range = h.MFxrange
