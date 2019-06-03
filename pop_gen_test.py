@@ -207,7 +207,7 @@ plt.xlim([25, 425])
 plt.ylim([25, 225])
 
 # %%
-ppl.plot_all_pop((goc_points, 16), (glo_points, 6.6/1.75), (grc_points, 3), [1500, 750], 100, save=True)
+ppl.plot_all_pop((goc_points, 17), (glo_points, 6.6/1.75), (grc_points, 3), [1500, 750], 100, save=True)
 plt.xlim([25, 425])
 plt.ylim([25, 225])
 
