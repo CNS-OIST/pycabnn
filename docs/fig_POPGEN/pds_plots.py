@@ -16,10 +16,10 @@ def plot_circles(mf_points, box, r, color, ec=None, ax=None):
 
     if type(r)==np.ndarray:
         for i, p in tqdm(enumerate(mf_points)):
-            ax.add_artist(Circle((p[0], p[1]), radius=r[i], facecolor=color, edgecolor=ec))
+            ax.add_artist(Circle((p[0], p[1]), radius=r[i], facecolor=color, edgecolor=ec, linewidth=0.5))
     else:
         for p in tqdm(mf_points):
-            ax.add_artist(Circle((p[0], p[1]), radius=r, facecolor=color, edgecolor=ec))
+            ax.add_artist(Circle((p[0], p[1]), radius=r, facecolor=color, edgecolor=ec, linewidth=0.5))
     # ax.scatter(mf_points[:, 0], mf_points[:, 1], 50, 'k')
 
     ax.set(xlim=Horizontal_range,
