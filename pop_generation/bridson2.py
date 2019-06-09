@@ -26,15 +26,17 @@ def set_nDarts(nPts, n_pts_created, nEmptyGrid, dartFactor=4):
     # ndarts = np.round(nPts / dartFactor)
     return int(np.round(ndarts))
 
+
 # 3D version
 fgrid = make_3d_grid
 
-def Bridson_sampling_2(sizeI, spacing, nPts, showIter, ftests=[],discount_factor=0.75):
+
+def Bridson_sampling_2(sizeI, spacing, nPts, showIter, ftests=[], discount_factor=0.75):
     count = 0
     count_time = []
-    elapsed_time= []
+    elapsed_time = []
 
-    #Setting properties of iterati
+    # Setting properties of iterati
     ndim = len(sizeI)
     cellsize = spacing / np.sqrt(ndim)
 
@@ -45,7 +47,7 @@ def Bridson_sampling_2(sizeI, spacing, nPts, showIter, ftests=[],discount_factor
     sGrid_nd = fgrid(sizeI, cellsize)
 
     sGrid = np.array([sGrid_nd[i][:].flatten() for i in range(ndim)]).T
-    del(sGrid_nd)
+    del sGrid_nd
 
     # Thrown in a particular grid
     is_grid_empty = np.ones(sGrid.shape[0], dtype=bool)
@@ -65,7 +67,7 @@ def Bridson_sampling_2(sizeI, spacing, nPts, showIter, ftests=[],discount_factor
     # Start Iterative process
     pbar = tqdm(total=nPts)
 
-    if ftests==[]:
+    if ftests == []:
         is_safe_to_continue = 1
 
     while n_pts_created < nPts and nEmptyGrid > 0:
@@ -78,12 +80,12 @@ def Bridson_sampling_2(sizeI, spacing, nPts, showIter, ftests=[],discount_factor
         p = np.random.choice(availGrid, ndarts, replace=False, p=score_availGrid)
         tempPts = sGrid[p, :] + dgrid * np.random.rand(len(p), ndim)
 
-        #Check with previous points
+        # Check with previous points
         # withinI = np.array([tempPts[:, i] < sizeI[i] for i in range(ndim)]).T
         # withinI = np.array([np.prod(x) for x in withinI])
         # eligiblePts = (withinI>0)*(D>spacing)*(Dist > 10)
 
-        if ftests!=[]:
+        if ftests != []:
             is_safe_with_prev_pts = np.ones(len(p), dtype=bool)
             for ftest in ftests:
                 is_safe_with_prev_pts = is_safe_with_prev_pts * ftest(tempPts)
@@ -94,12 +96,17 @@ def Bridson_sampling_2(sizeI, spacing, nPts, showIter, ftests=[],discount_factor
             p = p[is_safe_with_prev_pts]
             tempPts = tempPts[is_safe_with_prev_pts, :]
 
-        if is_safe_to_continue>0:
+        if is_safe_to_continue > 0:
             # Find good dart throws
             # D, _ = KDTree(np.vstack((pts, tempPts))).query(tempPts, k=2)
             # D = D[:, 1]
             # is_eligible = (D > spacing)
-            is_eligible = (KDTree(np.vstack((pts, tempPts))).query_radius(tempPts, r=spacing, count_only=True) < 2)
+            is_eligible = (
+                KDTree(np.vstack((pts, tempPts))).query_radius(
+                    tempPts, r=spacing, count_only=True
+                )
+                < 2
+            )
 
             accepted_pts = tempPts[is_eligible, :]
 
@@ -112,7 +119,7 @@ def Bridson_sampling_2(sizeI, spacing, nPts, showIter, ftests=[],discount_factor
 
             # Update quantities for next iterations
             nEmptyGrid = is_grid_empty.sum()
-            if n_pts_created==0:
+            if n_pts_created == 0:
                 pts = accepted_pts
             else:
                 pts = np.vstack((pts, accepted_pts))

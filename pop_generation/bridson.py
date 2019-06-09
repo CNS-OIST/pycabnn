@@ -75,11 +75,12 @@ def Bridson_sampling_1(
 
         ndarts = set_nDarts(nPts, n_pts_created, nEmptyGrid)
         if ndarts != sGrid.shape[0]:
-            p = np.random.choice(range(sGrid.shape[0]), ndarts, replace=False, p=scoreGrid)
+            p = np.random.choice(
+                range(sGrid.shape[0]), ndarts, replace=False, p=scoreGrid
+            )
             tempPts = sGrid[p, :] + dgrid * np.random.rand(len(p), ndim)
         else:
             tempPts = sGrid + dgrid * np.random.rand(len(ndarts), ndim)
-
 
         # Check with previous points
         # withinI = np.array([tempPts[:, i] < sizeI[i] for i in range(ndim)]).T
@@ -101,7 +102,8 @@ def Bridson_sampling_1(
             is_eligible = (
                 KDTree(np.vstack((pts, tempPts))).query_radius(
                     tempPts, r=spacing, count_only=True
-                ) < 2
+                )
+                < 2
             )
 
             accepted_pts = tempPts[is_eligible, :]
@@ -110,7 +112,7 @@ def Bridson_sampling_1(
             rejected_grids = p[~is_eligible]
             remaining_grids = np.setdiff1d(range(sGrid.shape[0]), accepted_grids)
 
-            sGrid = sGrid[remaining_grids,:]
+            sGrid = sGrid[remaining_grids, :]
 
             scoreGrid[rejected_grids] = scoreGrid[rejected_grids] * discount_factor
             scoreGrid = scoreGrid[remaining_grids]
