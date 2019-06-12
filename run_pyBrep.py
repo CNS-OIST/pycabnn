@@ -23,6 +23,7 @@ import pybrep as brp
 import time
 from docopt import docopt
 from neuron import h
+import numpy as np
 
 
 def load_input_data(args):
@@ -61,39 +62,63 @@ def load_input_data(args):
     return data
 
 
-def load_and_make_population(data):
+def load_and_make_population(data, pops):
+
     output_path = data["output_path"]
 
-    # Set up the Golgi population, render dendrites
-    gol_in = data["input_path"] / "GoCcoordinates.dat"
-    gg = brp.create_population("Golgi", h)
-    gg.load_somata(gol_in)
-    # # gg.gen_random_cell_loc(1995, 1500, 700, 200)
-    gg.add_dendrites()
-    gg.save_dend_coords(output_path)
-    gg.add_axon()
-    gg.save_somata(output_path, "GoCcoordinates.sorted.dat")
+    def make_glo(data):
+        """sets up the Glomerulus population"""
+        from pybrep.cell_population import Cell_pop
+        glo_in = data["input_path"] / "GLcoordinates.dat"
 
-    t2 = data["t"]
-    t3 = time.time()
-    print("Golgi cell processing:", t3 - t2)
+        glo = Cell_pop(h)
+        glo.load_somata(glo_in)
+        glo.save_somata(output_path, "GLcoordinates.sorted.dat")
 
-    # Set up Granule population including aa and pf
+        t0 = data["t"]
+        t1 = time.time()
+        print("GL processing:", t1 - t0)
+        return (glo, t1)
 
-    gran_in = data["input_path"] / "GCcoordinates.dat"
-    gp = brp.create_population("Granule", h)
-    gp.load_somata(gran_in)
-    gp.add_aa_endpoints_fixed()
-    gp.add_pf_endpoints()
-    gp.save_gct_points(output_path)
-    gp.save_somata(output_path, "GCcoordinates.sorted.dat")
 
-    t4 = time.time()
-    print("Granule cell processing:", t4 - t3)
+    def make_goc(data):
+        """sets up the Golgi population, render dendrites."""
+        gol_in = data["input_path"] / "GoCcoordinates.dat"
+        gg = brp.create_population("Golgi", h)
+        gg.load_somata(gol_in)
+        # # gg.gen_random_cell_loc(1995, 1500, 700, 200)
+        gg.add_dendrites()
+        gg.save_dend_coords(output_path)
+        gg.add_axon()
+        gg.save_somata(output_path, "GoCcoordinates.sorted.dat")
+
+        t2 = data["t"]
+        t3 = time.time()
+        print("Golgi cell processing:", t3 - t2)
+        return (gg, t3)
+
+
+    def make_grc(data):
+        """sets up Granule population including aa and pf."""
+        gran_in = data["input_path"] / "GCcoordinates.dat"
+        gp = brp.create_population("Granule", h)
+        gp.load_somata(gran_in)
+        gp.add_aa_endpoints_fixed()
+        gp.add_pf_endpoints()
+        gp.save_gct_points(output_path)
+        gp.save_somata(output_path, "GCcoordinates.sorted.dat")
+
+        t3 = data["t"]
+        t4 = time.time()
+        print("Granule cell processing:", t4 - t3)
+        return (gp, t4)
+
     print(" ")
 
-    data["t"] = t4
-    data["pops"] = {"grc": gp, "goc": gg}
+    data["pops"] = {}
+    for c in pops:
+        data["pops"][c], t = eval('make_'+c)(data)
+        data["t"] = t
 
     return data
 
@@ -206,14 +231,37 @@ def run_GoCtoGoCgap(data):
     data["t"] = t2
     return data
 
+def run_GlotoGrC(data):
+    from sklearn.neighbors import NearestNeighbors
+
+    glo, grc = data["pops"]["glo"], data["pops"]["grc"]
+
+    def squeezed_som_coord(x):
+        y = x.som.copy()
+        y[:,1] = y[:,1]/3
+        return y
+
+    glo_som_squeezed = squeezed_som_coord(glo)
+    grc_som_squeezed = squeezed_som_coord(grc)
+
+    nn = NearestNeighbors()
+    nn.fit(glo_som_squeezed)
+
+    from IPython import embed
+    embed()
+
 
 def main(args):
     data = load_input_data(args)
-    data = load_and_make_population(data)
+    data = load_and_make_population(data, ["glo", "grc"])
+    # data = load_and_make_population(data, ["grc", "goc"])
+    print(data)
 
-    valid_job_list = ["AAtoGoC", "PFtoGoC", "GoCtoGoC", "GoCtoGoCgap"]
+    valid_job_list = ["AAtoGoC", "PFtoGoC", "GoCtoGoC", "GoCtoGoCgap", "GlotoGrC"]
+
     if args["all"]:
         args["<jobs>"] = valid_job_list
+
     for j in args["<jobs>"]:
         if j not in valid_job_list:
             raise RuntimeError(
