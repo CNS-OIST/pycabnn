@@ -8,7 +8,6 @@ from functools import partial
 from tqdm.autonotebook import tqdm
 from sklearn.neighbors import KDTree, NearestNeighbors
 
-
 def make_2d_grid(sizeI, cellsize):
     return np.mgrid[0 : sizeI[0] : cellsize, 0 : sizeI[1] : cellsize]
 
@@ -48,7 +47,7 @@ def Bridson_sampling_1(
     sGrid_nd = fgrid(sizeI, cellsize)
 
     sGrid = np.array([sGrid_nd[i][:].flatten() for i in range(ndim)]).T
-    del sGrid_nd
+    del(sGrid_nd)
 
     # Thrown in a particular grid
     nEmptyGrid = nEmptyGrid0 = sGrid.shape[0]
@@ -64,12 +63,28 @@ def Bridson_sampling_1(
     iter = 0
 
     # Start Iterative process
-    if showIter:
-        pbar = tqdm(total=nPts)
-        pbar_grid = tqdm(total=nEmptyGrid0)
 
     nn1 = NearestNeighbors(radius=spacing)
     nn2 = NearestNeighbors(radius=spacing)
+
+
+    if ftests != []:
+        print('Testing coverage of cells...')
+        is_cell_uncovered = np.ones(sGrid.shape[0], dtype=bool)
+        for ftest in ftests:
+            is_cell_uncovered = ftest.test_cells(
+                sGrid, dgrid
+            )
+
+            sGrid = sGrid[is_cell_uncovered, :]
+            scoreGrid = scoreGrid[is_cell_uncovered]
+            nEmptyGrid = np.sum(sGrid.shape[0])
+            print('Uncovered cells: {} %\n\n'.format(nEmptyGrid/nEmptyGrid0*100))
+
+    if showIter:
+        pbar = tqdm(total=nPts)
+        pbar_grid = tqdm(total=nEmptyGrid0)
+        pbar_grid.update(nEmptyGrid0-nEmptyGrid)
 
     while n_pts_created < nPts and nEmptyGrid > 0:
         # Thrown darts in eligible grids
@@ -163,8 +178,9 @@ def Bridson_sampling_1(
 
     if showIter:
         pbar.close()
+        pbar_grid.close()
         print(
-            "Iteration: {}, (final)Points Created: {}, is_grid_empty:{} ({}%)".format(
+            "\nIteration: {}, (final)Points Created: {}, is_grid_empty:{} ({}%)".format(
                 iter, pts.shape[0], nEmptyGrid, nEmptyGrid / nEmptyGrid0 * 100
             )
         )

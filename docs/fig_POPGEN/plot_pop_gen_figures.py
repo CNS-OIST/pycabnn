@@ -116,9 +116,9 @@ ax.plot([bbox[0][1]-20, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15
 
 # %%
 ax = ppl.plot_all_pop(
-    (goc, 13.5),
-    (glo, 7.6/2),
-    (grc, 3),
+    (goc1, 13.5),
+    (glo1, 7.6/2),
+    (grc1, 3),
     bbox, 100)
 ax.plot([bbox[0][1]-20, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
 
