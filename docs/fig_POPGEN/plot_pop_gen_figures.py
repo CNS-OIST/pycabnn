@@ -10,13 +10,9 @@ plt.style.use('dark_background')
 import pds_plots as ppl
 
 # %%
-
-f = np.load('coords_20190604_1.npz')
+f = np.load('coords_20190613_1.npz')
 
 mf = f['mf']
-goc = f['goc']
-glo = f['glo']
-grc = f['grc_nop']
 
 bbox = [[0, 1500], [0-20, 700], [0, 200]]
 
@@ -28,15 +24,12 @@ def limit_to_box(x, box):
     return mf
 
 def fix_coors(x):
-    y = x.copy()
-    y = y-np.ones(y.shape[1])*25
+    y = x-np.ones(x.shape[1])*25
     box = [bbox[0], [bbox[1][0]+20, bbox[1][1]], bbox[2]]
     return limit_to_box(y, box[:x.shape[1]])
 
 mf = fix_coors(mf)
-goc = fix_coors(goc)
-glo = fix_coors(glo)
-grc = fix_coors(grc)
+
 
 # %%
 bbox = bbox[:2]
@@ -48,17 +41,28 @@ plt.savefig('mf.png', dpi=300/2.54)
 
 
 # %%
+bbox = [[0, 1500], [0-20, 700], [0, 200]]
+
+goc = f['goc']
+goc = fix_coors(goc)
+
 ax = ppl.plot_goc(goc, bbox, 100, 13.5)
 ax.plot([bbox[0][1]-100, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
 plt.savefig('goc.png', dpi=300/2.54)
 
 # %%
+glo = f['glo']
+glo = fix_coors(glo)
+
 ax = ppl.plot_goc_glo((goc, 13.5), (glo, 6.6 / 1.75), bbox, 100)
 ax.plot([bbox[0][1]-100, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
 plt.savefig('goc+glo.png', dpi=300/2.54)
 #         plt.savefig('goc+glo.png', dpi=300
 
 # %%
+grc = f['grc_nop']
+grc = fix_coors(grc)
+
 ax = ppl.plot_all_pop(
     (goc, 13.5),
     (glo, 6.6 / 1.75),

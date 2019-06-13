@@ -1,14 +1,21 @@
 # %%
+%load_ext autoreload
+%autoreload 2
+
+import sys
+sys.path.append('../../')
+
+# %%
 import numpy as np
 from neuron import h
-from pop_generation.bridson import Bridson_sampling_2d, Bridson_sampling_3d
+from pybrep.pop_generation.bridson import Bridson_sampling_2d, Bridson_sampling_3d
 
-h.load_file("test/set3005/Parameters.hoc")
+h.load_file("../../test/set3005/Parameters.hoc")
 h.MFxrange += 50
 h.MFyrange += 50
 h.GLdepth += 50
 
-
+# %%
 def compute_mf_params(h):
     Transverse_range = h.MFyrange
     Horizontal_range = h.MFxrange
@@ -36,8 +43,13 @@ def compute_mf_params(h):
 
 mf_box, n_mf = compute_mf_params(h)
 
-spacing_mf = 14.5
+spacing_mf = 20.5
 mf_points = Bridson_sampling_2d(mf_box, spacing_mf, n_mf, True)
+
+np.savez(
+    "coords_20190613_1.npz",
+    mf=mf_points
+)
 
 # %%
 def compute_goc_params(h):
@@ -60,19 +72,25 @@ goc_points = goc_points + np.random.normal(
     0, 1, size=(len(goc_points), 3)
 )  # Gaussian noise
 
-# %%
-_ = plt.hist(goc_points[:, 2], 50)
+
+np.savez(
+    "coords_20190613_1.npz",
+    mf=mf_points,
+    goc=goc_points
+)
+# _ = plt.hist(goc_points[:, 2], 50)
 
 # %%
 from sklearn.neighbors import KDTree
 
 goc_tree = KDTree(goc_points)
-d_goc_glo = 38 / 2 + (6.6) / 1.5 - 1
+d_goc_glo = 27 / 2 + (7.6) / 2 - 1
 
+scale_factor = 0.29/0.75
 
 def fgoc(x):
     y = x.copy()
-    y[:, 1] = y[:, 1] * 3
+    y[:, 1] = y[:, 1] / scale_factor
     nnsearch = goc_tree.query_radius(y, r=d_goc_glo, count_only=True)
     return nnsearch == 0
 
@@ -89,29 +107,35 @@ def compute_glo_params(h):
     Xinstantiate = 64 + 40  # 297+40
     Yinstantiate = 84 + 40 * box_fac  # 474+40x*box_fac
 
-    d_glo = 6.6 * 1e5  # (Billings et al., 2014)
+    d_grc = 1.9 * 1e6  # (Billings et al., 2014)
+    d_glo = d_grc*0.3
+#     d_glo = 6.6 * 1e5  # (Billings et al., 2014)
     n_glo = int(d_glo * Volume * 1e-9)
     print("N of Glomeruli = {}".format(n_glo))
 
-    return ((Horizontal_range, Transverse_range // 3, Vertical_range), n_glo)
+    return ((Horizontal_range, int(Transverse_range*scale_factor+0.5) , Vertical_range), n_glo)
 
 
 # Glomerulus (Rosettes)
 globox, n_glo = compute_glo_params(h)
 
 # (Billings et al., 2014) Since glomeruli is elipsoid shape, I recalculated based on the spatial occupancy of glomeruli and its density. Also, I subtract 1 cuz I will give Gaussian noise
-spacing_glo = 6.6 - 0.5
+spacing_glo = 8.5 - 1
 
 glo_points = Bridson_sampling_3d(globox, spacing_glo, n_glo, True, ftests=[fgoc])
 
 # Since glomerulus is stretched for Horizontal section, we will generate coordinates in small area at first, and then multiply it with 3. (Billings et al., 2014)
-glo_points[:, 1] = glo_points[:, 1] * 3
+glo_points[:, 1] = glo_points[:, 1]/scale_factor
 
-y = glo_points.copy()
-y[:, 1] = y[:, 1] / 3
-assert fgoc(y).prod() == 1
 
-glo_points = glo_points + np.random.normal(0, 0.5, size=(len(glo_points), 3))
+# %%
+np.savez(
+    "coords_20190613_1.npz",
+    mf=mf_points,
+    goc=goc_points,
+    glo=glo_points
+)
+
 
 # %%
 _ = plt.hist(glo_points[:, 2], 100)
@@ -119,7 +143,7 @@ _ = plt.hist(glo_points[:, 2], 100)
 # %%
 
 # %%
-d_goc_grc = 38 / 2 + 6 / 2 - 1
+d_goc_grc = 27 / 2 + 7.2 / 2 - 1
 
 
 def fgoc(x):
