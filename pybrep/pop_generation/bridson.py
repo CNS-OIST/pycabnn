@@ -86,7 +86,9 @@ def Bridson_sampling_1(
         if ftests != []:
             is_safe_with_prev_pts = np.ones(len(p), dtype=bool)
             for ftest in ftests:
-                is_safe_with_prev_pts = is_safe_with_prev_pts * ftest(tempPts)
+                is_safe_with_prev_pts = is_safe_with_prev_pts * ftest.test_points(
+                    tempPts
+                )
 
             is_safe_to_continue = np.sum(is_safe_with_prev_pts)
             rejected_grids = p[~is_safe_with_prev_pts]
