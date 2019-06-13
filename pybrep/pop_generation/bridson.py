@@ -6,7 +6,7 @@ import numpy as np
 # from scipy import spatial
 from functools import partial
 from tqdm.autonotebook import tqdm
-from sklearn.neighbors import KDTree
+from sklearn.neighbors import KDTree, NearestNeighbors
 
 
 def make_2d_grid(sizeI, cellsize):
@@ -19,10 +19,13 @@ def make_3d_grid(sizeI, cellsize):
     ]
 
 
-def set_nDarts(nPts, n_pts_created, nEmptyGrid, dartFactor=4):
+def set_nDarts(nPts, n_pts_created, n_pts_newly_created, nEmptyGrid, dartFactor=4):
     n_to_create = nPts - n_pts_created
-
-    ndarts = np.min([np.round(nPts / dartFactor), nEmptyGrid])
+    # if n_pts_newly_created==0:
+    #
+    # else:
+    #     ndarts = n_pts_newly_created*2
+    ndarts = np.min([nPts/dartFactor, nEmptyGrid/dartFactor**2])
     # ndarts = np.round(nPts / dartFactor)
     return int(np.round(ndarts))
 
@@ -56,11 +59,17 @@ def Bridson_sampling_1(
     if nPts == 0:
         nPts = nEmptyGrid
     n_pts_created = 0
+    n_pts_newly_created = 0
     pts = np.empty(shape=(1, ndim))
     iter = 0
 
     # Start Iterative process
-    pbar = tqdm(total=nPts)
+    if showIter:
+        pbar = tqdm(total=nPts)
+        pbar_grid = tqdm(total=nEmptyGrid0)
+
+    nn1 = NearestNeighbors(radius=spacing)
+    nn2 = NearestNeighbors(radius=spacing)
 
     while n_pts_created < nPts and nEmptyGrid > 0:
         # Thrown darts in eligible grids
@@ -68,7 +77,7 @@ def Bridson_sampling_1(
         # score_availGrid = scoreGrid[availGrid]
         scoreGrid = scoreGrid / scoreGrid.sum()
 
-        ndarts = set_nDarts(nPts, n_pts_created, nEmptyGrid)
+        ndarts = set_nDarts(nPts, n_pts_created, n_pts_newly_created, nEmptyGrid)
         if ndarts != sGrid.shape[0]:
             p = np.random.choice(
                 range(sGrid.shape[0]), ndarts, replace=False, p=scoreGrid
@@ -97,11 +106,11 @@ def Bridson_sampling_1(
             p = p[is_safe_with_prev_pts]
             tempPts = tempPts[is_safe_with_prev_pts, :]
 
-        if is_safe_to_continue > 0:
+        if is_safe_to_continue > 0 and n_pts_created > 0:
             # check with previously generated points
-            is_safe_with_prev_pts = (
-                KDTree(pts).query_radius(tempPts, r=spacing, count_only=True)==0
-            )
+            is_safe_with_prev_pts = np.frompyfunc(lambda x: x.size == 0, 1, 1)(
+                nn1.radius_neighbors(tempPts, return_distance=False)
+            ).astype(bool)
             is_safe_to_continue = np.sum(is_safe_with_prev_pts)
             rejected_grids = p[~is_safe_with_prev_pts]
             scoreGrid[rejected_grids] = scoreGrid[rejected_grids] * discount_factor
@@ -111,8 +120,13 @@ def Bridson_sampling_1(
 
         if is_safe_to_continue > 0:
             # find colliding pairs and leave only one of the pairs
-            ind = KDTree(tempPts).query_radius(tempPts, r=spacing)
-            is_eligible = np.frompyfunc(lambda i: (ind[i]<i).sum()==0, 1, 1)(np.arange(ind.size)).astype(bool)
+            nn2.fit(tempPts)
+            ind = nn2.radius_neighbors(tempPts, return_distance=False)
+
+            # ind = KDTree(tempPts).query_radius(tempPts, r=spacing)
+            is_eligible = np.frompyfunc(lambda i: (ind[i] < i).sum() == 0, 1, 1)(
+                np.arange(ind.size)
+            ).astype(bool)
 
             accepted_pts = tempPts[is_eligible, :]
 
@@ -124,17 +138,21 @@ def Bridson_sampling_1(
             # scoreGrid[rejected_grids] = scoreGrid[rejected_grids] * discount_factor
             scoreGrid = scoreGrid[remaining_grids]
 
-            # Update quantities for next iterations
-            nEmptyGrid = sGrid.shape[0]
-            if n_pts_created == 0:
-                pts = accepted_pts
-            else:
-                pts = np.vstack((pts, accepted_pts))
             n_pts_newly_created = accepted_pts.shape[0]
-            n_pts_created = pts.shape[0]
+            if n_pts_newly_created > 0:
+                # Update quantities for next iterations
+                nEmptyGrid = sGrid.shape[0]
+                if n_pts_created == 0:
+                    pts = accepted_pts
+                else:
+                    pts = np.vstack((pts, accepted_pts))
+
+                nn1.fit(pts)
+                n_pts_created = pts.shape[0]
 
             if showIter:
                 pbar.update(n_pts_newly_created)
+                pbar_grid.update(n_pts_newly_created)
 
         iter += 1
 
