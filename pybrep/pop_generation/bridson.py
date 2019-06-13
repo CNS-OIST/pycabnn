@@ -59,8 +59,6 @@ def Bridson_sampling_1(
     pts = np.empty(shape=(1, ndim))
     iter = 0
 
-    itercount = np.zeros(shape=(10000, 2))
-
     # Start Iterative process
     pbar = tqdm(total=nPts)
 
