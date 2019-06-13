@@ -36,16 +36,14 @@ class PointCloud(object):
 
     def test_points(self, points):
         if self.points.shape[0] >= points.shape[0]:
-            nnsearch = KDTree(self.points).query_radius(points, r=self.r, count_only=True)
-
+            nnsearch = KDTree(self.points).query_radius(
+                points, r=self.r, count_only=True
+            )
             return nnsearch == 0
         else:
-            inds = KDTree(points).query_radius(points, r=self.r)
+            inds = KDTree(points).query_radius(self.points, r=self.r)
             inds = np.unique(np.hstack(inds))
-
-            embed()
             return ~np.isin(range(points.shape[0]), inds)
-
 
     def test_cells(self, cell_corners, dgrid):
         nn2 = KDTree(cell_corners)

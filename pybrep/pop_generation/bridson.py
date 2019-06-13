@@ -8,6 +8,8 @@ from functools import partial
 from tqdm.autonotebook import tqdm
 from sklearn.neighbors import KDTree, NearestNeighbors
 
+from .utils import PointCloud
+
 def make_2d_grid(sizeI, cellsize):
     return np.mgrid[0 : sizeI[0] : cellsize, 0 : sizeI[1] : cellsize]
 
@@ -18,19 +20,19 @@ def make_3d_grid(sizeI, cellsize):
     ]
 
 
-def set_nDarts(nPts, n_pts_created, n_pts_newly_created, nEmptyGrid, dartFactor=4):
+def set_nDarts(nPts, n_pts_created, n_pts_newly_created, nEmptyGrid, dartFactor=5):
     n_to_create = nPts - n_pts_created
     # if n_pts_newly_created==0:
     #
     # else:
     #     ndarts = n_pts_newly_created*2
-    ndarts = np.min([nPts/dartFactor, nEmptyGrid/dartFactor**2])
-    # ndarts = np.round(nPts / dartFactor)
+    ndarts = np.max([nPts/dartFactor, nEmptyGrid/dartFactor])
+    # ndarts = np.max([n_to_create, nPts / dartFactor])
     return int(np.round(ndarts))
 
 
 def Bridson_sampling_1(
-    fgrid, sizeI, spacing, nPts, showIter, ftests=[], discount_factor=0.75
+    fgrid, sizeI, spacing, nPts, showIter, ftests=[], discount_factor=0.5
 ):
     count = 0
     count_time = []
@@ -64,9 +66,8 @@ def Bridson_sampling_1(
 
     # Start Iterative process
 
-    nn1 = NearestNeighbors(radius=spacing)
+    pcl = PointCloud(pts, spacing)
     nn2 = NearestNeighbors(radius=spacing)
-
 
     if ftests != []:
         print('Testing coverage of cells...')
@@ -79,7 +80,7 @@ def Bridson_sampling_1(
             sGrid = sGrid[is_cell_uncovered, :]
             scoreGrid = scoreGrid[is_cell_uncovered]
             nEmptyGrid = np.sum(sGrid.shape[0])
-            print('Uncovered cells: {} %\n\n'.format(nEmptyGrid/nEmptyGrid0*100))
+            print('Uncovered cells: {}%\n'.format(nEmptyGrid/nEmptyGrid0*100))
 
     if showIter:
         pbar = tqdm(total=nPts)
@@ -123,9 +124,10 @@ def Bridson_sampling_1(
 
         if is_safe_to_continue > 0 and n_pts_created > 0:
             # check with previously generated points
-            is_safe_with_prev_pts = np.frompyfunc(lambda x: x.size == 0, 1, 1)(
-                nn1.radius_neighbors(tempPts, return_distance=False)
-            ).astype(bool)
+            # is_safe_with_prev_pts = np.frompyfunc(lambda x: x.size == 0, 1, 1)(
+            #     nn1.radius_neighbors(tempPts, return_distance=False)
+            # ).astype(bool)
+            is_safe_with_prev_pts = pcl.test_points(tempPts)
             is_safe_to_continue = np.sum(is_safe_with_prev_pts)
             rejected_grids = p[~is_safe_with_prev_pts]
             scoreGrid[rejected_grids] = scoreGrid[rejected_grids] * discount_factor
@@ -158,12 +160,11 @@ def Bridson_sampling_1(
                 # Update quantities for next iterations
                 nEmptyGrid = sGrid.shape[0]
                 if n_pts_created == 0:
-                    pts = accepted_pts
+                    pcl.update_points(accepted_pts)
                 else:
-                    pts = np.vstack((pts, accepted_pts))
+                    pcl.append_points(accepted_pts)
 
-                nn1.fit(pts)
-                n_pts_created = pts.shape[0]
+                n_pts_created = pcl.points.shape[0]
 
             if showIter:
                 pbar.update(n_pts_newly_created)
@@ -171,6 +172,7 @@ def Bridson_sampling_1(
 
         iter += 1
 
+    pts = pcl.points
     if pts.shape[0] > nPts:
         p = np.arange(pts.shape[0])
         p = np.random.choice(p, nPts, replace=False)
