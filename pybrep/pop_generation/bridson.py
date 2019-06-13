@@ -77,7 +77,6 @@ def Bridson_sampling_1(
         else:
             tempPts = sGrid + dgrid * np.random.rand(len(ndarts), ndim)
 
-        # Check with previous points
         # withinI = np.array([tempPts[:, i] < sizeI[i] for i in range(ndim)]).T
         # withinI = np.array([np.prod(x) for x in withinI])
         # eligiblePts = (withinI>0)*(D>spacing)*(Dist > 10)
@@ -89,19 +88,29 @@ def Bridson_sampling_1(
             for ftest in ftests:
                 is_safe_with_prev_pts = is_safe_with_prev_pts * ftest(tempPts)
 
+            is_safe_to_continue = np.sum(is_safe_with_prev_pts)
             rejected_grids = p[~is_safe_with_prev_pts]
             scoreGrid[rejected_grids] = scoreGrid[rejected_grids] * discount_factor
-            is_safe_to_continue = np.sum(is_safe_with_prev_pts)
+
             p = p[is_safe_with_prev_pts]
             tempPts = tempPts[is_safe_with_prev_pts, :]
 
         if is_safe_to_continue > 0:
-            is_eligible = (
-                KDTree(np.vstack((pts, tempPts))).query_radius(
-                    tempPts, r=spacing, count_only=True
-                )
-                < 2
+            # check with previously generated points
+            is_safe_with_prev_pts = (
+                KDTree(pts).query_radius(tempPts, r=spacing, count_only=True)==0
             )
+            is_safe_to_continue = np.sum(is_safe_with_prev_pts)
+            rejected_grids = p[~is_safe_with_prev_pts]
+            scoreGrid[rejected_grids] = scoreGrid[rejected_grids] * discount_factor
+
+            p = p[is_safe_with_prev_pts]
+            tempPts = tempPts[is_safe_with_prev_pts, :]
+
+        if is_safe_to_continue > 0:
+            # find colliding pairs and leave only one of the pairs
+            ind = KDTree(tempPts).query_radius(tempPts, r=spacing)
+            is_eligible = np.frompyfunc(lambda i: (ind[i]<i).sum()==0, 1, 1)(np.arange(ind.size)).astype(bool)
 
             accepted_pts = tempPts[is_eligible, :]
 
@@ -110,8 +119,7 @@ def Bridson_sampling_1(
             remaining_grids = np.setdiff1d(range(sGrid.shape[0]), accepted_grids)
 
             sGrid = sGrid[remaining_grids, :]
-
-            scoreGrid[rejected_grids] = scoreGrid[rejected_grids] * discount_factor
+            # scoreGrid[rejected_grids] = scoreGrid[rejected_grids] * discount_factor
             scoreGrid = scoreGrid[remaining_grids]
 
             # Update quantities for next iterations
