@@ -62,9 +62,6 @@ def Bridson_sampling_1(
     # Start Iterative process
     pbar = tqdm(total=nPts)
 
-    if ftests == []:
-        is_safe_to_continue = 1
-
     while n_pts_created < nPts and nEmptyGrid > 0:
         # Thrown darts in eligible grids
         # availGrid, = np.where(is_grid_empty)
@@ -84,6 +81,8 @@ def Bridson_sampling_1(
         # withinI = np.array([tempPts[:, i] < sizeI[i] for i in range(ndim)]).T
         # withinI = np.array([np.prod(x) for x in withinI])
         # eligiblePts = (withinI>0)*(D>spacing)*(Dist > 10)
+
+        is_safe_to_continue = 1
 
         if ftests != []:
             is_safe_with_prev_pts = np.ones(len(p), dtype=bool)
