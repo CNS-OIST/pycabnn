@@ -128,7 +128,7 @@ def compute_glo_params(h):
 globox, n_glo = compute_glo_params(h)
 
 # (Billings et al., 2014) Since glomeruli is elipsoid shape, I recalculated based on the spatial occupancy of glomeruli and its density. Also, I subtract 1 cuz I will give Gaussian noise
-spacing_glo = 8.5 - 1
+spacing_glo = 8.25 - 1
 # spacing_glo = 8 - 1?
 
 glo_points = Bridson_sampling_3d(globox, spacing_glo, n_glo, True, ftests=[goc])
@@ -155,10 +155,10 @@ np.savez(
 
 # %%
 
-d_goc_grc = 27 / 2 + 6 / 2 + 1
+d_goc_grc = 27 / 2 + 6.5 / 2 + 1
 goc = PointCloud(goc_points, d_goc_grc)
 
-d_glo_grc = 7.6 / 2 + 6 / 2
+d_glo_grc = 7.6 / 2 + 6.5 / 2
 glo = PointCloud(glo_points1, d_glo_grc)
 
 def compute_grc_params(h):
@@ -182,7 +182,7 @@ def compute_grc_params(h):
 
 
 # (Billings et al., 2014) I subtract 1 because I will give Gaussian noise
-spacing_grc = 6 - 1
+spacing_grc = 6.5 - 1
 
 grcbox, n_grc = compute_grc_params(h)
 grc_points = Bridson_sampling_3d(grcbox, spacing_grc, n_grc, True, ftests=[goc, glo])

@@ -4,9 +4,13 @@ from numpy.linalg import norm
 from IPython import embed
 import time
 
-dlat2 = np.array([1, 0, 0, 1, 1, 1]).reshape((-1, 2)).astype('double')
+dlat2 = np.array([1, 0, 0, 1, 1, 1]).reshape((-1, 2)).astype("double")
 
-dlat3 = np.array([1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1]).reshape((-1, 3)).astype('double')
+dlat3 = (
+    np.array([1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1])
+    .reshape((-1, 3))
+    .astype("double")
+)
 
 
 def select_non_empty(ind):

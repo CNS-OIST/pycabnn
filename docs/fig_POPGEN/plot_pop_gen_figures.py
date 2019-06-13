@@ -10,17 +10,17 @@ plt.style.use('dark_background')
 import pds_plots as ppl
 
 # %%
-fname = "coords_20190613_2.npz"
+fname = "coords_20190613_3.npz"
 f = np.load(fname)
 
-mf = f['mf']
 
 # bbox = [[0, 1500], [0-20, 700], [0, 200]]
-bbox = [[0, 200], [0-20, 200], [0, 200]]
+bbox = [[0, 500], [0-20, 500], [0, 200]]
 
 
 def limit_to_box(x, box):
     mf = x.copy()
+    
     for i, t in enumerate(box):
         mf = mf[mf[:,i]>=t[0], :]
         mf = mf[mf[:,i]<=t[1], :]
@@ -31,6 +31,7 @@ def fix_coors(x):
     box = [bbox[0], [bbox[1][0]+20, bbox[1][1]], bbox[2]]
     return limit_to_box(y, box[:x.shape[1]])
 
+mf = f['mf']
 mf = fix_coors(mf)
 
 
@@ -46,7 +47,7 @@ plt.savefig('mf.png', dpi=300/2.54)
 
 
 # %%
-bbox = [[0, 200], [0-20, 200], [0, 200]]
+bbox = [[0, 500], [0-20, 500], [0, 200]]
 
 goc = f['goc']
 goc = fix_coors(goc)
@@ -74,7 +75,7 @@ ax = ppl.plot_all_pop(
     (grc, 3),
     bbox, 100)
 ax.plot([bbox[0][1]-20, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
-plt.savefig('all.png', dpi=300/2.54)
+plt.savefig('all.png', dpi=300)
 
 
 # %%
@@ -97,7 +98,7 @@ goc1 = to_saggit(goc)
 glo1 = to_saggit(glo)
 grc1 = to_saggit(grc)
 
-bbox = [[0, 200], [0-20, 200], [0, 200]]
+bbox = [[0, 500], [0-20, 200], [0, 500]]
 
 ax = ppl.plot_goc(goc1, bbox, 100, 13.5)
 ax.plot([bbox[0][1]-20, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
@@ -115,12 +116,15 @@ ax = ppl.plot_goc_glo((goc2, 13.5), (glo2, 6.6 / 1.75), bbox, 100)
 ax.plot([bbox[0][1]-20, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
 
 # %%
+bbox = [[0, 500], [0-10, 200], [0, 500]]
+
 ax = ppl.plot_all_pop(
     (goc1, 13.5),
     (glo1, 7.6/2),
     (grc1, 3),
     bbox, 100)
-ax.plot([bbox[0][1]-20, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
+ax.plot([bbox[0][1]-10, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
+plt.savefig('all_sag.png', dpi=300)
 
 
 # %%

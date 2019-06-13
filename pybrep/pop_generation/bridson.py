@@ -20,13 +20,13 @@ def make_3d_grid(sizeI, cellsize):
     ]
 
 
-def set_nDarts(nPts, n_pts_created, n_pts_newly_created, nEmptyGrid, dartFactor=5):
+def set_nDarts(nPts, n_pts_created, n_pts_newly_created, nEmptyGrid, dartFactor=4):
     n_to_create = nPts - n_pts_created
     # if n_pts_newly_created==0:
     #
     # else:
     #     ndarts = n_pts_newly_created*2
-    ndarts = np.max([nPts/dartFactor, nEmptyGrid/dartFactor])
+    ndarts = np.min([nPts/dartFactor, nEmptyGrid/dartFactor])
     # ndarts = np.max([n_to_create, nPts / dartFactor])
     return int(np.round(ndarts))
 
@@ -54,7 +54,6 @@ def Bridson_sampling_1(
     # Thrown in a particular grid
     nEmptyGrid = nEmptyGrid0 = sGrid.shape[0]
     scoreGrid = np.ones(sGrid.shape[0])
-    scoreGrid = scoreGrid
 
     # Initialize Parameters
     if nPts == 0:
