@@ -1,7 +1,8 @@
 import numpy as np
-from sklearn.neighbors import KDTree
+from sklearn.neighbors import NearestNeighbors
 from numpy.linalg import norm
 from IPython import embed
+
 import time
 
 dlat2 = np.array([1, 0, 0, 1, 1, 1]).reshape((-1, 2)).astype("double")
@@ -39,19 +40,34 @@ class PointCloud(object):
         self.points = np.vstack((self.points, new_points))
 
     def test_points(self, points):
+        nn1 = NearestNeighbors(radius=self.r, n_jobs=-1)
         if self.points.shape[0] >= points.shape[0]:
-            nnsearch = KDTree(self.points).query_radius(
-                points, r=self.r, count_only=True
+            nn1.fit(self.points)
+            nnsearch = nn1.radius_neighbors(points, return_distance=False)
             )
-            return nnsearch == 0
+            return ~select_non_empty(nnsearch)
         else:
-            inds = KDTree(points).query_radius(self.points, r=self.r)
+            nn1.fit(points)
+            inds = nn1.radius_neighbors(self.points, return_distance=False)
             inds = np.unique(np.hstack(inds))
             return ~np.isin(range(points.shape[0]), inds)
 
-    def test_cells(self, cell_corners, dgrid):
-        nn2 = KDTree(cell_corners)
-        inds = nn2.query_radius(self.points, r=self.r)
+    def test_cells(self, cell_corners, dgrid, nn=None, return_nn=False):
+        t0 = time.time()
+        # nn2 = KDTree(cell_corners)
+
+        if nn is None:
+            nn2 = NearestNeighbors(n_jobs=-1)
+            nn2.fit(cell_corners)
+            t1 = time.time()
+            print(t1 - t0)
+        else:
+            nn2 = nn
+            t1 = time.time()
+
+        # nn2 = KDTree(cell_corners)
+        # inds = nn2.query_radius(self.points, r=self.r)
+        inds = nn2.radius_neighbors(self.points, radius=self.r, return_distance=False)
         is_covering1 = select_non_empty(inds)
 
         n_test = np.sum(is_covering1)
@@ -60,6 +76,8 @@ class PointCloud(object):
 
         dlat = self.dlat.ravel() * dgrid
         t2 = time.time()
+        print(t2 - t1)
+
         ftest = lambda i: cells_each_point_covers(
             cell_corners[inds[i], :] - selected_points[i, :],
             inds[i],
@@ -68,10 +86,14 @@ class PointCloud(object):
             self.r,
         )
 
+        print("ntest: ", n_test)
         cells_covered = np.frompyfunc(ftest, 1, 1)(range(n_test))
         cells_covered = np.unique(np.hstack(cells_covered).astype(int))
         t3 = time.time()
         print(t3 - t2)
 
-        return np.isin(range(cell_corners.shape[0]), cells_covered, invert=True)
+        if return_nn:
+            return (np.isin(range(cell_corners.shape[0]), cells_covered, invert=True), nn2)
+        else:
+            return np.isin(range(cell_corners.shape[0]), cells_covered, invert=True)
 

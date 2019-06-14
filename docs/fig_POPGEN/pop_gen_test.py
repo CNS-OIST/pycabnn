@@ -8,9 +8,9 @@ sys.path.append('../../')
 # %%
 import numpy as np
 from neuron import h
-from pybrep.pop_generation.bridson import Bridson_sampling_2d, Bridson_sampling_3d
+from pybrep.pop_generation.ebeida import ebeida_sampling
 from pybrep.pop_generation.utils import PointCloud
-
+import matplotlib.pyplot as plt
 
 h.load_file("../../test/set3005/Parameters.hoc")
 h.MFxrange = 700
@@ -19,7 +19,7 @@ h.MFyrange += 50
 h.GLdepth += 50
 
 # %%
-fname = "coords_20190613_3.npz"
+fname = "coords_20190614_1e.npz"
 
 def compute_mf_params(h):
     Transverse_range = h.MFyrange
@@ -48,9 +48,14 @@ def compute_mf_params(h):
 
 mf_box, n_mf = compute_mf_params(h)
 
-spacing_mf = 20.5
-mf_points = Bridson_sampling_2d(mf_box, spacing_mf, n_mf, True)
+spacing_mf = 21
+mf_points = ebeida_sampling(mf_box, spacing_mf, n_mf, True)
 
+
+np.savez(
+    fname,
+    mf=mf_points
+)
 
 # %%
 def compute_goc_params(h):
@@ -67,11 +72,11 @@ def compute_goc_params(h):
 
 
 goc_box, n_goc = compute_goc_params(h)
-spacing_goc = 45.5 - 1  # 40 #(NH Barmack, V Yakhnitsa, 2008)
+spacing_goc = 45 - 1  # 40 #(NH Barmack, V Yakhnitsa, 2008)
 # spacing_goc = 42.5 - 1  # 40 #(NH Barmack, V Yakhnitsa, 2008)
 
 
-goc_points = Bridson_sampling_3d(goc_box, spacing_goc, n_goc, True)
+goc_points = ebeida_sampling(goc_box, spacing_goc, n_goc, True)
 goc_points = goc_points + np.random.normal(
     0, 1, size=(len(goc_points), 3)
 )  # Gaussian noise
@@ -84,7 +89,7 @@ np.savez(
 )
 
 
-# %%
+# # %%
 
 scale_factor = 0.29/0.75
 
@@ -128,10 +133,10 @@ def compute_glo_params(h):
 globox, n_glo = compute_glo_params(h)
 
 # (Billings et al., 2014) Since glomeruli is elipsoid shape, I recalculated based on the spatial occupancy of glomeruli and its density. Also, I subtract 1 cuz I will give Gaussian noise
-spacing_glo = 8.25 - 1
+spacing_glo = 8.75 - 1
 # spacing_glo = 8 - 1?
 
-glo_points = Bridson_sampling_3d(globox, spacing_glo, n_glo, True, ftests=[goc])
+glo_points = ebeida_sampling(globox, spacing_glo, n_glo, True, ftests=[goc])
 
 # Since glomerulus is stretched for Horizontal section, we will generate coordinates in small area at first, and then multiply it with 3. (Billings et al., 2014)
 glo_points[:, 1] = glo_points[:, 1]/scale_factor
@@ -152,13 +157,15 @@ np.savez(
     glo=glo_points1
 )
 
+plt.scatter(mf_points[:,0], mf_points[:,1], 10)
+plt.show()
 
 # %%
 
-d_goc_grc = 27 / 2 + 6.5 / 2 + 1
+d_goc_grc = 27 / 2 + 6.7 / 2 + 1
 goc = PointCloud(goc_points, d_goc_grc)
 
-d_glo_grc = 7.6 / 2 + 6.5 / 2
+d_glo_grc = 7.6 / 2 + 6.7 / 2
 glo = PointCloud(glo_points1, d_glo_grc)
 
 def compute_grc_params(h):
@@ -182,10 +189,10 @@ def compute_grc_params(h):
 
 
 # (Billings et al., 2014) I subtract 1 because I will give Gaussian noise
-spacing_grc = 6.5 - 1
+spacing_grc = 6.7 - 1
 
 grcbox, n_grc = compute_grc_params(h)
-grc_points = Bridson_sampling_3d(grcbox, spacing_grc, n_grc, True, ftests=[goc, glo])
+grc_points = ebeida_sampling(grcbox, spacing_grc, n_grc, True, ftests=[goc, glo])
 
 # %%
 np.savez(
