@@ -117,10 +117,10 @@ class Glo(PointCloud):
         y[:, 1] *= scale_factor * scale_factor2
         return super().test_points(y)
 
-    def test_cells(self, cell_corners, dgrid, nn=None):
+    def test_cells(self, cell_corners, dgrid, nn=None, return_nn=False):
         y = cell_corners.copy()
         y[:, 1] *= scale_factor * scale_factor2
-        return super().test_cells(y, dgrid, nn=nn)
+        return super().test_cells(y, dgrid, nn=nn, return_nn=return_nn)
 
 
 glo_pts_squeezed = glo_points1.copy()
@@ -153,7 +153,7 @@ def compute_grc_params(h):
 spacing_grc = 6.6 - 1
 
 grcbox, n_grc = compute_grc_params(h)
-grc_points = ebeida_sampling(grcbox, spacing_grc, n_grc, True, ftests=[goc, glo])
+grc_points = ebeida_sampling(grcbox, spacing_grc, n_grc, True, ftests=[glo, goc])
 
 # %%
 np.savez(

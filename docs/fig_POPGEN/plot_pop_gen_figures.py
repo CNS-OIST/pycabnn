@@ -10,7 +10,7 @@ plt.style.use('dark_background')
 import pds_plots as ppl
 
 # %%
-fname = "coords_20190614_1e.npz"
+fname = "coords_20190626_1_2.npz"
 f = np.load(fname)
 
 
@@ -78,7 +78,8 @@ plt.savefig('all.png', dpi=300)
 
 # %%
 
-fname = "coords_20190614_1e.npz"
+fname = "coords_20190626_1_1.npz"
+
 f = np.load(fname)
 
 
@@ -125,10 +126,12 @@ bbox = [[200, 500], [0-10, 200], [0, 500]]
 
 ax = ppl.plot_goc(goc1, bbox, 100, 13.5)
 ax.plot([bbox[0][1]-50, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
+plt.savefig('goc_sag.png', dpi=300)
 
 # %%
-ax = ppl.plot_goc_glo((goc1, 13.5), (glo1, 6.6 / 1.75), bbox, 100)
+ax = ppl.plot_goc_glo((goc1, 13.5), (glo1, 7.6 / 2), bbox, 100)
 ax.plot([bbox[0][1]-50, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
+plt.savefig('goc+glo_sag.png', dpi=300)
 
 # %%
 goc2 = to_medlat(goc)
@@ -144,10 +147,24 @@ bbox = [[200, 500], [0-10, 200], [0, 500]]
 ax = ppl.plot_all_pop(
     (goc1, 13.5),
     (glo1, 7.6/2),
-    (grc1, 3),
+    (grc1, 3.25),
     bbox, 100)
 ax.plot([bbox[0][1]-50, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
 plt.savefig('all_sag.png', dpi=300)
 
 
 # %%
+goc2 = to_medlat(goc)
+glo2 = to_medlat(glo)
+grc2 = to_medlat(grc)
+
+
+# grc = to_yzx(grc)
+
+ax = ppl.plot_all_pop(
+    (goc2, 13.5),
+    (glo2, 7.6/2),
+    (grc2, 3.25),
+    bbox, 100)
+ax.plot([bbox[0][1]-50, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
+plt.savefig('all_med.png', dpi=300)

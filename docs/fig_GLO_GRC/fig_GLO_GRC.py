@@ -18,7 +18,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-fname = "../fig_POPGEN/coords_20190626_1_1.npz"
+fname = "../fig_POPGEN/coords_20190626_1_2.npz"
 f = np.load(fname)
 f['grc_nop'].shape
 
@@ -51,7 +51,7 @@ bbox = [[0, 700], [0, 700], [0, 200]]
 grc = fix_coords(f['grc_nop'], bbox)
 glo = fix_coords(f['glo'], bbox)
 
-scale_factor = 1/7
+scale_factor = 1/5.5
 
 src = grc.copy()
 tgt = glo.copy()
@@ -76,20 +76,20 @@ dendvs = np.vstack([glo[conn,:] - grc[i,:] for i, conn in enumerate(conns)])
 dendlens = np.sqrt((dendvs**2).sum(axis=-1))
 dendlens
 
-dendlens.mean()
-
-dendvs = [glo[conn,:] - grc[i,:] for i, conn in enumerate(conns) if conn.size>0]
+plt.hist(dendlens,100)
+print('{}±{}'.format(dendlens.mean(), dendlens.std()))
 
 # +
+dendvs = [glo[conns[i],:] - grc[i,:] for i, conn in enumerate(conns) if conn.size>0]
+
 ml_spread = np.array([z[:,0].max()-z[:,0].min() for z in dendvs])
 
-plt.hist(ml_spread)
+plt.hist(ml_spread,100)
 print('{}±{}'.format(ml_spread.mean(), ml_spread.std()))
 
-# +
 sg_spread = np.array([z[:,1].max()-z[:,1].min() for z in dendvs])
 
-plt.hist(sg_spread)
+plt.hist(sg_spread,100)
 print('{}±{}'.format(sg_spread.mean(), sg_spread.std()))
 # -
 

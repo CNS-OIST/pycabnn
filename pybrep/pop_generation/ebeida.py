@@ -173,16 +173,17 @@ def ebeida_sampling(sizeI, spacing, nPts, showIter, ftests=[], discount_factor=0
                     print("{}/{}".format(n_empty_cells, n_empty_cells0))
 
         is_safe_to_continue = s_cell.shape[0]
-        if is_safe_to_continue and n_pts_newly_created/nPts<0.005: # s_cell.shape[0]<550000:
+        if is_safe_to_continue and n_pts_newly_created/nPts<0.0025: # s_cell.shape[0]<550000:
             print("Splitting cells...")
             dcell = dcell / 2
             s_cell = (np.tile(s_cell, (1, 2 ** ndim)) + dlat * dcell).reshape((-1, ndim))
             grid = np.repeat(grid, 2 ** ndim)
             n_empty_cells0 = np.sum(s_cell.shape[0])
             assert grid.size == n_empty_cells0
+            print("Number of new cells =", n_empty_cells0)
 
-            print("Testing coverage of cells...with existing points")
             if ftests != []:
+                print("Testing coverage of cells...with existing points")
                 for ftest in ftests:
                     is_cell_uncovered = ftest.test_cells(s_cell, dcell)
 
