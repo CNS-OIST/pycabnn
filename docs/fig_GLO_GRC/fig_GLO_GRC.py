@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.4'
-#       jupytext_version: 1.1.6
+#       jupytext_version: 1.1.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -18,7 +18,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-fname = "../fig_POPGEN/coords_20190614_1e.npz"
+fname = "../fig_POPGEN/coords_20190626_1_1.npz"
 f = np.load(fname)
 
 
@@ -50,7 +50,7 @@ bbox = [[0, 700], [0, 700], [0, 200]]
 grc = fix_coords(f['grc_nop'], bbox)
 glo = fix_coords(f['glo'], bbox)
 
-scale_factor = 0.29/0.75
+scale_factor = 1/3
 
 src = grc.copy()
 tgt = glo.copy()
@@ -92,12 +92,3 @@ sg_spread = np.array([z[:,1].max()-z[:,1].min() for z in dendvs])
 
 plt.hist(sg_spread)
 print('{}±{}'.format(sg_spread.mean(), sg_spread.std()))
-# -
-
-
-
-plt.hist(dendvs[:,0], 50)
-
-plt.hist(dendvs[:,2], 50)
-
-
