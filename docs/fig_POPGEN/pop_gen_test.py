@@ -133,7 +133,7 @@ def compute_glo_params(h):
 globox, n_glo = compute_glo_params(h)
 
 # (Billings et al., 2014) Since glomeruli is elipsoid shape, I recalculated based on the spatial occupancy of glomeruli and its density. Also, I subtract 1 cuz I will give Gaussian noise
-spacing_glo = 8.4 - 1
+spacing_glo = 8.39 - 1
 # spacing_glo = 8 - 1?
 
 glo_points = ebeida_sampling(globox, spacing_glo, n_glo, True, ftests=[goc])
