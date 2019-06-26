@@ -18,7 +18,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-fname = "../fig_POPGEN/coords_20190626_1_3.npz"
+fname = "../fig_POPGEN/coords_20190626_1_4.npz"
 f = np.load(fname)
 f['grc_nop'].shape
 
