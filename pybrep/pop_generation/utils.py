@@ -56,7 +56,7 @@ class PointCloud(object):
         # nn2 = KDTree(cell_corners)
 
         if nn is None:
-            nn2 = NearestNeighbors(n_jobs=-1)
+            nn2 = NearestNeighbors(n_jobs=-1, algorithm='kd_tree')
             nn2.fit(cell_corners)
             t1 = time.time()
             print(t1 - t0)
@@ -87,7 +87,11 @@ class PointCloud(object):
 
         print("ntest: ", n_test)
         cells_covered = np.frompyfunc(ftest, 1, 1)(range(n_test))
-        cells_covered = np.unique(np.hstack(cells_covered).astype(int))
+        if cells_covered.size>0:
+            cells_covered = np.unique(np.hstack(cells_covered).astype(int))
+        else:
+            print('cells_covered =', cells_covered)
+
         t3 = time.time()
         print(t3 - t2)
 
