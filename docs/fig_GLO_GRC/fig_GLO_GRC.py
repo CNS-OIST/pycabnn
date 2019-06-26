@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 
 fname = "../fig_POPGEN/coords_20190626_1_1.npz"
 f = np.load(fname)
+f['grc_nop'].shape
 
 
 def limit_to_box(x, box):
@@ -50,12 +51,12 @@ bbox = [[0, 700], [0, 700], [0, 200]]
 grc = fix_coords(f['grc_nop'], bbox)
 glo = fix_coords(f['glo'], bbox)
 
-scale_factor = 1/3
+scale_factor = 1/7
 
 src = grc.copy()
 tgt = glo.copy()
-src[:, 1] = src[:, 1]*scale_factor
-tgt[:, 1] = tgt[:, 1]*scale_factor
+src[:, 1] *= scale_factor
+tgt[:, 1] *= scale_factor
 
 from sklearn.neighbors import NearestNeighbors
 
@@ -79,8 +80,6 @@ dendlens.mean()
 
 dendvs = [glo[conn,:] - grc[i,:] for i, conn in enumerate(conns) if conn.size>0]
 
-dendvs[0][:,0].max()
-
 # +
 ml_spread = np.array([z[:,0].max()-z[:,0].min() for z in dendvs])
 
@@ -92,3 +91,8 @@ sg_spread = np.array([z[:,1].max()-z[:,1].min() for z in dendvs])
 
 plt.hist(sg_spread)
 print('{}±{}'.format(sg_spread.mean(), sg_spread.std()))
+# -
+
+
+
+
