@@ -14,7 +14,7 @@ h.MFyrange += 50
 h.GLdepth += 50
 
 f_input_name = "coords_20190626_1.npz"
-f_output_name = "coords_20190626_1_2.npz"
+f_output_name = "coords_20190626_1_3.npz"
 
 def compute_mf_params(h):
     Transverse_range = h.MFyrange
@@ -108,7 +108,7 @@ d_goc_grc = 27 / 2 + (6.6 - 1) / 2 + 1
 goc = PointCloud(goc_points, d_goc_grc)
 
 d_glo_grc = 7.6 / 2 + 6.6 / 2
-scale_factor2 = 3/1.32
+scale_factor2 = 3/1.3
 
 
 class Glo(PointCloud):
