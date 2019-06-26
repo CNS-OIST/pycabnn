@@ -20,7 +20,6 @@ bbox = [[0, 300], [0-10, 200], [0, 200]]
 
 def limit_to_box(x, box):
     mf = x.copy()
-    
     for i, t in enumerate(box):
         mf = mf[mf[:,i]>=t[0], :]
         mf = mf[mf[:,i]<=t[1], :]

@@ -19,7 +19,7 @@ h.MFyrange += 50
 h.GLdepth += 50
 
 # %%
-fname = "coords_20190614_1e.npz"
+fname = "coords_20190626_1.npz"
 
 def compute_mf_params(h):
     Transverse_range = h.MFyrange
@@ -91,7 +91,7 @@ np.savez(
 
 # # %%
 
-scale_factor = 0.29/0.75
+scale_factor = 1/3 #0.29/0.75
 
 class GoC(PointCloud):
     def test_points(self, x):
@@ -133,7 +133,7 @@ def compute_glo_params(h):
 globox, n_glo = compute_glo_params(h)
 
 # (Billings et al., 2014) Since glomeruli is elipsoid shape, I recalculated based on the spatial occupancy of glomeruli and its density. Also, I subtract 1 cuz I will give Gaussian noise
-spacing_glo = 8.75 - 1
+spacing_glo = 8.4 - 1
 # spacing_glo = 8 - 1?
 
 glo_points = ebeida_sampling(globox, spacing_glo, n_glo, True, ftests=[goc])
