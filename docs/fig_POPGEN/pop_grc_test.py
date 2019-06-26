@@ -14,7 +14,7 @@ h.MFyrange += 50
 h.GLdepth += 50
 
 f_input_name = "coords_20190626_1.npz"
-f_output_name = "coords_20190626_1_1.npz"
+f_output_name = "coords_20190626_1_2.npz"
 
 def compute_mf_params(h):
     Transverse_range = h.MFyrange
@@ -67,17 +67,6 @@ spacing_goc = 45 - 1  # 40 #(NH Barmack, V Yakhnitsa, 2008)
 
 scale_factor = 1/3 #0.29/0.75
 
-class GoC(PointCloud):
-    def test_points(self, x):
-        y = x.copy()
-        y[:, 1] = y[:, 1] / scale_factor
-        return super().test_points(y)
-
-    def test_cells(self, cell_corners, dgrid):
-        y = cell_corners.copy()
-        y[:, 1] = y[:, 1] / scale_factor
-        return super().test_cells(y, dgrid)
-
 d_goc_glo = 27 / 2 + (7.6) / 2 - 1 + 1/scale_factor
 
 def compute_glo_params(h):
@@ -114,11 +103,31 @@ goc_points  = f_input['goc']
 glo_points1 = f_input['glo']
 
 # %%
-d_goc_grc = 27 / 2 + 6.7 / 2 + 1
+
+d_goc_grc = 27 / 2 + (6.6 - 1) / 2 + 1
 goc = PointCloud(goc_points, d_goc_grc)
 
-d_glo_grc = 7.6 / 2 + 6.7 / 2
-glo = PointCloud(glo_points1, d_glo_grc)
+d_glo_grc = 7.6 / 2 + 6.6 / 2
+scale_factor2 = 3/1.32
+
+
+class Glo(PointCloud):
+    def test_points(self, x):
+        y = x.copy()
+        y[:, 1] *= scale_factor * scale_factor2
+        return super().test_points(y)
+
+    def test_cells(self, cell_corners, dgrid, nn=None):
+        y = cell_corners.copy()
+        y[:, 1] *= scale_factor * scale_factor2
+        return super().test_cells(y, dgrid, nn=nn)
+
+
+glo_pts_squeezed = glo_points1.copy()
+glo_pts_squeezed[:, 1] *= scale_factor * scale_factor2
+glo = Glo(glo_pts_squeezed, d_glo_grc)
+glo.dlat[:, 1] *= scale_factor*scale_factor2
+
 
 def compute_grc_params(h):
     Transverse_range = h.MFyrange
@@ -141,7 +150,7 @@ def compute_grc_params(h):
 
 
 # (Billings et al., 2014) I subtract 1 because I will give Gaussian noise
-spacing_grc = 6.7 - 1
+spacing_grc = 6.6 - 1
 
 grcbox, n_grc = compute_grc_params(h)
 grc_points = ebeida_sampling(grcbox, spacing_grc, n_grc, True, ftests=[goc, glo])
