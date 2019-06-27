@@ -14,7 +14,7 @@ h.MFyrange += 50
 h.GLdepth += 50
 
 f_input_name = "coords_20190626_1.npz"
-f_output_name = "coords_20190626_1_4.npz"
+f_output_name = "coords_20190626_1_6.npz"
 
 def compute_mf_params(h):
     Transverse_range = h.MFyrange
@@ -104,10 +104,10 @@ glo_points1 = f_input['glo']
 
 # %%
 
-d_goc_grc = 27 / 2 + (6.6 - 1) / 2 + 1
+d_goc_grc = 27 / 2 + (6.15) / 2 
 goc = PointCloud(goc_points, d_goc_grc)
 
-d_glo_grc = 10 / 2 + 6.6 / 2
+d_glo_grc = 8.7 / 2 + 6.15 / 2
 scale_factor2 = 3
 
 
@@ -150,7 +150,7 @@ def compute_grc_params(h):
 
 
 # (Billings et al., 2014) I subtract 1 because I will give Gaussian noise
-spacing_grc = 6.6 - 1
+spacing_grc = 6.15 - 0.2
 
 grcbox, n_grc = compute_grc_params(h)
 grc_points = ebeida_sampling(grcbox, spacing_grc, n_grc, True, ftests=[glo, goc])
