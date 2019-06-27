@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # %%
 %load_ext autoreload
 %autoreload 2
@@ -8,6 +9,8 @@ import matplotlib.pyplot as plt
 plt.style.use('dark_background')
 
 import pds_plots as ppl
+
+# %%
 
 # %%
 fname = "coords_20190626_1_2.npz"
@@ -168,3 +171,61 @@ ax = ppl.plot_all_pop(
     bbox, 100)
 ax.plot([bbox[0][1]-50, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
 plt.savefig('all_med.png', dpi=300)
+
+# %%
+fname = "../fig_POPGEN/coords_20190626_1_4.npz"
+f = np.load(fname)
+f['grc_nop'].shape
+
+
+grx = grc + np.random.randn(*grc.shape)*0.25
+nn.fit(grx)
+dists, nnids = nn.kneighbors(grx, n_neighbors=2, return_distance=True)
+
+
+_ = plt.hist(dists, 500)
+# _ = plt.hist(dists_u, 500)
+plt.xlim([4, 10])
+
+
+nn.fit(grc)
+dists_u, nnids = nn.kneighbors(grc, n_neighbors=2, return_distance=True)
+
+nnids = nnids[:,1]
+dists = dists[:,1]
+
+dists_u = dists_u[:,1]
+gry = limit_to_box(grx, [[30, 670], [30, 670], [30, 170]])
+
+nn = NearestNeighbors(n_jobs=-1)
+nn.fit(grx)
+
+from tqdm.autonotebook import tqdm
+
+mcounts = []
+sdcounts = []
+dists = np.linspace(0, 30, 120)
+for r in tqdm(dists):
+    count = np.frompyfunc(lambda x: x.size, 1, 1)(nn.radius_neighbors(
+        gry, radius=r, return_distance=False
+    )).astype(float) - 1
+    mcounts.append(count.mean())
+    sdcounts.append(count.std()/np.sqrt(count.size))
+# mcount = count.mean()
+# sdcount = count.std()
+# print('{} ± {}'.format(mcount, sdcount))
+
+cc2 = np.gradient(mcounts)/(dists**2)
+cc2_0 = cc2[-1]
+cc2 = cc2/cc2_0
+plt.plot(dists, cc2)
+
+mcounts = np.array(mcounts)
+sdcounts = np.array(sdcounts)
+
+_, ax = plt.
+cc2_u = np.gradient(mcounts + 150*sdcounts)/(dists**2+0.001)/cc2_0
+cc2_d = np.gradient(mcounts - 150*sdcounts)/(dists**2+0.001)/cc2_0
+# plt.fill_between(dists, cc2_d, cc2_u)
+plt.fill_between(dists, cc2_d, cc2_u, alpha=0.5)
+plt.plot(dists, cc2, 'k')

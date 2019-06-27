@@ -19,7 +19,7 @@ h.MFyrange += 50
 h.GLdepth += 50
 
 # %%
-fname = "coords_20190626_1.npz"
+fname = "coords_20190626_3.npz"
 
 def compute_mf_params(h):
     Transverse_range = h.MFyrange
@@ -99,10 +99,10 @@ class GoC(PointCloud):
         y[:, 1] = y[:, 1] / scale_factor
         return super().test_points(y)
 
-    def test_cells(self, cell_corners, dgrid):
+    def test_cells(self, cell_corners, dgrid, nn=None):
         y = cell_corners.copy()
         y[:, 1] = y[:, 1] / scale_factor
-        return super().test_cells(y, dgrid)
+        return super().test_cells(y, dgrid, nn=nn)
 
 d_goc_glo = 27 / 2 + (7.6) / 2 - 1 + 1/scale_factor
 goc = GoC(goc_points, d_goc_glo)
