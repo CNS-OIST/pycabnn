@@ -11,14 +11,10 @@ plt.style.use('dark_background')
 import pds_plots as ppl
 
 # %%
-
-# %%
-fname = "coords_20190626_1_2.npz"
+fname = "coords_20190626_1_6.npz"
 f = np.load(fname)
 
-
-# bbox = [[0, 1500], [0-20, 700], [0, 200]]
-bbox = [[0, 300], [0-10, 200], [0, 200]]
+bbox = [[0, 700], [0-20, 700], [0, 200]]
 
 
 def limit_to_box(x, box):
@@ -28,21 +24,31 @@ def limit_to_box(x, box):
         mf = mf[mf[:,i]<=t[1], :]
     return mf
 
+
 def fix_coors(x):
     y = x-np.ones(x.shape[1])*25
     box = [bbox[0], [bbox[1][0]+20, bbox[1][1]], bbox[2]]
     return limit_to_box(y, box[:x.shape[1]])
+
 
 mf = f['mf']
 mf = fix_coors(mf)
 
 
 # %%
+fname = "coords_20190626_4.npz"
+f = np.load(fname)
 
+bbox = [[0, 1500], [0-20, 700], [0, 200]]
+
+mf = f['mf']
+mf = fix_coors(mf)
+
+bbox = [[0, 700*8/5], [0-10, 700], [0, 200]]
 bbox2 = bbox[:2]
 
 plt.style.use('dark_background')
-ax = ppl.plot_mf_1(mf, bbox2, 4, save=False)
+ax = ppl.plot_mf_1(mf, bbox2, 8/2, save=False)
 ax.plot([bbox2[0][1]-100, bbox2[0][1]], [bbox2[1][0]+2.5, bbox2[1][0]+2.5], 'w', linewidth=10)
 # ppl.plot_mf_2(mf, [1500, 700], save=True)
 plt.tight_layout()
