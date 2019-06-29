@@ -6,7 +6,6 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-plt.style.use('dark_background')
 
 import pds_plots as ppl
 
@@ -36,8 +35,8 @@ mf = fix_coors(mf)
 
 
 # %%
-fname = "coords_20190626_4.npz"
-f = np.load(fname)
+# fname = "coords_20190626_4.npz"
+# f = np.load(fname)
 
 bbox = [[0, 1500], [0-20, 700], [0, 200]]
 
@@ -56,9 +55,12 @@ plt.savefig('mf.png', dpi=300/2.54)
 
 
 # %%
+bbox = [[0, 200*8/5], [0-20, 200], [0, 200]]
 
 goc = f['goc']
 goc = fix_coors(goc)
+
+plt.style.use('dark_background')
 
 ax = ppl.plot_goc(goc, bbox, 100, 13.5)
 ax.plot([bbox[0][1]-100, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
@@ -74,8 +76,9 @@ plt.savefig('goc+glo.png', dpi=300/2.54)
 #         plt.savefig('goc+glo.png', dpi=300
 
 # %%
-grc = f['grc_nop']
-grc = fix_coors(grc)
+grc0 = f['grc_nop']
+grx = grc + np.random.randn(*grc0.shape)*0.2
+grc = fix_coors(grx)
 
 ax = ppl.plot_all_pop(
     (goc, 13.5),
@@ -86,8 +89,7 @@ ax.plot([bbox[0][1]-100, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=1
 plt.savefig('all.png', dpi=300)
 
 # %%
-
-fname = "coords_20190626_1_1.npz"
+fname = "coords_20190626_1_6.npz"
 
 f = np.load(fname)
 
@@ -103,6 +105,10 @@ goc = fix_coors(goc)
 
 glo = f['glo']
 glo = fix_coors(glo)
+
+grc0 = f['grc_nop']
+grx = grc0 + np.random.randn(*grc0.shape)*0.2
+grc = fix_coors(grx)
 
 
 
@@ -124,43 +130,42 @@ def to_medlat(x):
 goc1 = to_saggit(goc)
 glo1 = to_saggit(glo)
 grc1 = to_saggit(grc)
-grc = f['grc_nop']
-grc = fix_coors(grc)
-grc = f['grc_nop']
-grc = fix_coors(grc)
 
 
-bbox = [[200, 500], [0-10, 200], [0, 500]]
+
+bbox = [[200, 200+200*8/5], [0-10, 200], [0, 500]]
 
 
 ax = ppl.plot_goc(goc1, bbox, 100, 13.5)
-ax.plot([bbox[0][1]-50, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
+ax.plot([bbox[0][1]-100, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
 plt.savefig('goc_sag.png', dpi=300)
 
 # %%
+bbox = [[200, 200+200*8/5], [0-10, 200], [0, 500]]
+
 ax = ppl.plot_goc_glo((goc1, 13.5), (glo1, 7.6 / 2), bbox, 100)
-ax.plot([bbox[0][1]-50, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
+ax.plot([bbox[0][1]-100, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
 plt.savefig('goc+glo_sag.png', dpi=300)
+
+# %%
+bbox = [[200, 200+200*8/5], [0-10, 200], [0, 500]]
+
+ax = ppl.plot_all_pop(
+    (goc1, 13.5),
+    (glo1, 7.6/2),
+    (grc1, 6.15/2),
+    bbox, 100)
+ax.plot([bbox[0][1]-100, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
+plt.savefig('all_sag.png', dpi=300)
+
 
 # %%
 goc2 = to_medlat(goc)
 glo2 = to_medlat(glo)
 # grc = to_yzx(grc)
 
-ax = ppl.plot_goc_glo((goc2, 13.5), (glo2, 6.6 / 1.75), bbox, 100)
-ax.plot([bbox[0][1]-50, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
-
-# %%
-bbox = [[200, 500], [0-10, 200], [0, 500]]
-
-ax = ppl.plot_all_pop(
-    (goc1, 13.5),
-    (glo1, 7.6/2),
-    (grc1, 3.25),
-    bbox, 100)
-ax.plot([bbox[0][1]-50, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
-plt.savefig('all_sag.png', dpi=300)
-
+ax = ppl.plot_goc_glo((goc2, 13.5), (glo2, 7.6 / 2), bbox, 100)
+ax.plot([bbox[0][1]-100, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15)
 
 # %%
 goc2 = to_medlat(goc)
@@ -179,21 +184,25 @@ ax.plot([bbox[0][1]-50, bbox[0][1]], [bbox[1][0], bbox[1][0]], 'w', linewidth=15
 plt.savefig('all_med.png', dpi=300)
 
 # %%
-fname = "../fig_POPGEN/coords_20190626_1_4.npz"
+fname = "../fig_POPGEN/coords_20190626_1_6.npz"
 f = np.load(fname)
 f['grc_nop'].shape
 
+# %%
+from sklearn.neighbors import NearestNeighbors
+
+nn = NearestNeighbors(n_jobs=-1)
 
 grx = grc + np.random.randn(*grc.shape)*0.25
 nn.fit(grx)
 dists, nnids = nn.kneighbors(grx, n_neighbors=2, return_distance=True)
 
-
+# %%
 _ = plt.hist(dists, 500)
 # _ = plt.hist(dists_u, 500)
 plt.xlim([4, 10])
 
-
+# %%
 nn.fit(grc)
 dists_u, nnids = nn.kneighbors(grc, n_neighbors=2, return_distance=True)
 
