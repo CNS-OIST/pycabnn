@@ -2,13 +2,10 @@
 #             Robert Bridson, SIGGRAPH, 2007
 
 import numpy as np
-
-# from scipy import spatial
-from functools import partial
-from tqdm.autonotebook import tqdm
 from sklearn.neighbors import KDTree, NearestNeighbors
-
 from .utils import PointCloud
+from tqdm.autonotebook import tqdm
+
 
 def make_2d_grid(sizeI, cellsize):
     return np.mgrid[0 : sizeI[0] : cellsize, 0 : sizeI[1] : cellsize]
@@ -26,13 +23,13 @@ def set_nDarts(nPts, n_pts_created, n_pts_newly_created, nEmptyGrid, dartFactor=
     #
     # else:
     #     ndarts = n_pts_newly_created*2
-    ndarts = np.min([nPts/dartFactor, nEmptyGrid/dartFactor])
+    ndarts = np.min([nPts / dartFactor, nEmptyGrid / dartFactor])
     # ndarts = np.max([n_to_create, nPts / dartFactor])
     return int(np.round(ndarts))
 
 
-def Bridson_sampling_1(
-    fgrid, sizeI, spacing, nPts, showIter, ftests=[], discount_factor=0.5
+def bridson_sampling(
+    sizeI, spacing, nPts, ftests=[], discount_factor=0.5, show_progress=True
 ):
     count = 0
     count_time = []
@@ -46,18 +43,18 @@ def Bridson_sampling_1(
     dgrid = spacing / np.sqrt(ndim)
 
     # Make a grid and convert it into a nxD array
-    sGrid_nd = fgrid(sizeI, cellsize)
+    fgrid = eval("make_{}d_grid".format(ndim))
 
-    sGrid = np.array([sGrid_nd[i][:].flatten() for i in range(ndim)]).T
-    del(sGrid_nd)
+    grid = fgrid(sizeI, cellsize)
+    grid = np.array([grid[i][:].flatten() for i in range(ndim)]).T
 
     # Thrown in a particular grid
-    nEmptyGrid = nEmptyGrid0 = sGrid.shape[0]
-    scoreGrid = np.ones(sGrid.shape[0])
+    n_empty_grid = n_empty_grid0 = grid.shape[0]
+    score_grid = np.ones(grid.shape[0])
 
     # Initialize Parameters
     if nPts == 0:
-        nPts = nEmptyGrid
+        nPts = n_empty_grid
     n_pts_created = 0
     n_pts_newly_created = 0
     pts = np.empty(shape=(1, ndim))
@@ -69,41 +66,30 @@ def Bridson_sampling_1(
     nn2 = NearestNeighbors(radius=spacing)
 
     if ftests != []:
-        print('Testing coverage of cells...')
-        is_cell_uncovered = np.ones(sGrid.shape[0], dtype=bool)
+        print("Testing coverage of cells...")
+        is_cell_uncovered = np.ones(grid.shape[0], dtype=bool)
         for ftest in ftests:
-            is_cell_uncovered = ftest.test_cells(
-                sGrid, dgrid
-            )
+            is_cell_uncovered = ftest.test_cells(grid, dgrid)
 
-            sGrid = sGrid[is_cell_uncovered, :]
-            scoreGrid = scoreGrid[is_cell_uncovered]
-            nEmptyGrid = np.sum(sGrid.shape[0])
-            print('Uncovered cells: {}%\n'.format(nEmptyGrid/nEmptyGrid0*100))
+            grid = grid[is_cell_uncovered, :]
+            score_grid = score_grid[is_cell_uncovered]
+            n_empty_grid = np.sum(grid.shape[0])
+            print("Uncovered cells: {}%\n".format(n_empty_grid / n_empty_grid0 * 100))
 
-    if showIter:
+    if show_progress:
         pbar = tqdm(total=nPts)
-        pbar_grid = tqdm(total=nEmptyGrid0)
-        pbar_grid.update(nEmptyGrid0-nEmptyGrid)
+        pbar_grid = tqdm(total=n_empty_grid0)
+        pbar_grid.update(n_empty_grid0 - n_empty_grid)
 
-    while n_pts_created < nPts and nEmptyGrid > 0:
-        # Thrown darts in eligible grids
-        # availGrid, = np.where(is_grid_empty)
-        # score_availGrid = scoreGrid[availGrid]
-        scoreGrid = scoreGrid / scoreGrid.sum()
+    while n_pts_created < nPts and n_empty_grid > 0:
+        score_grid = score_grid / score_grid.sum()
 
-        ndarts = set_nDarts(nPts, n_pts_created, n_pts_newly_created, nEmptyGrid)
-        if ndarts != sGrid.shape[0]:
-            p = np.random.choice(
-                range(sGrid.shape[0]), ndarts, replace=False, p=scoreGrid
-            )
-            tempPts = sGrid[p, :] + dgrid * np.random.rand(len(p), ndim)
-        else:
-            tempPts = sGrid + dgrid * np.random.rand(len(ndarts), ndim)
+        ndarts = set_nDarts(nPts, n_pts_created, n_pts_newly_created, n_empty_grid)
 
-        # withinI = np.array([tempPts[:, i] < sizeI[i] for i in range(ndim)]).T
-        # withinI = np.array([np.prod(x) for x in withinI])
-        # eligiblePts = (withinI>0)*(D>spacing)*(Dist > 10)
+        ndarts = int(np.round(n_empty_grid * 0.9))
+
+        p = np.random.choice(range(grid.shape[0]), ndarts, replace=False, p=score_grid)
+        temp_pts = grid[p, :] + dgrid * np.random.rand(len(p), ndim)
 
         is_safe_to_continue = 1
 
@@ -111,61 +97,43 @@ def Bridson_sampling_1(
             is_safe_with_prev_pts = np.ones(len(p), dtype=bool)
             for ftest in ftests:
                 is_safe_with_prev_pts = is_safe_with_prev_pts * ftest.test_points(
-                    tempPts
+                    temp_pts
                 )
 
             is_safe_to_continue = np.sum(is_safe_with_prev_pts)
             rejected_grids = p[~is_safe_with_prev_pts]
-            scoreGrid[rejected_grids] = scoreGrid[rejected_grids] * discount_factor
+            score_grid[rejected_grids] = score_grid[rejected_grids] * discount_factor
 
             p = p[is_safe_with_prev_pts]
-            tempPts = tempPts[is_safe_with_prev_pts, :]
+            temp_pts = temp_pts[is_safe_with_prev_pts, :]
 
-        if is_safe_to_continue > 0 and n_pts_created > 0:
-            # check with previously generated points
-            # is_safe_with_prev_pts = np.frompyfunc(lambda x: x.size == 0, 1, 1)(
-            #     nn1.radius_neighbors(tempPts, return_distance=False)
-            # ).astype(bool)
-            is_safe_with_prev_pts = pcl.test_points(tempPts)
-            is_safe_to_continue = np.sum(is_safe_with_prev_pts)
-            rejected_grids = p[~is_safe_with_prev_pts]
-            scoreGrid[rejected_grids] = scoreGrid[rejected_grids] * discount_factor
+        accepted_grids, accepted_pts = test_new_points_with_existing(
+            pcl,
+            temp_pts,
+            p,
+            is_safe_to_continue,
+            n_pts_created,
+            nn2,
+            score_grid=score_grid,
+            discount_factor=discount_factor,
+        )
 
-            p = p[is_safe_with_prev_pts]
-            tempPts = tempPts[is_safe_with_prev_pts, :]
+        if len(accepted_grids) > 0:
 
-        if is_safe_to_continue > 0:
-            # find colliding pairs and leave only one of the pairs
-            nn2.fit(tempPts)
-            ind = nn2.radius_neighbors(tempPts, return_distance=False)
-
-            # ind = KDTree(tempPts).query_radius(tempPts, r=spacing)
-            is_eligible = np.frompyfunc(lambda i: (ind[i] < i).sum() == 0, 1, 1)(
-                np.arange(ind.size)
-            ).astype(bool)
-
-            accepted_pts = tempPts[is_eligible, :]
-
-            accepted_grids = p[is_eligible]
-            rejected_grids = p[~is_eligible]
-            remaining_grids = np.setdiff1d(range(sGrid.shape[0]), accepted_grids)
-
-            sGrid = sGrid[remaining_grids, :]
-            # scoreGrid[rejected_grids] = scoreGrid[rejected_grids] * discount_factor
-            scoreGrid = scoreGrid[remaining_grids]
+            grid = np.delete(grid, accepted_grids, axis=0)
+            score_grid = np.delete(score_grid, accepted_grids, axis=0)
 
             n_pts_newly_created = accepted_pts.shape[0]
             if n_pts_newly_created > 0:
-                # Update quantities for next iterations
-                nEmptyGrid = sGrid.shape[0]
                 if n_pts_created == 0:
                     pcl.update_points(accepted_pts)
                 else:
                     pcl.append_points(accepted_pts)
 
                 n_pts_created = pcl.points.shape[0]
+                n_empty_grid = grid.shape[0]
 
-            if showIter:
+            if show_progress:
                 pbar.update(n_pts_newly_created)
                 pbar_grid.update(n_pts_newly_created)
 
@@ -177,18 +145,57 @@ def Bridson_sampling_1(
         p = np.random.choice(p, nPts, replace=False)
         pts = pts[p, :]
 
-    if showIter:
+    if show_progress:
         pbar.close()
         pbar_grid.close()
         print(
             "\nIteration: {}, (final)Points Created: {}, is_grid_empty:{} ({}%)".format(
-                iter, pts.shape[0], nEmptyGrid, nEmptyGrid / nEmptyGrid0 * 100
+                iter, pts.shape[0], n_empty_grid, n_empty_grid / n_empty_grid0 * 100
             )
         )
     return pts
 
 
-Bridson_sampling_2d = partial(Bridson_sampling_1, make_2d_grid)
+def test_new_points_with_existing(
+    pcl,
+    temp_pts,
+    p,
+    is_safe_to_continue,
+    n_pts_created,
+    nn2,
+    score_grid=[],
+    discount_factor=1,
+):
 
-Bridson_sampling_3d = partial(Bridson_sampling_1, make_3d_grid)
+    accepted_grids = []
+    accepted_pts = []
+
+    # check with previously generated points
+    if is_safe_to_continue > 0 and n_pts_created > 0:
+
+        is_safe_with_prev_pts = pcl.test_points(temp_pts)
+        is_safe_to_continue = np.sum(is_safe_with_prev_pts)
+
+        rejected_grids = p[~is_safe_with_prev_pts]
+
+        if len(score_grid) > 0:
+            score_grid[rejected_grids] = score_grid[rejected_grids] * discount_factor
+
+        p = p[is_safe_with_prev_pts]
+        temp_pts = temp_pts[is_safe_with_prev_pts, :]
+
+    # find colliding pairs and leave only one of the pairs
+    if is_safe_to_continue > 0:
+        nn2.fit(temp_pts)
+        ind = nn2.radius_neighbors(temp_pts, return_distance=False)
+
+        # select only the points which collides with itself or lower rank points
+        is_eligible = np.frompyfunc(lambda i: (ind[i] < i).sum() == 0, 1, 1)(
+            np.arange(ind.size)
+        ).astype(bool)
+
+        accepted_pts = temp_pts[is_eligible, :]
+        accepted_grids = p[is_eligible]
+
+    return accepted_grids, accepted_pts
 
