@@ -56,7 +56,7 @@ class PointCloud(object):
         # nn2 = KDTree(cell_corners)
 
         if nn is None:
-            nn2 = NearestNeighbors(n_jobs=-1, algorithm='kd_tree')
+            nn2 = NearestNeighbors()
             nn2.fit(cell_corners)
             t1 = time.time()
             print(t1 - t0)
