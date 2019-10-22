@@ -41,6 +41,12 @@ class PointCloud(object):
 
     def test_points(self, points):
         nn1 = NearestNeighbors(radius=self.r, n_jobs=-1)
+        nn1.fit(self.points)
+        nnsearch = nn1.radius_neighbors(points, return_distance=False)
+        return ~select_non_empty(nnsearch)
+
+    def test_points_adaptive(self, points):
+        nn1 = NearestNeighbors(radius=self.r, n_jobs=-1)
         if self.points.shape[0] >= points.shape[0]:
             nn1.fit(self.points)
             nnsearch = nn1.radius_neighbors(points, return_distance=False)
