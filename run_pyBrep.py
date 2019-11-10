@@ -8,8 +8,8 @@ import time
 ######### Please feed with data!!
 #Parameters(might be read in from the command line some day...)
 #Output path
-input_path = Path('/Users/shhong/Dropbox/network_data/model/')
-output_path = Path.cwd().parent.parent / 'output_4'
+input_path = Path('/work/DeSchutterU/shhong/tmp/Molecular_Layer.Mon12Feb2018_2022/model/')
+output_path = input_path
 # config files: if you work in an environment where you want
 paramdir = input_path / 'params/set3005'
 config_hoc = paramdir / 'Parameters.hoc'
@@ -84,7 +84,7 @@ c_rad_aa = h.AAtoGoCzone/1.73
 print("R for AA: {}".format(c_rad_aa))
 
 cc = brp.Connect_2D(gp.qpts_aa, gg.qpts, c_rad_aa, output_path / 'AAtoGoC')
-_ = cc.connections_parallel(deparallelize=False, nblocks=120, debug=True)
+_ = cc.connections_parallel(deparallelize=True, nblocks=120, debug=True)
 t5 = time.time()
 print('AA: Found and saved after', t5-t4)
 print(' ')
@@ -93,7 +93,7 @@ c_rad_pf = h.PFtoGoCzone/1.113
 print("R for PF: {}".format(c_rad_pf))
 
 cc = brp.Connect_2D(gp.qpts_pf, gg.qpts, c_rad_pf, output_path / 'PFtoGoC')
-_ = cc.connections_parallel(deparallelize=False, nblocks=120, debug=True)
+_ = cc.connections_parallel(deparallelize=True, nblocks=120, debug=True)
 t6 = time.time()
 print('PF: Found and saved after', t6-t5)
 print(' ')
