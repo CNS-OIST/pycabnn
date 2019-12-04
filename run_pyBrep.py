@@ -232,32 +232,30 @@ def run_GoCtoGoCgap(data):
     return data
 
 def run_GlotoGrC(data):
-    from sklearn.neighbors import NearestNeighbors
+    raise NotImplementedError()
+    # from sklearn.neighbors import NearestNeighbors
 
-    glo, grc = data["pops"]["glo"], data["pops"]["grc"]
+    # glo, grc = data["pops"]["glo"], data["pops"]["grc"]
 
-    def squeezed_som_coord(x):
-        y = x.som.copy()
-        y[:,1] = y[:,1]/3
-        return y
+    # def squeezed_som_coord(x):
+    #     y = x.som.copy()
+    #     y[:,1] = y[:,1]/3
+    #     return y
 
-    glo_som_squeezed = squeezed_som_coord(glo)
-    grc_som_squeezed = squeezed_som_coord(grc)
+    # glo_som_squeezed = squeezed_som_coord(glo)
+    # grc_som_squeezed = squeezed_som_coord(grc)
 
-    nn = NearestNeighbors()
-    nn.fit(glo_som_squeezed)
-
-    from IPython import embed
-    embed()
+    # nn = NearestNeighbors()
+    # nn.fit(glo_som_squeezed)
 
 
 def main(args):
     data = load_input_data(args)
-    data = load_and_make_population(data, ["glo", "grc"])
-    # data = load_and_make_population(data, ["grc", "goc"])
+    # data = load_and_make_population(data, ["glo", "grc"])
+    data = load_and_make_population(data, ["grc", "goc"])
     print(data)
 
-    valid_job_list = ["AAtoGoC", "PFtoGoC", "GoCtoGoC", "GoCtoGoCgap", "GlotoGrC"]
+    valid_job_list = ["AAtoGoC", "PFtoGoC", "GoCtoGoC", "GoCtoGoCgap"]
 
     if args["all"]:
         args["<jobs>"] = valid_job_list
