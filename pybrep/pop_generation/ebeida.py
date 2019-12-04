@@ -1,14 +1,12 @@
 # References: Fast Poisson Disk Sampling in Arbitrary Dimensions
-#             Robert ebeida, SIGGRAPH, 2007
+#             Robert Ebeida, SIGGRAPH, 2007
 
 import numpy as np
 
-# from scipy import spatial
-from functools import partial
 from tqdm.autonotebook import tqdm
 from sklearn.neighbors import KDTree, NearestNeighbors
-
 from .utils import PointCloud
+
 from IPython import embed
 
 dlat2 = np.array([0, 0, 1, 0, 0, 1, 1, 1]).reshape((-1, 2)).astype("double")
@@ -42,26 +40,27 @@ def set_nDarts(nPts, n_pts_created, n_pts_newly_created, n_empty_cells, dartFact
     return int(np.round(ndarts))
 
 
-def ebeida_sampling(sizeI, spacing, nPts, showIter, ftests=[], discount_factor=0.5):
+def ebeida_sampling(sizeI, spacing, nPts, showIter, ftests=[]):
     count = 0
     count_time = []
     elapsed_time = []
 
     # Setting properties of iterati
     ndim = len(sizeI)
-    print("ndim", ndim)
+    print("ndim =", ndim)
     cellsize = spacing / np.sqrt(ndim)
     fgrid = eval("make_{}d_grid".format(ndim))
     dlat = eval("dlat{}".format(ndim)).ravel()
     print("dlat dim", dlat.shape)
 
     # Make grid size such that there is just one pt in each grid
-    dcell = spacing / np.sqrt(ndim)
+    dcell = cellsize
 
     # Make a grid and convert it into a nxD array
     s_cell = fgrid(sizeI, cellsize)
     s_cell = np.array([s_cell[i][:].flatten() for i in range(ndim)]).T
-    grid = np.arange(s_cell.shape[0]).astype(int)
+    grid = np.arange(s_cell.shape[0])[:,np.newaxis]
+    s_cell = np.hstack((s_cell, grid))
     print("s_cell dim", s_cell.shape)
 
     # Thrown in a particular grid
@@ -105,7 +104,7 @@ def ebeida_sampling(sizeI, spacing, nPts, showIter, ftests=[], discount_factor=0
 
         is_safe_to_continue = 1
 
-        tempPts = s_cell[p, :] + dcell * np.random.rand(len(p), ndim)
+        tempPts = s_cell[p, :ndim] + dcell * np.random.rand(len(p), ndim)
         temp_grids = grid[p]
 
         if ftests != []:
@@ -224,9 +223,3 @@ def ebeida_sampling(sizeI, spacing, nPts, showIter, ftests=[], discount_factor=0
             )
         )
     return pts
-
-
-ebeida_sampling_2d = partial(ebeida_sampling, make_2d_grid)
-
-ebeida_sampling_3d = partial(ebeida_sampling, make_3d_grid)
-
