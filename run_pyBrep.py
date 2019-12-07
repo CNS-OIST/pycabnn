@@ -233,20 +233,37 @@ def run_GoCtoGoC(data):
 def run_GoCtoGoCgap(data):
     import numpy as np
     from tqdm import tqdm
+    from sklearn.neighbors import KDTree
 
     gg = data["pops"]["goc"]
     dist = []
     src = []
     tgt = []
 
-    for i in tqdm(range(gg.n_cell)):
-        for j in range(gg.n_cell):
-            if i != j:
-                di = np.linalg.norm(gg.som[j] - gg.som[i])
-                if di < h.GoCtoGoCzone:
-                    src.append(i)
-                    tgt.append(j)
-                    dist.append(di)
+    ## Old brute-force approach
+    # for i in tqdm(range(gg.n_cell)):
+    #     for j in range(gg.n_cell):
+    #         if i != j:
+    #             di = np.linalg.norm(gg.som[j] - gg.som[i])
+    #             if di < h.GoCtoGoCgapzone:
+    #                 src.append(i)
+    #                 tgt.append(j)
+    #                 dist.append(di)
+
+    # Find all pairs within GoCtoGoCgapzone
+    ii, di = KDTree(gg.som).query_radius(
+            gg.som, r=h.GoCtoGoCgapzone, return_distance=True
+    )
+
+    srcs = ii
+    srcs = [s[s!=n] for n, s in enumerate(ii)]
+    dists = [di[n][s!=n] for n, s in enumerate(ii)]
+
+    for n, _ in enumerate(srcs):
+        for m, s in enumerate(srcs[n]):
+            tgt.append(n)
+            src.append(s)
+            dist.append(dists[n][m])
 
     output_path = data["output_path"]
     np.savetxt(output_path / "GoCtoGoCgapsources.dat", src, fmt="%d")
