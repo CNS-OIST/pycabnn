@@ -14,6 +14,10 @@
 # ---
 
 # %%
+%load_ext autoreload
+%autoreload 2
+%matplotlib inline
+
 import sys
 sys.path.append('../../')
 
@@ -21,7 +25,7 @@ sys.path.append('../../')
 import numpy as np
 from neuron import h
 from pybrep.pop_generation.ebeida import ebeida_sampling
-from pybrep.pop_generation.bridson import Bridson_sampling_2d
+from pybrep.pop_generation.bridson import bridson_sampling
 from pybrep.pop_generation.utils import PointCloud
 import matplotlib.pyplot as plt
 
