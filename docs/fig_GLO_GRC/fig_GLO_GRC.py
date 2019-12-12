@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.4'
-#       jupytext_version: 1.2.1
+#       jupytext_version: 1.2.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -19,7 +19,7 @@ import numpy as np
 from tqdm.autonotebook import tqdm
 import matplotlib.pyplot as plt
 
-fname = "../fig_POPGEN/coords_20190626_1_6.npz"
+fname = "../fig_POPGEN/data/coords_20190626_1_6.npz"
 f = np.load(fname)
 f['grc_nop'].shape
 
@@ -142,16 +142,15 @@ dists_u = dists_u[:,1]
 # -
 
 _, ax = plt.subplots(figsize=(8.9/2.54, 8.9/2.54*5/8))
-ax.hist(dists, 250)
+ax.hist(dists, 450, density=True, color='k')
 # _ = plt.hist(dists_u, 500)
 ax.set(
     xlim=[5, 10],
-    xlabel='nearest neighbor distance (μm)'
+    xlabel='nearest neighbor distance (μm)',
+    ylabel='density'
 )
 plt.tight_layout()
-plt.savefig('nn_dist_hist.png', dpi=300)
-
-
+plt.savefig('nn_dist_hist.png', dpi=600)
 
 # +
 gry = limit_to_box(grx, [[30, 670], [30, 670], [30, 170]])
@@ -197,7 +196,7 @@ ax.set(
     ylabel='pair correlation function'
 )
 plt.tight_layout()
-plt.savefig('cc2_grc.png', dpi=300)
+plt.savefig('cc2_grc.png', dpi=600)
 # -
 
 
