@@ -162,34 +162,62 @@ def run_PFtoGoC(data):
 def run_GoCtoGoC(data):
     import numpy as np
     from tqdm.autonotebook import tqdm
-
-    ##### TODO: need to be reimplemented by pybrep
     from sklearn.neighbors import KDTree
-
-    gg = data["pops"]["goc"]
-    dist = []
-    src = []
-    tgt = []
-
-    for i in tqdm(range(gg.n_cell)):
-        axon_coord1 = gg.axon[i]
-        tree = KDTree(axon_coord1)
-        for j in range(gg.n_cell):
-            if i != j:
-                ii, di = tree.query_radius(
-                    np.expand_dims(gg.som[j], axis=0),
-                    r=h.GoCtoGoCzone,
-                    return_distance=True,
-                )
-                if ii[0].size > 0:
-                    temp = di[0].argmin()
-                    ii, di = ii[0][temp], di[0][temp]
-                    axon_len = np.linalg.norm(axon_coord1[ii] - gg.som[i])
-                    src.append(i)
-                    tgt.append(j)
-                    dist.append(axon_len + di)  # putative path length along the axon
+    from pybrep.util import Query_point as qp
 
     output_path = data["output_path"]
+
+    gg = data["pops"]["goc"]
+
+    ## Old brute-force approach
+    # for i in tqdm(range(gg.n_cell)):
+    #     axon_coord1 = gg.axon[i]
+    #     tree = KDTree(axon_coord1)
+    #     for j in range(gg.n_cell):
+    #         if i != j:
+    #             ii, di = tree.query_radius(
+    #                 np.expand_dims(gg.som[j], axis=0),
+    #                 r=h.GoCtoGoCzone,
+    #                 return_distance=True,
+    #             )
+    #             if ii[0].size > 0:
+    #                 temp = di[0].argmin()
+    #                 ii, di = ii[0][temp], di[0][temp]
+    #                 axon_len = np.linalg.norm(axon_coord1[ii] - gg.som[i])
+    #                 src.append(i)
+    #                 tgt.append(j)
+    #                 dist.append(axon_len + di)  # putative path length along the axon
+
+    # Golgi cell axon points
+    gax = qp(gg.axon)
+
+    ii, di = KDTree(gax.coo).query_radius(
+        gg.som, r=h.GoCtoGoCzone, return_distance=True
+    )
+
+    # Find all sources and exclude self-connections
+    srcs = [np.unique(gax.idx[ix].ravel()) for ix in ii]
+    srcs = [s[s!=n] for n, s in enumerate(srcs)]
+
+    # Compute the soma-axon distance
+    axdst = gax.coo-gg.som[gax.idx.ravel(),:]
+    axdst = np.sqrt(np.sum(axdst**2, axis=1))
+
+    src = []
+    tgt = []
+    dist = []
+
+    # Compute soma-axon-soma distance and collect data
+    for n, _ in enumerate(srcs):
+        for s in srcs[n]:
+            idx_axon = (gax.idx[ii[n]].ravel()==s)
+            dst_ax_som = di[n][idx_axon]
+            i_nearest, d_nearest = dst_ax_som.argmin(), dst_ax_som.min()
+            i_nearest_axon = ii[n][idx_axon][i_nearest]
+            d_axon = axdst[i_nearest_axon]
+            dist.append(d_nearest + d_axon)
+            src.append(s)
+            tgt.append(n)
 
     np.savetxt(output_path / "GoCtoGoCsources.dat", src, fmt="%d")
     np.savetxt(output_path / "GoCtoGoCtargets.dat", tgt, fmt="%d")
@@ -205,20 +233,37 @@ def run_GoCtoGoC(data):
 def run_GoCtoGoCgap(data):
     import numpy as np
     from tqdm import tqdm
+    from sklearn.neighbors import KDTree
 
     gg = data["pops"]["goc"]
     dist = []
     src = []
     tgt = []
 
-    for i in tqdm(range(gg.n_cell)):
-        for j in range(gg.n_cell):
-            if i != j:
-                di = np.linalg.norm(gg.som[j] - gg.som[i])
-                if di < h.GoCtoGoCzone:
-                    src.append(i)
-                    tgt.append(j)
-                    dist.append(di)
+    ## Old brute-force approach
+    # for i in tqdm(range(gg.n_cell)):
+    #     for j in range(gg.n_cell):
+    #         if i != j:
+    #             di = np.linalg.norm(gg.som[j] - gg.som[i])
+    #             if di < h.GoCtoGoCgapzone:
+    #                 src.append(i)
+    #                 tgt.append(j)
+    #                 dist.append(di)
+
+    # Find all pairs within GoCtoGoCgapzone
+    ii, di = KDTree(gg.som).query_radius(
+            gg.som, r=h.GoCtoGoCgapzone, return_distance=True
+    )
+
+    srcs = ii
+    srcs = [s[s!=n] for n, s in enumerate(ii)]
+    dists = [di[n][s!=n] for n, s in enumerate(ii)]
+
+    for n, _ in enumerate(srcs):
+        for m, s in enumerate(srcs[n]):
+            tgt.append(n)
+            src.append(s)
+            dist.append(dists[n][m])
 
     output_path = data["output_path"]
     np.savetxt(output_path / "GoCtoGoCgapsources.dat", src, fmt="%d")
@@ -232,32 +277,30 @@ def run_GoCtoGoCgap(data):
     return data
 
 def run_GlotoGrC(data):
-    from sklearn.neighbors import NearestNeighbors
+    raise NotImplementedError()
+    # from sklearn.neighbors import NearestNeighbors
 
-    glo, grc = data["pops"]["glo"], data["pops"]["grc"]
+    # glo, grc = data["pops"]["glo"], data["pops"]["grc"]
 
-    def squeezed_som_coord(x):
-        y = x.som.copy()
-        y[:,1] = y[:,1]/3
-        return y
+    # def squeezed_som_coord(x):
+    #     y = x.som.copy()
+    #     y[:,1] = y[:,1]/3
+    #     return y
 
-    glo_som_squeezed = squeezed_som_coord(glo)
-    grc_som_squeezed = squeezed_som_coord(grc)
+    # glo_som_squeezed = squeezed_som_coord(glo)
+    # grc_som_squeezed = squeezed_som_coord(grc)
 
-    nn = NearestNeighbors()
-    nn.fit(glo_som_squeezed)
-
-    from IPython import embed
-    embed()
+    # nn = NearestNeighbors()
+    # nn.fit(glo_som_squeezed)
 
 
 def main(args):
     data = load_input_data(args)
-    data = load_and_make_population(data, ["glo", "grc"])
-    # data = load_and_make_population(data, ["grc", "goc"])
+    # data = load_and_make_population(data, ["glo", "grc"])
+    data = load_and_make_population(data, ["grc", "goc"])
     print(data)
 
-    valid_job_list = ["AAtoGoC", "PFtoGoC", "GoCtoGoC", "GoCtoGoCgap", "GlotoGrC"]
+    valid_job_list = ["AAtoGoC", "PFtoGoC", "GoCtoGoC", "GoCtoGoCgap"]
 
     if args["all"]:
         args["<jobs>"] = valid_job_list

@@ -248,7 +248,7 @@ class Connect_2D(object):
 
         return res, l_res
 
-    def save_result(self, prefix='', table_name='connection', save_mode='sqlite'):
+    def save_result(self, prefix='', table_name='connection', save_mode='hdf5'):
         '''Saves the results as produced by the query_x_in_y method similarly as BREP.
         res = result(containing a list of arrays/lists with the found IDs
             -> first index = query point ID
@@ -258,7 +258,7 @@ class Connect_2D(object):
         With the two last bools different 4 different modes can be created to have flexibility.'''
 
         prefix = str(prefix)
-        if save_mode == 'sqlite':
+        if save_mode == 'sqlite3':
             import sqlite3
             conn = sqlite3.connect(prefix + '.db')
             c = conn.cursor()
@@ -268,16 +268,16 @@ class Connect_2D(object):
             conn.close()
 
         print('Begin writing the results.')
-        if save_mode == 'sqlite':
+        if save_mode == 'sqlite3':
             foutname = prefix+'.db'
             conn = sqlite3.connect(foutname)
             self.result.to_sql(table_name, conn, if_exists='append', index=False)
             conn.close()
 
-        if save_mode == 'hdf':
+        if save_mode == 'hdf5':
             foutname = prefix+'.h5'
-            store = pd.HDFStore(foutname, 'w')
-            store.append(table_name, self.result)
+            store = pd.HDFStore(foutname, 'w', complevel=1, data_columns=['source', 'target'])
+            store.append(table_name, self.result, data_columns=['source', 'target'])
             store.close()
 
         print('Done writing, saving as: {}.'.format(prefix))

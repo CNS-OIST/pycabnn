@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.4'
-#       jupytext_version: 1.1.1
+#       jupytext_version: 1.2.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -16,9 +16,10 @@
 
 # # Glomerulus - GrC connectivity
 import numpy as np
+from tqdm.autonotebook import tqdm
 import matplotlib.pyplot as plt
 
-fname = "../fig_POPGEN/coords_20190626_1_6.npz"
+fname = "../fig_POPGEN/data/coords_20190626_1_6.npz"
 f = np.load(fname)
 f['grc_nop'].shape
 
@@ -53,9 +54,21 @@ glo = fix_coords(f['glo'], bbox)
 grx = grc + np.random.randn(*grc.shape)*0.2
 
 # +
-scale_factor = 1/3
+grx = np.random.rand(*grx.shape)
+glo = np.random.rand(*glo.shape)
 
-grx = grc + np.random.randn(*grc.shape)*0.2
+grx[:,0] *= 700
+grx[:,1] *= 700
+grx[:,2] *= 200
+
+glo[:,0] *= 700
+glo[:,1] *= 700
+glo[:,2] *= 200
+
+# +
+scale_factor = 1/4
+
+# grx = grc + np.random.randn(*grc.shape)*0.2
 
 src = grx.copy()
 tgt = glo.copy()
@@ -66,10 +79,12 @@ tgt[:, 1] *= scale_factor
 from sklearn.neighbors import NearestNeighbors
 
 # +
+rr = 7.85
 nn = NearestNeighbors()
 nn.fit(tgt)
-conns = nn.radius_neighbors(src, radius=20.66/2.128, return_distance=False)
+conns = nn.radius_neighbors(src, radius=rr, return_distance=False)
 nconns = np.frompyfunc(lambda x: x.size, 1, 1)(conns).astype(int)
+
 n_r, x_r, _ = plt.hist(nconns,np.arange(nconns.max()),100)
 print('N conns = {} ± {}'.format(np.mean(nconns), np.std(nconns)))
       
@@ -78,9 +93,9 @@ print('N conns = {} ± {}'.format(np.mean(nconns), np.std(nconns)))
 # +
 nn = NearestNeighbors()
 nn.fit(tgt)
-conns = nn.radius_neighbors(src, radius=20.3/2.128, return_distance=False)
+conns = nn.radius_neighbors(src, radius=rr, return_distance=False)
 nconns = np.frompyfunc(lambda x: x.size, 1, 1)(conns).astype(int)
-nc, xc, _ = plt.hist(nconns,np.arange(nconns.max()),100)
+nc, xc, _ = plt.hist(nconns, np.arange(nconns.max()), 100)
 print('N conns = {} ± {}'.format(np.mean(nconns), np.std(nconns)))
       
 # conns = nn.kneighbors(src, n_neighbors=2, return_distance=False)
@@ -89,12 +104,15 @@ print('N conns = {} ± {}'.format(np.mean(nconns), np.std(nconns)))
 plt.bar(x_r[:-1], n_r, 1, alpha=0.5)
 plt.bar(xc[:-1], nc, 1, alpha=0.5)
 
+1.364489593641605/2.126870358595118
+
 dendvs = np.vstack([glo[conn,:] - grc[i,:] for i, conn in enumerate(conns) if conn.size>1])
 dendlens = np.sqrt((dendvs**2).sum(axis=-1))
 dendlens
 
 plt.hist(dendlens,500)
-plt.xlim([7.5, 40])
+plt.xlim([0, 40])
+plt.ylim([0, 5000])
 print('{}±{}'.format(dendlens.mean(), dendlens.std()))
 
 # +
@@ -124,16 +142,15 @@ dists_u = dists_u[:,1]
 # -
 
 _, ax = plt.subplots(figsize=(8.9/2.54, 8.9/2.54*5/8))
-ax.hist(dists, 250)
+ax.hist(dists, 450, density=True, color='k')
 # _ = plt.hist(dists_u, 500)
 ax.set(
     xlim=[5, 10],
-    xlabel='nearest neighbor distance (μm)'
+    xlabel='nearest neighbor distance (μm)',
+    ylabel='density'
 )
 plt.tight_layout()
-plt.savefig('nn_dist_hist.png', dpi=300)
-
-
+plt.savefig('nn_dist_hist.png', dpi=600)
 
 # +
 gry = limit_to_box(grx, [[30, 670], [30, 670], [30, 170]])
@@ -179,22 +196,12 @@ ax.set(
     ylabel='pair correlation function'
 )
 plt.tight_layout()
-plt.savefig('cc2_grc.png', dpi=300)
-
-# +
-grx = np.random.rand(*grx.shape)
-glo = np.random.rand(*glo.shape)
-
-grx[:,0] *= 700
-grx[:,1] *= 700
-grx[:,2] *= 200
-
-glo[:,0] *= 700
-glo[:,1] *= 700
-glo[:,2] *= 200
+plt.savefig('cc2_grc.png', dpi=600)
 # -
 
-scale_factor = 1/3
+
+
+scale_factor = 1/4
 gry = limit_to_box(grx, [[40, 660], [40/scale_factor, 700-40/scale_factor], [0, 200]])
 src = gry.copy()
 tgt = glo.copy()

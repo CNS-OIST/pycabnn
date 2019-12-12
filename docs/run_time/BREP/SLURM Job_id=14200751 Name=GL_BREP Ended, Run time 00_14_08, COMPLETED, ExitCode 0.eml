@@ -1,0 +1,123 @@
+Delivered-To: sungho.hong@gmail.com
+Received: by 10.28.69.148 with SMTP id l20csp4099730wmi; Mon, 21 Aug 2017
+ 05:52:46 -0700 (PDT)
+X-Received: by 10.107.58.8 with SMTP id h8mr14938349ioa.22.1503319966099; Mon,
+ 21 Aug 2017 05:52:46 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1503319966; cv=none; d=google.com;
+ s=arc-20160816;
+ b=bDeC/Eh0/DuyX8BPSCHT131syBX7pUH/k+IaBfNtCWR4BakTcZOL7dE56ppJFvcVhL
+ zzbtNdZTy4APEeowof4W24JYjVqhL93+d3t2TOh//YlkjXV9qHFAQk5FT4sBsnPmsz9d
+ 9MsoGDP7EYjp16GNh6r/wPb5IVgCI+ZB80gd5kx0wavbaQ1laZY+nhZdkoeDx/dI8Qqx
+ hf9xqpbor03ZrmX9wpF6x8ITuowsmM3tnN49IlEWEjONZ1lqbgSmOqic+WJi0ZCryjTk
+ zO38D4KHgMNa54WYBAx7xraCMdqLSthEV1fT35ZnrsN+KhKherufXRfDIys0SaxeRf81 TKiQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com;
+ s=arc-20160816; h=spamdiagnosticmetadata:spamdiagnosticoutput:date:message-id
+ :mime-version:to:subject:from:dkim-signature :arc-authentication-results;
+ bh=V0MSzuPsdKlR+0jkCp7L9NakuvoO5QdGx72yOYMHooE=;
+ b=lJQgwTDLn9UvTHhla1nlzXn6385eD07j853lje96dW/aeCW/c3HInEuOcjyHdXjgNX
+ adksaln4cyuTvXdCFocsDOY41NziBzEWR4f7mgE3lF7wswVpM++gs8ibve2LInOqKjja
+ 7barNWSRPZXQYIjLWGrY8E3qlbd/4IIck8vDk3SO1xcdEzrMzt4A9uV0yuYf/mTt54mV
+ x+4QqXa2CRxhwXWtAxOlh/TeJ/0s00mmB3fu16l2J24okbYQxMmLllW3xA5SkfeDlr1g
+ psf3WFwghJnPDTWiMcosfGroiqpvrHd/fdITlloDtMoBRysL4q/aWBEL3TU1pyMGevIZ SoWw==
+ARC-Authentication-Results: i=1; mx.google.com; dkim=pass
+ header.i=@office365oist.onmicrosoft.com header.s=selector1-oist-jp
+ header.b=STeurw4M; spf=pass (google.com: domain of sango-slurm@oist.jp
+ designates 23.103.139.178 as permitted sender)
+ smtp.mailfrom=sango-slurm@oist.jp
+Return-Path: <sango-slurm@oist.jp>
+Received: from JPN01-TY1-obe.outbound.protection.outlook.com
+ (mail-ty1jpn01lp0178.outbound.protection.outlook.com. [23.103.139.178]) by
+ mx.google.com with ESMTPS id d64si8429825itc.86.2017.08.21.05.52.45 for
+ <sungho.hong@gmail.com> (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA
+ bits=128/128); Mon, 21 Aug 2017 05:52:46 -0700 (PDT)
+Received-SPF: pass (google.com: domain of sango-slurm@oist.jp designates
+ 23.103.139.178 as permitted sender) client-ip=23.103.139.178;
+Authentication-Results: mx.google.com; dkim=pass
+ header.i=@office365oist.onmicrosoft.com header.s=selector1-oist-jp
+ header.b=STeurw4M; spf=pass (google.com: domain of sango-slurm@oist.jp
+ designates 23.103.139.178 as permitted sender)
+ smtp.mailfrom=sango-slurm@oist.jp
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=office365oist.onmicrosoft.com; s=selector1-oist-jp;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version;
+ bh=V0MSzuPsdKlR+0jkCp7L9NakuvoO5QdGx72yOYMHooE=;
+ b=STeurw4M+tazayi3ddv5fc691CnFIc4gp3TwQNFGQtvYZGyF/MvBDVkxGilQTyZoxPT9UmiiggOr80LmV1SCxExEdDdJlAtYjz1B/bMsr/A6c9OcaDna9Qr+ThhqqUfJXR7ZB1VdHdPGvLauWEIkcZlZcAJpeBW70bcnzoyRGFY=
+Received: from KAWPR01CA0090.jpnprd01.prod.outlook.com (10.174.230.26) by
+ TY1PR01MB0809.jpnprd01.prod.outlook.com (10.167.159.12) with Microsoft SMTP
+ Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id
+ 15.1.1362.18; Mon, 21 Aug 2017 12:52:43 +0000
+Received: from TY1JPN01FT011.eop-JPN01.prod.protection.outlook.com
+ (2a01:111:f400:7e9d::203) by KAWPR01CA0090.outlook.office365.com
+ (2603:1096:402:c::26) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id 15.1.1362.18 via
+ Frontend Transport; Mon, 21 Aug 2017 12:52:44 +0000
+Authentication-Results: spf=pass (sender IP is 203.181.243.165)
+ smtp.mailfrom=oist.jp; office365oist.mail.onmicrosoft.com; dkim=none (message
+ not signed) header.d=none;office365oist.mail.onmicrosoft.com;
+ dmarc=bestguesspass action=none header.from=oist.jp;
+Received-SPF: Pass (protection.outlook.com: domain of oist.jp designates
+ 203.181.243.165 as permitted sender) receiver=protection.outlook.com;
+ client-ip=203.181.243.165; helo=mail.oist.jp;
+Received: from mail.oist.jp (203.181.243.165) by
+ TY1JPN01FT011.mail.protection.outlook.com (10.152.187.30) with Microsoft SMTP
+ Server (version=TLS1_0, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA_P384) id
+ 15.1.1341.15 via Frontend Transport; Mon, 21 Aug 2017 12:52:43 +0000
+Received: from localhost (10.210.16.2) by smtp.oist.jp (10.230.16.63) with
+ Microsoft SMTP Server (TLS) id 14.3.319.2; Mon, 21 Aug 2017 21:51:53 +0900
+From: <sango-slurm@oist.jp>
+Subject: SLURM Job_id=14200751 Name=GL_BREP Ended, Run time 00:14:08,
+ COMPLETED, ExitCode 0
+To: <shhong@oist.jp>
+MIME-Version: 1.0
+Content-Type: text/plain
+Message-ID: <320296aa-b3a5-4a0f-bc51-53626720aa20@OISTEXHUB02.oist.local>
+Return-Path: sango-slurm@oist.jp
+Date: Mon, 21 Aug 2017 21:51:53 +0900
+X-OrganizationHeadersPreserved: OISTEXHUB02.oist.local
+X-EOPAttributedMessage: 0
+X-Forefront-Antispam-Report: CIP:203.181.243.165;IPV:NLI;CTRY:JP;EFV:NLI;SFV:NSPM;SFS:(6009001)(2980300002)(438002)(3190300001)(189002)(199003)(86152003)(106476002)(86362001)(189998001)(31696002)(104016004)(2351001)(97736004)(106466001)(54356999)(50466002)(47776003)(2876002)(48376002)(31686004)(69596002)(76506005)(5003940100001)(57986006)(50986999)(6636002)(558084003)(110136004)(74482002)(8676002)(6916009)(33646002)(81166006)(81156014)(1096003)(98436002)(8936002)(77096006)(305945005)(101616003)(356003)(626005)(53936002)(68736007)(9686003)(106356001)(5660300001);DIR:INB;SFP:;SCL:1;SRVR:TY1PR01MB0809;H:mail.oist.jp;FPR:;SPF:Pass;PTR:InfoNoRecords;MX:1;A:1;LANG:en;
+X-Microsoft-Exchange-Diagnostics: 1;TY1JPN01FT011;1:MH2o9WkvLaCJar0Ed4FNzILH83to6g70JjkVThxpKrTs+RXtooEab6R6raxJD/ZRc6W+KzWQyfVNdXBESdDjaetUpo0Oegulv/7BByS6bIlwqWxRCgv2Bfpk2hMfdNfm
+X-CrossPremisesHeadersPromoted: TY1JPN01FT011.eop-JPN01.prod.protection.outlook.com
+X-CrossPremisesHeadersFiltered: TY1JPN01FT011.eop-JPN01.prod.protection.outlook.com
+X-MS-PublicTrafficType: Email
+X-MS-Office365-Filtering-Correlation-Id: f1e72e0f-883e-4b02-e9a3-08d4e89383ad
+X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:(300000500095)(300135000095)(300000501095)(300135300095)(22001)(300000502095)(300135100095)(2017030254152)(8251501002)(300000503095)(300135400095)(2017052603031)(201703131423075)(201703031133081)(201702281549075)(300000504095)(300135200095)(300000505095)(300135600095)(300000506095)(300135500095);SRVR:TY1PR01MB0809;
+X-Microsoft-Exchange-Diagnostics: 1;TY1PR01MB0809;3:s5opaWaNEmYyYBCjHdywhcOujsgxMkL3+XAdrLv/OeQ5x/WaUT4Ux1FLqKXKcIKMMZZO40dy4F2DysXPR5eafHTRrYOH1fRvtNTP1VNRPp9hsUkMcLjATd1TT55xeF1pWH7o+EKhOi5hGUJ6x9+jfuCrfb8Oe5cVYpQJNIo/o7J54vnp0VJZhvKtMkNQ60E4Ty1vJ2MwakcYNaoAhaoYG+O9n1t2aYPsg/kM8DQ9O6opcvI7HkJvveTdv0wUZ9WJbMphQg+EvKMIGwy9iFu4rpjpB2WCGR4biXb+vSmb4jPVl3+BwCtvfPUFeFTc4K0aIfU5AwWBe9/6Y4La64F2AcjnfFPKSL5I8CdKkDLbX/E=;25:zf9yc0TzjZap/HiiDkhecDVE7cyCOG73K1GxVwlm5XAg6hGZrkldZdvNjpOyJQH5YncR7UBtWIdyWYugfU6BQZ51RB5PYfQpH0O1FXFXkEuGhPLU6Y3DBTpKhrRGgfqZxfXoto+K+qY02zXad6rDz+DqiaCGf7SWO9eGVZVZPKtnhOR9TSjbIn0RNMQ/p+2RJ/eIh+14SI+CVbpKiL1zcMI947xlK5M9zQnmx8VlqqMCG54oLFvdBVBbU5qMcqvWrOMDue3uXglqbnGxDNsBaU7Qk4cfwCIE0Dc5oAVtz1VahlEZ/XT7OzeaEaNpP79LqDKxvQUGVR8Uds9g6GruRw==
+X-MS-TrafficTypeDiagnostic: TY1PR01MB0809:|TY1PR01MB0809:
+X-Microsoft-Exchange-Diagnostics: 1;TY1PR01MB0809;31:zYniyJz50F5tpC2/ruyZ5mAF1d/TMJfDkf/BwFG6RIQh2uei8M1X1SbrgRFCYdU7jOlcp9B38Koc6QYcPzB7eEMeXvMSpRRJH9zLkqlBexa4qCdBifF0eijh9C43z0UqjrKKK7ru/N8Nl8iLc3HNLBqbs670TE4oOIdrA3A4cPQ47/gxs2vpDdj75jltCauWSe8i6Da4aylhLK+B1mMRI7bp6ijjRFHmMC8pz6V/gDE=;20:+Sm4pMn7pbdp5ghCMvL4c9kJbkqnTQ43sO51ukSOxQbapCqZVybUvqdTgFS4e6jfGarGszPZWti4MoxBLBJQVe07qg4dFv4KlUKNIbDMFeVZoUOazG34oOQuCelSdLYzuz3j1iFSMgtIz2w0v9tgxw8bqiUwJWFyek6M5N02N3dnT0x500XYUyZoNkuflnTrN+8zLeBJxu1IrPITS+UgNUBPF98n4JF5ceG9akUIlQXBB+PzV8F44VS6pKjDuXtMXIIfdnzjdvxpm3doRZ4reOU2mm6E9v1Qj4PndkCmZWVeIiFkwmGL8j/qvbVBMzDJtS+SwOJ2woL8lLavJ/mWJulb+q5VlL8yVbzAA3JL/KPAa8rEIkIoL0vnk9DuHHWajsp3p1H6gttQNaMphqg6nHh13bVok5HJdznBGwc0SzvdsKF33R42ULJQ4cu07OUS3LSxZZnPqg2mtDLRRBFKA5Aju8zRxI1sUQYdeaPATs7Qxun6AIXFRET2Fv76lste
+X-Exchange-Antispam-Report-Test: UriScan:;
+X-Exchange-Antispam-Report-CFA-Test: BCL:0;PCL:0;RULEID:(100000700101)(100105000095)(100000701101)(100105300095)(100000702101)(100105100095)(9101521199)(2401047)(13018025)(8121501046)(13016025)(10201501046)(100000703101)(100105400095)(93006095)(93004095)(3002001)(201708071742011)(100000704101)(100105200095)(100000705101)(100105500095);SRVR:TY1PR01MB0809;BCL:0;PCL:0;RULEID:(100000800101)(100110000095)(100000801101)(100110300095)(100000802101)(100110100095)(100000803101)(100110400095)(100000804101)(100110200095)(100000805101)(100110500095);SRVR:TY1PR01MB0809;
+X-Microsoft-Exchange-Diagnostics: 1;TY1PR01MB0809;4:DOIfOn2qxuIjqjwCHje0tdBS+oJnxI5JN+FBrWcWRb+VZuwln9De3kArPS7l0IGcsvFfZWryObnTbHm++2oQ5rIIGpxxQQrkucXOBI1uhiPLeAc2TVzI6v07XL6SWrn+Rn8GfO8LJ+aaMzLFs6602Pga5lF0BfwWaAfc8Wu5dejSgLy5Dz0D6MPNKVDoVoMt0A+KwP3Hwpr0os3Mv/wSjUdnDKWhjCYRzWiQU3JGVHlnuPcwPtGr4XsgHdoVVifW
+X-Microsoft-Exchange-Diagnostics: =?us-ascii?Q?1;TY1PR01MB0809;23:Cvzq3XwQ38/Nckk2mvfItX3Wmg9l68cZ4QHsTxBnN?=
+ =?us-ascii?Q?DZSkqEtp0CeHN47rt72xjn3kcbESpDb+B+LyXN3RxlWKLyW00TlOLWHzi9d5?=
+ =?us-ascii?Q?ltrdidZNvbS/+l0uDmiBMyT7R5sr/7PM91ovlQzcvcHMtgGxZTW3DZD4ZhCG?=
+ =?us-ascii?Q?zqibnshd1f/07RdBJ9386rxva767+vmobX+v7SYxdcf0VLIfwdQDU3gWmKou?=
+ =?us-ascii?Q?/bO09Ac67u5XsK7Fn8y56pPVQ4jve0UVCUUEBN4NfZAb7rG64A0OElso7rmE?=
+ =?us-ascii?Q?51CD7dotobcfLs2GPoKA4RZG/ewEv1BqEB35GiokXFHoOxg9JkFziKDnTKkx?=
+ =?us-ascii?Q?/Suv4ERWOiiwDtlYlLvuEyLua4vbab16WTQXWLBvWErIExNzjs6dV3g/v0SV?=
+ =?us-ascii?Q?xfiduhClDBZFvJOaAUhArhgBagcyxrZSbV7HjAfDeG/fNrSRd3OHVdzzCwHi?=
+ =?us-ascii?Q?wV8YKgvsdCgxKnwDGgtmNjyb8lJZSqLhD5XalzUJ3PQfNTmj11SoAjVJ6EK+?=
+ =?us-ascii?Q?zkShbnApUFI2mVNlp7hodpwowNYZ+ENy/M1d2EZ/Yr2j9MOFw8h5dDSumNCW?=
+ =?us-ascii?Q?7CskOuwmnw07x9jwAzbL+H4Pwss7Bzdssflz5ruoVG9p2skO9i9iR1NFapea?=
+ =?us-ascii?Q?n/hrrwTjOyxW9VU8nXG+INcJE/GsGH5JUgNFQFFgtscDndEMm6peVu0cgxgS?=
+ =?us-ascii?Q?RrZvMA++rKJa4qi0X3s07K6E9fuBh7a+gFRH5rv6Cc+8PRBl1lRPjXxcMH+b?=
+ =?us-ascii?Q?UyqFan8tmUJSzYEyOpxR0nHuV9kFI/DWgblN6VSjUmwUUuoVwbIL/6xmajVo?=
+ =?us-ascii?Q?rV3wxVrmpq8iEVT+DmZWclb9VhEjC/Sv9ycT0fdKFx1f8g0D96GamtXJBPCr?=
+ =?us-ascii?Q?EPbGaz/E26dn1140EvT9QXRCcIW5JRJLtyZQx9L8IsIPSwFecAF67f6FB41x?=
+ =?us-ascii?Q?k7LHDJyIPQ9Ajbqz01QrmzKLLuRcfsEKgSJPDxiWnwGM1qUZlV6uZdrH0slW?=
+ =?us-ascii?Q?yDgD6FqZ1LTRXV7fg5UruLGMWI76iPVMxU0eCmDk/+yjLw68QhtAeyoZ6JHp?=
+ =?us-ascii?Q?cEdIRbuwnvc6snOwITERzG3W/OWYTMT6CaMVGuiDS5Jn6o+5DRXLODgQq60i?=
+ =?us-ascii?Q?xYgVJAKAN7EbfkY8NN78OHVuerHZ8MY?=
+X-Microsoft-Exchange-Diagnostics: 1;TY1PR01MB0809;6:7zeLo1+8jf78Q0gpopfrW5mvhXjf53UVtB1aosM3GbN/1fA/L1O3sRpnNWGLD/UeimGrvKxCWg6tkDELiwfZI0VFCOPNinyzYlzr4GnJxWFSDOY8ywZq3XIuIAgrjFWkF8+WCO62xGJ1GmnpOWvrZ3zh2tlkR4ornRlybb7Fego8xmmEJ6M8yMcafHBlWDmMriE68KbubS1NQB5f41Nlk9gB6rBWOz/BRufqOQ1PdKzjZ5g2TCl5Bj7XLsObFP4AvjLIA5gW1t6eB7oL2XHL+tkhCo1E0AgRBWEbYO4YNnMRVHxhHOAum64e9JM0Q3r4qhB6w4IvNVjos4NaUBYjww==;5:k6ajDxx+XUzaQ2fYBbcbMxBYHmQ7HXYasY1dGDgwEItjHpY/91P2VYhMmoL4PWey9eIsTGMedBgNmNIRpDLgPFuK/bTqOgFjVGBMhZohiKl89Rl9eqXRiJiiEJVDiWJ6Ol/vdxxnK349TPfuSGdL5A==;24:yrUMDgJgYaM3Xm6tj9mU7yStTl47SVjwtWjq5+ArPm1eZAesPRNGFtU7KuD9BfFr18UrAwAO46UybemOMVsEj+NHAsTuNSak+KVNUZHgM+o=;7:4Z1OL2IQnHWNP+cD5hsMWUsiXw7zKTI0rX0KW8AAhGUH/w9IPgj7PYxSq+QxYxfztayIZxWbUy9a+I2dLJUFXQF7Es9P5dOlzI6AtV1M2LbgVmjHayGf+CGAfwB8tGZKXeSBtSQfyNT1cyY0khcvs859bhBLL124uSYXetjwgt0R2nITkryw2jgTJpAClHUVjD8M2v5X2MNIWzHLc8M0LRwGqru6m94CWzjPOMPiVjQ=
+SpamDiagnosticOutput: 1:99
+SpamDiagnosticMetadata: NSPM
+X-MS-Exchange-Inbox-Rules-Loop: shhong@oist.jp
+X-Microsoft-Exchange-Diagnostics: 1;TY1PR01MB0809;20:28TXQmZ1/y29NXR95AxLatXTs+xs1+ltQJOKOn5q/G/EIOjeWIofzR7FsEwBLXxOBor9bhNVd+OLzLXSe1Hki6i88g+XC5GokE7iRkxfN8ouLWQsPSMZmE/W36VGmF8A1bgoJctlDsjpx5uiDb4DzlqBTZJD4gw7TzOmdGl8tzNaeB6kM2n+aA5hPg+MPzHlQi/HxBvBl1nnd5Ewc2XzQ5K45pmaa3p3Bys44E6WjmowqCa8elUKPtUTiawkw0kqN9lQkLm0sULKR/MjHXlW6uLtgO5QIYVXAK/m/UGJvFBOGrBRrKV6jh6xzwFK8db0//ls8PT01ttlPmpD1AJ13LRZiQD7Cvnv+weCNKkWsQd502W0kHtoUXUMDVZKbI6oTRHFMhKu6xNmtBIj7I3KvrcrnbsL0SjogN7DT85vaAiOCG0kMoESfoZDWjqVN/g7GnUhtMdAGmAgHwNS6YXaiImk9tE1apZ68eDTl+9ibdXE/YWCxXrt9xZJVzR1IwK7;23:RA77wbO83GXTbMfdgOnxeONZbcd90e5Bd4RfTFB/ESklxAHd6Ek5ms9eNcdaDZNRtg8Jrj4pAfcl/be4sPpLr2bQrpY3L43gGlCfPcTvra5mjCcy5z586hnKrYOWH567uHZSYp5uitojhxyogI44zQ==
+X-OriginatorOrg: oist.jp
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 21 Aug 2017 12:52:43.0475 (UTC)
+X-MS-Exchange-CrossTenant-Id: d8c0fb8d-bb56-44bb-9f4a-c58e7465652e
+X-MS-Exchange-CrossTenant-OriginalAttributedTenantConnectingIp: TenantId=d8c0fb8d-bb56-44bb-9f4a-c58e7465652e;Ip=[203.181.243.165];Helo=[mail.oist.jp]
+X-MS-Exchange-CrossTenant-FromEntityHeader: HybridOnPrem
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: TY1PR01MB0809
+
+SLURM Job_id=14200751 Name=GL_BREP Ended, Run time 00:14:08, COMPLETED, ExitCode 0

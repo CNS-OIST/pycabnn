@@ -1,0 +1,18 @@
+1 SLURM Job_id=14200756 Name=GL_BREP Ended, Run time 00_14_06, COMPLETED, ExitCode 0.eml 14 6
+2 SLURM Job_id=14200726 Name=GL_BREP Ended, Run time 00_14_07, COMPLETED, ExitCode 0.eml 14 7
+3 SLURM Job_id=14200679 Name=GL_BREP Ended, Run time 00_13_56, COMPLETED, ExitCode 0.eml 13 56
+4 SLURM Job_id=14200683 Name=GL_BREP Ended, Run time 00_14_01, COMPLETED, ExitCode 0.eml 14 1
+5 SLURM Job_id=14200733 Name=GL_BREP Ended, Run time 00_14_02, COMPLETED, ExitCode 0.eml 14 2
+6 SLURM Job_id=14200774 Name=GL_BREP Ended, Run time 00_14_21, COMPLETED, ExitCode 0.eml 14 21
+7 SLURM Job_id=14200737 Name=GL_BREP Ended, Run time 00_14_07, COMPLETED, ExitCode 0.eml 14 7
+8 SLURM Job_id=14200751 Name=GL_BREP Ended, Run time 00_14_08, COMPLETED, ExitCode 0.eml 14 8
+9 SLURM Job_id=14200701 Name=GL_BREP Ended, Run time 00_14_07, COMPLETED, ExitCode 0.eml 14 7
+10 SLURM Job_id=14200782 Name=GL_BREP Ended, Run time 00_15_19, COMPLETED, ExitCode 0.eml 15 19
+11 SLURM Job_id=14200763 Name=GL_BREP Ended, Run time 00_14_20, COMPLETED, ExitCode 0.eml 14 20
+12 SLURM Job_id=14200785 Name=GL_BREP Ended, Run time 00_14_12, COMPLETED, ExitCode 0.eml 14 12
+13 SLURM Job_id=14200770 Name=GL_BREP Ended, Run time 00_14_03, COMPLETED, ExitCode 0.eml 14 3
+14 SLURM Job_id=14200779 Name=GL_BREP Ended, Run time 00_14_07, COMPLETED, ExitCode 0.eml 14 7
+15 SLURM Job_id=14200788 Name=GL_BREP Ended, Run time 00_15_47, COMPLETED, ExitCode 0.eml 15 47
+16 SLURM Job_id=14200767 Name=GL_BREP Ended, Run time 00_14_03, COMPLETED, ExitCode 0.eml 14 3
+17 SLURM Job_id=14200800 Name=GL_BREP Ended, Run time 00_16_06, COMPLETED, ExitCode 0.eml 16 6
+Trials = 17, t = 864.2352941176471 +- 38.272289794183536 secs
