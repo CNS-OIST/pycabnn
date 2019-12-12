@@ -7,8 +7,6 @@ from tqdm.autonotebook import tqdm
 from sklearn.neighbors import KDTree, NearestNeighbors
 from .utils import PointCloud
 
-from IPython import embed
-
 dlat2 = np.array([0, 0, 1, 0, 0, 1, 1, 1]).reshape((-1, 2)).astype("double")
 
 dlat3 = (
@@ -59,7 +57,7 @@ def ebeida_sampling(sizeI, spacing, nPts, showIter, ftests=[]):
     # Make a grid and convert it into a nxD array
     s_cell = fgrid(sizeI, cellsize)
     s_cell = np.array([s_cell[i][:].flatten() for i in range(ndim)]).T
-    grid = np.arange(s_cell.shape[0])[:,np.newaxis]
+    grid = np.arange(s_cell.shape[0])[:, np.newaxis]
     s_cell = np.hstack((s_cell, grid))
     print("s_cell dim", s_cell.shape)
 
@@ -118,7 +116,7 @@ def ebeida_sampling(sizeI, spacing, nPts, showIter, ftests=[]):
             tempPts = tempPts[is_safe_with_prev_pts, :]
             temp_grids = temp_grids[is_safe_with_prev_pts]
 
-        is_safe_to_continue = p.size #tempPts.shape[0]
+        is_safe_to_continue = p.size  # tempPts.shape[0]
         # print(p.size, tempPts.shape[0], temp_grids.size)
 
         if is_safe_to_continue > 0 and n_pts_created > 0:
@@ -147,7 +145,7 @@ def ebeida_sampling(sizeI, spacing, nPts, showIter, ftests=[]):
             ).astype(bool)
 
             n_pts_newly_created = np.sum(is_eligible)
-            rejection_rate = 1-n_pts_newly_created/ndarts
+            rejection_rate = 1 - n_pts_newly_created / ndarts
             print("Rejection_rate: ", rejection_rate)
 
             if n_pts_newly_created > 0:
@@ -166,16 +164,20 @@ def ebeida_sampling(sizeI, spacing, nPts, showIter, ftests=[]):
                     pcl.append_points(accepted_pts)
 
                 n_pts_created = pcl.points.shape[0]
-                print("new points:", n_pts_created,"/", nPts,  end=" ")
+                print("new points:", n_pts_created, "/", nPts, end=" ")
 
                 if showIter:
                     print("{}/{}".format(n_empty_cells, n_empty_cells0))
 
         is_safe_to_continue = s_cell.shape[0]
-        if is_safe_to_continue and n_pts_newly_created/nPts<0.0025: # s_cell.shape[0]<550000:
+        if (
+            is_safe_to_continue and n_pts_newly_created / nPts < 0.0025
+        ):  # s_cell.shape[0]<550000:
             print("Splitting cells...")
             dcell = dcell / 2
-            s_cell = (np.tile(s_cell, (1, 2 ** ndim)) + dlat * dcell).reshape((-1, ndim))
+            s_cell = (np.tile(s_cell, (1, 2 ** ndim)) + dlat * dcell).reshape(
+                (-1, ndim)
+            )
             grid = np.repeat(grid, 2 ** ndim)
             n_empty_cells0 = np.sum(s_cell.shape[0])
             assert grid.size == n_empty_cells0
@@ -205,7 +207,11 @@ def ebeida_sampling(sizeI, spacing, nPts, showIter, ftests=[]):
             grid = grid[is_cell_uncovered]
             n_empty_cells = n_empty_cells0 = np.sum(s_cell.shape[0])
 
-            print("Uncovered cells: {}%\n".format(n_empty_cells / (n_empty_cells0+0.001) * 100))
+            print(
+                "Uncovered cells: {}%\n".format(
+                    n_empty_cells / (n_empty_cells0 + 0.001) * 100
+                )
+            )
 
         iter += 1
 
@@ -219,7 +225,10 @@ def ebeida_sampling(sizeI, spacing, nPts, showIter, ftests=[]):
         pbar.close()
         print(
             "\nIteration: {}, (final)Points Created: {}, is_grid_empty:{} ({}%)".format(
-                iter, pts.shape[0], n_empty_cells, n_empty_cells / (n_empty_cells0+0.001) * 100
+                iter,
+                pts.shape[0],
+                n_empty_cells,
+                n_empty_cells / (n_empty_cells0 + 0.001) * 100,
             )
         )
     return pts

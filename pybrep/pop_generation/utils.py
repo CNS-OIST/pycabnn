@@ -93,16 +93,19 @@ class PointCloud(object):
 
         print("ntest: ", n_test)
         cells_covered = np.frompyfunc(ftest, 1, 1)(range(n_test))
-        if cells_covered.size>0:
+        if cells_covered.size > 0:
             cells_covered = np.unique(np.hstack(cells_covered).astype(int))
         else:
-            print('cells_covered =', cells_covered)
+            print("cells_covered =", cells_covered)
 
         t3 = time.time()
         print(t3 - t2)
 
         if return_nn:
-            return (np.isin(range(cell_corners.shape[0]), cells_covered, invert=True), nn2)
+            return (
+                np.isin(range(cell_corners.shape[0]), cells_covered, invert=True),
+                nn2,
+            )
         else:
             return np.isin(range(cell_corners.shape[0]), cells_covered, invert=True)
 
