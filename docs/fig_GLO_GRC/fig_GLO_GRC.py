@@ -104,7 +104,17 @@ print('N conns = {} ± {}'.format(np.mean(nconns), np.std(nconns)))
 plt.bar(x_r[:-1], n_r, 1, alpha=0.5)
 plt.bar(xc[:-1], nc, 1, alpha=0.5)
 
-1.364489593641605/2.126870358595118
+2.126870358595118/1.364489593641605
+
+print(np.sum(n_r[x_r[:-1]>7])/sum(n_r)*100)
+print(np.sum(nc[xc[:-1]>7])/sum(nc)*100)
+print(np.sum(n_r[x_r[:-1]<3])/sum(n_r)*100)
+print(np.sum(nc[xc[:-1]<3])/sum(nc)*100)
+
+
+plt.plot(np.cumsum(n_r)/np.sum(n_r)*100,'o-')
+plt.plot(np.cumsum(nc)/np.sum(nc)*100,'o-')
+plt.xlim([0, 10.1])
 
 dendvs = np.vstack([glo[conn,:] - grc[i,:] for i, conn in enumerate(conns) if conn.size>1])
 dendlens = np.sqrt((dendvs**2).sum(axis=-1))
