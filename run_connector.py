@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-"""run_pybrep.py
+"""run_connector.py
 
 Jobs = AAtoGoC, PFtoGoC, GoCtoGoC, GoCtoGoCgap
 
 Usage:
-  run_pybrep.py (-i PATH) (-o PATH) (-p PATH) [--parallel] (all | <jobs>...)
-  run_pybrep.py (-h | --help)
-  run_pybrep.py --version
+  run_connector.py (-i PATH) (-o PATH) (-p PATH) [--parallel] (all | <jobs>...)
+  run_connector.py (-h | --help)
+  run_connector.py --version
 
 Options:
   -h --help                            Show this screen.
@@ -19,7 +19,7 @@ Options:
 """
 
 from pathlib import Path
-import pybrep as brp
+import pycabnn as cbn
 import time
 from docopt import docopt
 from neuron import h
@@ -47,7 +47,7 @@ def load_input_data(args):
     except ModuleNotFoundError:
         # TODO: have to find a good way to deal with this
         config_pseudo_hoc = Path.cwd() / "pseudo_hoc.pkl"
-        h = brp.Pseudo_hoc(config_pseudo_hoc)
+        h = cbn.Pseudo_hoc(config_pseudo_hoc)
         print("Trying to read in pseudo-hoc config object from ", config_pseudo_hoc)
     finally:
         # Just pick a random variable and check whether it is read
@@ -68,7 +68,7 @@ def load_and_make_population(data, pops):
 
     def make_glo(data):
         """sets up the Glomerulus population"""
-        from pybrep.cell_population import Cell_pop
+        from pycabnn.cell_population import Cell_pop
         glo_in = data["input_path"] / "GLcoordinates.dat"
 
         glo = Cell_pop(h)
@@ -84,7 +84,7 @@ def load_and_make_population(data, pops):
     def make_goc(data):
         """sets up the Golgi population, render dendrites."""
         gol_in = data["input_path"] / "GoCcoordinates.dat"
-        gg = brp.create_population("Golgi", h)
+        gg = cbn.create_population("Golgi", h)
         gg.load_somata(gol_in)
         # # gg.gen_random_cell_loc(1995, 1500, 700, 200)
         gg.add_dendrites()
@@ -101,7 +101,7 @@ def load_and_make_population(data, pops):
     def make_grc(data):
         """sets up Granule population including aa and pf."""
         gran_in = data["input_path"] / "GCcoordinates.dat"
-        gp = brp.create_population("Granule", h)
+        gp = cbn.create_population("Granule", h)
         gp.load_somata(gran_in)
         gp.add_aa_endpoints_fixed()
         gp.add_pf_endpoints()
@@ -129,7 +129,7 @@ def run_AAtoGoC(data):
     print("R for AA: {}".format(c_rad_aa))
 
     gp, gg = data["pops"]["grc"], data["pops"]["goc"]
-    cc = brp.Connect_2D(gp.qpts_aa, gg.qpts, c_rad_aa)
+    cc = cbn.Connect_2D(gp.qpts_aa, gg.qpts, c_rad_aa)
     # TODO: adapt the following from command line options
     cc.connections_parallel(deparallelize=False, nblocks=120, debug=False)
     cc.save_result(data["output_path"] / "AAtoGoC")
@@ -147,7 +147,7 @@ def run_PFtoGoC(data):
     print("R for PF: {}".format(c_rad_pf))
 
     gp, gg = data["pops"]["grc"], data["pops"]["goc"]
-    cc = brp.Connect_2D(gp.qpts_pf, gg.qpts, c_rad_pf)
+    cc = cbn.Connect_2D(gp.qpts_pf, gg.qpts, c_rad_pf)
     cc.connections_parallel(deparallelize=False, nblocks=120, debug=False)
     cc.save_result(data["output_path"] / "PFtoGoC")
 
@@ -163,7 +163,7 @@ def run_GoCtoGoC(data):
     import numpy as np
     from tqdm.autonotebook import tqdm
     from sklearn.neighbors import KDTree
-    from pybrep.util import Query_point as qp
+    from pycabnn.util import Query_point as qp
 
     output_path = data["output_path"]
 
