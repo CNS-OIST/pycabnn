@@ -169,25 +169,6 @@ def run_GoCtoGoC(data):
 
     gg = data["pops"]["goc"]
 
-    ## Old brute-force approach
-    # for i in tqdm(range(gg.n_cell)):
-    #     axon_coord1 = gg.axon[i]
-    #     tree = KDTree(axon_coord1)
-    #     for j in range(gg.n_cell):
-    #         if i != j:
-    #             ii, di = tree.query_radius(
-    #                 np.expand_dims(gg.som[j], axis=0),
-    #                 r=h.GoCtoGoCzone,
-    #                 return_distance=True,
-    #             )
-    #             if ii[0].size > 0:
-    #                 temp = di[0].argmin()
-    #                 ii, di = ii[0][temp], di[0][temp]
-    #                 axon_len = np.linalg.norm(axon_coord1[ii] - gg.som[i])
-    #                 src.append(i)
-    #                 tgt.append(j)
-    #                 dist.append(axon_len + di)  # putative path length along the axon
-
     # Golgi cell axon points
     gax = qp(gg.axon)
 
@@ -240,16 +221,6 @@ def run_GoCtoGoCgap(data):
     src = []
     tgt = []
 
-    ## Old brute-force approach
-    # for i in tqdm(range(gg.n_cell)):
-    #     for j in range(gg.n_cell):
-    #         if i != j:
-    #             di = np.linalg.norm(gg.som[j] - gg.som[i])
-    #             if di < h.GoCtoGoCgapzone:
-    #                 src.append(i)
-    #                 tgt.append(j)
-    #                 dist.append(di)
-
     # Find all pairs within GoCtoGoCgapzone
     ii, di = KDTree(gg.som).query_radius(
             gg.som, r=h.GoCtoGoCgapzone, return_distance=True
@@ -278,21 +249,6 @@ def run_GoCtoGoCgap(data):
 
 def run_GlotoGrC(data):
     raise NotImplementedError()
-    # from sklearn.neighbors import NearestNeighbors
-
-    # glo, grc = data["pops"]["glo"], data["pops"]["grc"]
-
-    # def squeezed_som_coord(x):
-    #     y = x.som.copy()
-    #     y[:,1] = y[:,1]/3
-    #     return y
-
-    # glo_som_squeezed = squeezed_som_coord(glo)
-    # grc_som_squeezed = squeezed_som_coord(grc)
-
-    # nn = NearestNeighbors()
-    # nn.fit(glo_som_squeezed)
-
 
 def main(args):
     data = load_input_data(args)
