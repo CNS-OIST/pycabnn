@@ -1,0 +1,1 @@
+Iteration: 85, (final)Points Created: 267187, is_grid_empty:46743 (99.99999786064228%)
