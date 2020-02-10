@@ -1,5 +1,5 @@
 """
-pybrep.py
+pycabnn
 
 Finds distance-based connectivity between neurons with spatially extended
 dendritic and axonal morphology, mainly developed for a physiologically detailed

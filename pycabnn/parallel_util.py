@@ -2,7 +2,7 @@
 '''
 parallel_util.py
 
-Contains functions that will be imported to each worker in the parallel version of pyBREP.
+Contains functions that will be imported to each worker in the parallel version of pycabnn.
 Queries given points in a given tree, saves results.
 '''
 
@@ -13,7 +13,7 @@ from .util import str_l
 
 def find_connections_2dpar(kdt, pts, lpts, c_rad, lin_axis, lin_in_tree, lin_is_src, ids, debug=False):
     '''
-    Performs distance-based searches for the linearized version of pyBREP (currently Connect_2D)
+    Performs distance-based searches for the linearized version of pycabnn (currently Connect_2D)
     kdt: 2D Tree with points
     pts: Query_point object for the 3D data points
     lpts: Query_point object for the 2D projected points
