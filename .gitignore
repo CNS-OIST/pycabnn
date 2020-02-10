@@ -8,7 +8,6 @@ __pycache__/
 tmp.pkl
 parser.scm
 brep.yy.scm
-*.dat
 output*
 brep-ivan
 Documentation/Labr*
