@@ -4,7 +4,7 @@
 
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 from sklearn.neighbors import KDTree
 from .util import str_l, Query_point
 import warnings
@@ -31,24 +31,30 @@ class Connect_3D(object):
         self.c_rad = c_rad
         self.prefix = prefix
 
-    def connections_parallel(self, deparallelize=False, src_in_tree=[], use_distance='add', avoid_self=True):
+    def connections_parallel(self, deparallelize=False, src_in_tree=[], use_distance='add', avoid_self=True, nblocks=None, debug=False):
         ''' Finds the connections in parallel, depending on a running IPython cluster.
         The deparallelize option switches to a serial mode independent of the Ipython cluster.
         src_in_tree determines whether the source or target population will go into the tree.
         If ĺeft blank, the bigger point cloud will be used, as this is faster.'''
 
         if not deparallelize:
-            # set up client and workers
-            import ipyparallel as ipp
-            import os
-
-            self.rc = ipp.Client()
-            self.dv = self.rc[:]
-            self.dv.use_cloudpickle() #this is necessary so that closures can be sent to the workers
-            self.lv = self.rc.load_balanced_view()
+            try:
+                import ipyparallel as ipp
+                import os
+                self.rc = ipp.Client()
+                self.dv = self.rc[:]
+                self.dv.use_cloudpickle()
+                self.lv = self.rc.load_balanced_view()
+                if nblocks is None:
+                    nblocks = len(self.rc.ids)
             print('Started parallel process with', len(self.rc.ids), 'workers.')
             print('Work directory for workers:', self.rc[0].apply_sync(os.getcwd))
             print('Work directory of main process:', os.getcwd())
+            except:
+                raise RuntimeError('Parallel process could not be started!')
+        else:
+            if nblocks is None:
+                nblocks = 1
 
         # If not given, determine which point cloud should go to the tree (the bigger one)
         if not type(src_in_tree).__name__ == 'bool':
@@ -70,13 +76,14 @@ class Connect_3D(object):
             from . import parallel_util
 
         # Using cloudpickle, the variables used in the worker methods have to be in the workspace
+
         spts = self.spts
         tpts = self.tpts
         c_rad = self.c_rad
         src_in_tree = self.src_in_tree
         prefix = self.prefix
 
-        print('sit', src_in_tree)
+        # print('sit', src_in_tree)
 
         lam_qpt = lambda ids: parallel_util.find_connections_3dpar(kdt, spts, tpts, c_rad, src_in_tree, ids, use_distance, avoid_self)
 
@@ -128,7 +135,7 @@ class Connect_2D(object):
         self.lin_is_src = qpts_src.lin
         self.c_rad = c_rad
 
-    def connections_parallel(self, deparallelize=False, serial_fallback=False, req_lin_in_tree=[], nblocks=None, run_only=[], debug=False):
+    def connections_parallel(self, deparallelize=False, serial_fallback='find_connections', req_lin_in_tree=[], nblocks=None, run_only=[], debug=False):
         '''searches connections, per default in parallel. Workers will get a copy of the tree, query points etc.
         and perform the search independently, each saving the result themself.
         deparallelize: if set True, modules and functions tailored for a parallel process will be used,
@@ -150,7 +157,7 @@ class Connect_2D(object):
                 print('Parallel process could not be started!')
                 if serial_fallback:
                     print('Will do it sequentially instead...')
-                    res, l_res = self.find_connections()
+                    res, l_res = eval('self.{}()'.format(serial_fallback))
                     self.save_results(res, l_res, self.prefix)
                 return
         else:
