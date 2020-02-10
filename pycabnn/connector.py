@@ -47,9 +47,9 @@ class Connect_3D(object):
                 self.lv = self.rc.load_balanced_view()
                 if nblocks is None:
                     nblocks = len(self.rc.ids)
-            print('Started parallel process with', len(self.rc.ids), 'workers.')
-            print('Work directory for workers:', self.rc[0].apply_sync(os.getcwd))
-            print('Work directory of main process:', os.getcwd())
+                print('Started parallel process with', len(self.rc.ids), 'workers.')
+                print('Work directory for workers:', self.rc[0].apply_sync(os.getcwd))
+                print('Work directory of main process:', os.getcwd())
             except:
                 raise RuntimeError('Parallel process could not be started!')
         else:
