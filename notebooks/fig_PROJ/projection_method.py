@@ -1,5 +1,4 @@
 # %%
-#%matplotlib widget
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -171,5 +170,5 @@ ax.yaxis._axinfo["tick"]["color"] = "w"
 ax.zaxis._axinfo["tick"]["color"] = "w"
 
 plt.tight_layout()
-plt.savefig("project.jpg", dpi=300)
-plt.savefig("project.pdf", dpi=300)
+plt.savefig("project.jpg", dpi=600)
+plt.savefig("project.pdf", dpi=600)
