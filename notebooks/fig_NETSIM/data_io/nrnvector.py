@@ -1,6 +1,6 @@
 import struct
 import numpy as np
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 
 type_length = {3: 4, # FLOAT
                4: 8, # #DOUBLE
