@@ -15,6 +15,7 @@ Pycabnn is written in pure Python 3 and depends on the following packages:
 * numpy
 * scipy
 * scikit-learn
+* tqdm (for progress bars)
 * pytables (for saving results in HDF5 files)
 * ipyparallel (for utilizing multiple CPUs)
 * cloudpickle (when used with ipyparallel)
