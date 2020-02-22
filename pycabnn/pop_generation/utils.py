@@ -4,9 +4,10 @@ from numpy.linalg import norm
 
 import time
 
-dlat2 = np.array([1, 0, 0, 1, 1, 1]).reshape((-1, 2)).astype("double")
 
-dlat3 = (
+_dlat2 = np.array([1, 0, 0, 1, 1, 1]).reshape((-1, 2)).astype("double")
+
+_dlat3 = (
     np.array([1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1])
     .reshape((-1, 3))
     .astype("double")
@@ -30,7 +31,7 @@ class PointCloud(object):
         self.points = points
         self.r = r
         self.dim = self.points.shape[1]
-        self.dlat = eval("dlat{}".format(self.dim))
+        self.dlat = eval("_dlat{}".format(self.dim))
 
     def update_points(self, points):
         self.points = points
