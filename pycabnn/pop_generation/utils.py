@@ -14,11 +14,15 @@ _dlat3 = (
 )
 
 
-def select_non_empty(ind):
-    return np.frompyfunc(lambda x: x.size > 0, 1, 1)(ind).astype(bool)
+def is_not_empty(ind_array):
+    """returns an array of False/True based on whether each element in an array of arrays is empty or not."""
+    return np.frompyfunc(lambda x: x.size > 0, 1, 1)(ind_array).astype(bool)
 
 
 def cells_each_point_covers(dpoints, ind, dlat, dim, r):
+    """return the IDs of the cells that are completely covered within a distance r.
+    dpoints is a corner"""
+    # Here we generate vertices given
     vertices = (np.tile(dpoints, (1, 2 ** dim - 1)) + dlat).reshape(
         (dpoints.shape[0], -1, dim)
     )
