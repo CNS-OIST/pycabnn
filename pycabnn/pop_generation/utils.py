@@ -1,7 +1,6 @@
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from numpy.linalg import norm
-from IPython import embed
 
 import time
 

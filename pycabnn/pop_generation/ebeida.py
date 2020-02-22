@@ -9,7 +9,6 @@ from tqdm.autonotebook import tqdm
 from sklearn.neighbors import KDTree, NearestNeighbors
 
 from .utils import PointCloud
-from IPython import embed
 
 dlat2 = np.array([0, 0, 1, 0, 0, 1, 1, 1]).reshape((-1, 2)).astype("double")
 
