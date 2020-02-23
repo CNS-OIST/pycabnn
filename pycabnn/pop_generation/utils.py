@@ -44,11 +44,11 @@ class PointCloud(object):
         self.points = np.vstack((self.points, new_points))
 
     def test_points(self, points):
-        nn1 = NearestNeighbors(radius=self.r, n_jobs=-1)
+        nn1 = NearestNeighbors(radius=self.r)
         if self.points.shape[0] >= points.shape[0]:
             nn1.fit(self.points)
             nnsearch = nn1.radius_neighbors(points, return_distance=False)
-            return ~select_non_empty(nnsearch)
+            return ~is_not_empty(nnsearch)
         else:
             nn1.fit(points)
             inds = nn1.radius_neighbors(self.points, return_distance=False)
@@ -60,7 +60,7 @@ class PointCloud(object):
         # nn2 = KDTree(cell_corners)
 
         if nn is None:
-            nn2 = NearestNeighbors(n_jobs=-1, algorithm='kd_tree')
+            nn2 = NearestNeighbors(algorithm='kd_tree')
             nn2.fit(cell_corners)
             t1 = time.time()
             print(t1 - t0)
@@ -71,7 +71,7 @@ class PointCloud(object):
         # nn2 = KDTree(cell_corners)
         # inds = nn2.query_radius(self.points, r=self.r)
         inds = nn2.radius_neighbors(self.points, radius=self.r, return_distance=False)
-        is_covering1 = select_non_empty(inds)
+        is_covering1 = is_not_empty(inds)
 
         n_test = np.sum(is_covering1)
         selected_points = self.points[is_covering1, :]
