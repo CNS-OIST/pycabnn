@@ -12,7 +12,7 @@ from pybrep.pop_generation.ebeida import ebeida_sampling
 from pybrep.pop_generation.utils import PointCloud
 import matplotlib.pyplot as plt
 
-h.load_file("../../test/set3005/Parameters.hoc")
+h.load_file("../../test_data/set3005/Parameters.hoc")
 h.MFxrange = 700
 h.MFxrange += 50
 h.MFyrange += 50
@@ -156,3 +156,4 @@ np.savez(
     goc=goc_points,
     glo=glo_points1
 )
+
