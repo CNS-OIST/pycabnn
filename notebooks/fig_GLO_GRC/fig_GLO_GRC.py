@@ -6,8 +6,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.4'
-#       jupytext_version: 1.2.4
+#       format_version: '1.5'
+#       jupytext_version: 1.3.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -18,19 +18,20 @@
 import numpy as np
 from tqdm.autonotebook import tqdm
 import matplotlib.pyplot as plt
+from sklearn.neighbors import NearestNeighbors
 
 fname = "../fig_POPGEN/data/coords_20190626_1_6.npz"
 f = np.load(fname)
 f['grc_nop'].shape
 
 
+# +
 def limit_to_box(x, box):
     mf = x.copy()
     for i, t in enumerate(box):
         mf = mf[mf[:, i] >= t[0], :]
         mf = mf[mf[:, i] <= t[1], :]
     return mf
-
 
 def print_range(goc):
     print(
@@ -40,13 +41,14 @@ def print_range(goc):
         "z: [{}, {}]".format(goc[:, 2].min(), goc[:, 2].max()),
     )
 
-
 def fix_coords(x, bbox):
     y = x - 25
     y = limit_to_box(y, bbox)
     print_range(y)
     return y
 
+
+# -
 
 bbox = [[0, 700], [0, 700], [0, 200]]
 grc = fix_coords(f['grc_nop'], bbox)
@@ -74,9 +76,6 @@ src = grx.copy()
 tgt = glo.copy()
 src[:, 1] *= scale_factor
 tgt[:, 1] *= scale_factor
-# -
-
-from sklearn.neighbors import NearestNeighbors
 
 # +
 rr = 7.85
@@ -139,6 +138,7 @@ plt.hist(sg_spread,100)
 print('{}±{}'.format(sg_spread.mean(), sg_spread.std()))
 
 # +
+nn = NearestNeighbors()
 nn.fit(grx)
 dists, nnids = nn.kneighbors(grx, n_neighbors=2, return_distance=True)
 
@@ -208,8 +208,48 @@ ax.set(
 plt.tight_layout()
 plt.savefig('cc2_grc.png', dpi=600)
 # -
+nn.fit(grx)
+gry = limit_to_box(grx, [[30, 670], [30, 670], [30, 170]])
+nnids = nn.kneighbors(gry, n_neighbors=2, return_distance=False)
+nnids = nnids[:,1]
 
 
+# +
+# print(grx.shape)
+# print(gry.shape)
+nn_gry = grx[nnids,:]
+dvec = nn_gry-gry
+dvec
+
+from numpy.linalg import norm
+dst_dvec = norm(dvec, axis=-1)
+dvec2 = dvec[:,0:2]
+l2_dvec2 = norm(dvec2, axis=-1)
+
+cos_theta = dvec2[:,0]/l2_dvec2
+sin_theta = dvec2[:,1]/l2_dvec2
+
+theta = np.arctan2(sin_theta, cos_theta)
+
+# +
+xx = np.linspace(-np.pi/2, np.pi/2, 21)
+n, x, _ = plt.hist((theta), xx)
+
+xtickloc = np.linspace(-np.pi/2, np.pi/2, 3)
+n = n/sum(n)*100
+_, ax = plt.subplots()
+# ax.bar(x[:-1], n)
+ax.step(x, np.hstack([n, n[0]]), 'k')
+# ax.set_ylim([2050, 2300])
+ax.set_xticks(xtickloc)
+ax.set_xticklabels([r'-$\pi$/2', '0', r'$\pi$/2'])
+ax.set_ylabel('fraction (%)')
+ax.set_xlabel('angle from sagittal')
+# -
+
+(n.max()-n.min())/n.min()
+
+#
 
 scale_factor = 1/4
 gry = limit_to_box(grx, [[40, 660], [40/scale_factor, 700-40/scale_factor], [0, 200]])
