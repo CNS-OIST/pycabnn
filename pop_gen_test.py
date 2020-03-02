@@ -1,23 +1,26 @@
 # %%
-%load_ext autoreload
-%autoreload 2
+# %load_ext autoreload
+# %autoreload 2
 
-import numpy as np
 from neuron import h
+import numpy as np
 from pycabnn.pop_generation.ebeida import ebeida_sampling
 from pycabnn.pop_generation.utils import PointCloud
-import matplotlib.pyplot as plt
 
 # %%
 h.load_file("./test_data/params/Parameters.hoc")
+
+# we limit the x-range to 700 um and add 50 um in all directions
 h.MFxrange = 700
 h.MFxrange += 50
 h.MFyrange += 50
 h.GLdepth += 50
 
 # %%
-fname = "coords_20190626_3.npz"
+fname = "test_data/generated_positions/coords_20200224_1.npz"
 
+
+# %%
 def compute_mf_params(h):
     Transverse_range = h.MFyrange
     Horizontal_range = h.MFxrange
@@ -36,7 +39,7 @@ def compute_mf_params(h):
         * MFdensity
         * 1e-6
     )
-    print("N MF = {}".format(n_mf))
+    print("Target number of MFs = {}".format(n_mf))
     return (
         (Horizontal_range + (2 * Yinstantiate), Transverse_range + (2 * Xinstantiate)),
         n_mf,
@@ -45,14 +48,11 @@ def compute_mf_params(h):
 
 mf_box, n_mf = compute_mf_params(h)
 
-spacing_mf = 21
+spacing_mf = 20.9
 mf_points = ebeida_sampling(mf_box, spacing_mf, n_mf, True)
 
 
-np.savez(
-    fname,
-    mf=mf_points
-)
+np.savez(fname, mf=mf_points)
 
 # %%
 def compute_goc_params(h):
@@ -67,28 +67,27 @@ def compute_goc_params(h):
     print("N GoC = {}".format(n_goc))
     return ((Horizontal_range, Transverse_range, Vertical_range), n_goc)
 
-
 goc_box, n_goc = compute_goc_params(h)
-spacing_goc = 45 - 1  # 40 #(NH Barmack, V Yakhnitsa, 2008)
-# spacing_goc = 42.5 - 1  # 40 #(NH Barmack, V Yakhnitsa, 2008)
 
+spacing_goc = 45 - 1  # 40 (NH Barmack, V Yakhnitsa, 2008)
 
 goc_points = ebeida_sampling(goc_box, spacing_goc, n_goc, True)
 goc_points = goc_points + np.random.normal(
     0, 1, size=(len(goc_points), 3)
 )  # Gaussian noise
 
-
+# %%
 np.savez(
     fname,
     mf=mf_points,
     goc=goc_points
 )
 
-
-# # %%
-
-scale_factor = 1/3 #0.29/0.75
+# %%
+scale_factor = 1/3
+# (Billings et al., 2014) Since glomeruli is elipsoid shape, I recalculated based on the spatial occupancy of glomeruli and its density. Also, I subtract 1 cuz I will give Gaussian noise
+spacing_glo = 8.39 - 1
+# spacing_glo = 8 - 1?
 
 class GoC(PointCloud):
     def test_points(self, x):
@@ -101,9 +100,11 @@ class GoC(PointCloud):
         y[:, 1] = y[:, 1] / scale_factor
         return super().test_cells(y, dgrid, nn=nn)
 
-d_goc_glo = 27 / 2 + (7.6) / 2 - 1 + 1/scale_factor
+
+d_goc_glo = 27 / 2 + spacing_glo / 2 - 1 + 1/scale_factor
 goc = GoC(goc_points, d_goc_glo)
 goc.dlat[:,1] = goc.dlat[:,1]/scale_factor
+
 
 def compute_glo_params(h):
     Transverse_range = h.MFyrange
@@ -129,28 +130,23 @@ def compute_glo_params(h):
 # Glomerulus (Rosettes)
 globox, n_glo = compute_glo_params(h)
 
-# (Billings et al., 2014) Since glomeruli is elipsoid shape, I recalculated based on the spatial occupancy of glomeruli and its density. Also, I subtract 1 cuz I will give Gaussian noise
-spacing_glo = 8.39 - 1
-# spacing_glo = 8 - 1?
-
 glo_points = ebeida_sampling(globox, spacing_glo, n_glo, True, ftests=[goc])
 
 # Since glomerulus is stretched for Horizontal section, we will generate coordinates in small area at first, and then multiply it with 3. (Billings et al., 2014)
 glo_points[:, 1] = glo_points[:, 1]/scale_factor
 
 
-
-# %%
-glo_points1 = glo_points.copy()
-glo_points1[:, 1] = glo_points1[:, 1] * scale_factor
-glo_points1 = glo_points1 + np.random.normal(0, 1, size=(len(glo_points1), 3))
-glo_points1[:, 1] = glo_points1[:, 1] / scale_factor
-
-
-np.savez(
-    fname,
-    mf=mf_points,
-    goc=goc_points,
-    glo=glo_points1
-)
+# %% [raw]
+# glo_points1 = glo_points.copy()
+# glo_points1[:, 1] = glo_points1[:, 1] * scale_factor
+# glo_points1 = glo_points1 + np.random.normal(0, 1, size=(len(glo_points1), 3))
+# glo_points1[:, 1] = glo_points1[:, 1] / scale_factor
+#
+#
+# np.savez(
+#     fname,
+#     mf=mf_points,
+#     goc=goc_points,
+#     glo=glo_points1
+# )
 

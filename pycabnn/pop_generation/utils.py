@@ -2,9 +2,6 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from numpy.linalg import norm
 
-import time
-
-
 _dlat2 = np.array([1, 0, 0, 1, 1, 1]).reshape((-1, 2)).astype("double")
 
 _dlat3 = (
@@ -56,51 +53,88 @@ class PointCloud(object):
             return ~np.isin(range(points.shape[0]), inds)
 
     def test_cells(self, cell_corners, dgrid, nn=None, return_nn=False):
-        t0 = time.time()
-        # nn2 = KDTree(cell_corners)
 
-        if nn is None:
-            nn2 = NearestNeighbors(algorithm='kd_tree')
-            nn2.fit(cell_corners)
-            t1 = time.time()
-            print(t1 - t0)
+        # if nn is None:
+        #     print('kd tree {}'.format(cell_corners.shape[0]), end="... ")
+        #     nn2 = NearestNeighbors(algorithm='ball_tree', leaf_size=60)
+        #     nn2.fit(cell_corners)
+        # else:
+        #     nn2 = nn
+
+        # # nn2 = KDTree(cell_corners)
+        # # inds = nn2.query_radius(self.points, r=self.r)
+        # inds = nn2.radius_neighbors(self.points, radius=self.r, return_distance=False)
+        # is_covering1 = is_not_empty(inds)
+
+        # n_test = np.sum(is_covering1)
+        # selected_points = self.points[is_covering1, :]
+        # inds = inds[is_covering1]
+
+        # dlat = self.dlat.ravel() * dgrid
+
+        # ftest = lambda i: cells_each_point_covers(
+        #     cell_corners[inds[i], :] - selected_points[i, :],
+        #     inds[i],
+        #     dlat,
+        #     self.dim,
+        #     self.r,
+        # )
+
+        # # print("ntest: ", n_test)
+        # print('kd tree query {}'.format(n_test), end="... ")
+        # cells_covered = np.frompyfunc(ftest, 1, 1)(range(n_test))
+        # if cells_covered.size>0:
+        #     cells_covered = np.unique(np.hstack(cells_covered).astype(int))
+        # # else:
+        # #     print('cells_covered =', cells_covered)
+
+        from functools import reduce
+        from joblib import Parallel, delayed
+        from tqdm import tqdm
+
+        print('pts = ', self.points.shape, end='... ')
+        print('cells = ', cell_corners.shape, end='...')
+
+        nn3 = NearestNeighbors(algorithm='kd_tree')
+        nn3.fit(self.points)
+
+        def get_ind1_numpy(cell_corners_1):
+            inds = nn3.radius_neighbors(cell_corners_1, radius=self.r, return_distance=False)
+
+            dlat = self.dlat * dgrid
+
+            for dv in dlat:
+                inds = np.vstack([
+                        inds,
+                        nn3.radius_neighbors(
+                            cell_corners_1 + dv, radius=self.r, return_distance=False
+                        )
+                ])
+
+            inds = inds.T
+
+            ftest = lambda i: reduce(np.intersect1d, tuple(inds[i]))
+            ind1 = np.frompyfunc(ftest, 1, 1)(range(inds.shape[0]))
+            return ind1
+
+        nsplit = cell_corners.shape[0]//10000
+
+        if nsplit>1:
+            cell_corners_list = np.array_split(cell_corners, nsplit)
+            ind1 = Parallel(n_jobs=-1)(
+                delayed(get_ind1_numpy)(x) for x in tqdm(cell_corners_list)
+            )
+            ind1 = np.hstack(ind1)
+            # from IPython import embed
+            # embed()
         else:
-            nn2 = nn
-            t1 = time.time()
+            ind1 = get_ind1_numpy(cell_corners)
 
-        # nn2 = KDTree(cell_corners)
-        # inds = nn2.query_radius(self.points, r=self.r)
-        inds = nn2.radius_neighbors(self.points, radius=self.r, return_distance=False)
-        is_covering1 = is_not_empty(inds)
-
-        n_test = np.sum(is_covering1)
-        selected_points = self.points[is_covering1, :]
-        inds = inds[is_covering1]
-
-        dlat = self.dlat.ravel() * dgrid
-        t2 = time.time()
-        print(t2 - t1)
-
-        ftest = lambda i: cells_each_point_covers(
-            cell_corners[inds[i], :] - selected_points[i, :],
-            inds[i],
-            dlat,
-            self.dim,
-            self.r,
-        )
-
-        print("ntest: ", n_test)
-        cells_covered = np.frompyfunc(ftest, 1, 1)(range(n_test))
-        if cells_covered.size>0:
-            cells_covered = np.unique(np.hstack(cells_covered).astype(int))
-        else:
-            print('cells_covered =', cells_covered)
-
-        t3 = time.time()
-        print(t3 - t2)
+        # cells_covered = np.arange(ind1.size)[is_not_empty(ind1)]
 
         if return_nn:
-            return (np.isin(range(cell_corners.shape[0]), cells_covered, invert=True), nn2)
+            return (~is_not_empty(ind1), nn3)
         else:
-            return np.isin(range(cell_corners.shape[0]), cells_covered, invert=True)
+            # return np.isin(range(cell_corners.shape[0]), cells_covered, invert=True)
+            return ~is_not_empty(ind1)
 
