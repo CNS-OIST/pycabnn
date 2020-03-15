@@ -4,38 +4,43 @@
 Jobs = mf, goc, glo, grc
 
 Usage:
-  generate_cell_position.py (-i PATH) (-o PATH) (-p PATH) [--parallel] (all | <jobs>...)
+  generate_cell_position.py (-o PATH) (-p PATH) (all | <jobs>...)
   generate_cell_position.py (-h | --help)
   generate_cell_position.py --version
 
 Options:
   -h --help                            Show this screen.
   --version                            Show version.
-  -i PATH, --input_path=<input_path>   Input path.
   -o PATH, --output_path=<output_path> Output path.
   -p PATH, --param_path=<param_dir>    Params path.
-  --parallel                           Run things in parallel (via ipyparallel)
 
 """
 
-from neuron import h
 import numpy as np
 from pycabnn.pop_generation.ebeida import ebeida_sampling
 from pycabnn.pop_generation.utils import PointCloud
 
-# %%
-def load_input_data(args):
-    h.load_file("./test_data/params/Parameters.hoc")
 
-    # we limit the x-range to 700 um and add 50 um in all directions
+def load_input_data(args):
+    from neuron import h
+    from pathlib import Path
+
+    print(args)
+    input_file = Path(args['--param_path']) / 'Parameters.hoc'
+    h.load_file(str(input_file))
+
+    # Limit the x-range to 700 um and add 50 um in all directions
     h.MFxrange = 700
     h.MFxrange += 50
     h.MFyrange += 50
     h.GLdepth += 50
 
-    fname = "test_data/generated_positions/coords_20200224_1.npz"
+    fname = Path(args['--output_path'])
+    if fname.suffix != '.npz':
+        fname = fname.with_suffix('.npz')
 
     data = {"h": h, "fname": fname}
+    print(data)
     return data
 
 
@@ -71,7 +76,7 @@ def make_mf(data):
             n_mf,
         )
 
-    mf_box, n_mf = compute_mf_params(h)
+    mf_box, n_mf = compute_mf_params()
 
     spacing_mf = 20.9
     mf_points = ebeida_sampling(mf_box, spacing_mf, n_mf, True)
@@ -190,7 +195,8 @@ def make_glo(data):
 def main(args):
     data = load_input_data(args)
 
-    valid_job_list = ["mf", "goc", "glo", "grc"]
+    valid_job_list = ["mf", "goc", "glo"]
+    # valid_job_list = ["mf", "goc", "glo"]
 
     if args["all"]:
         args["<jobs>"] = valid_job_list
@@ -203,7 +209,7 @@ def main(args):
         else:
             data = eval("make_" + j)(data)
 
-
 if __name__ == "__main__":
+    from docopt import docopt
     args = docopt(__doc__, version="0.7dev")
     main(args)
