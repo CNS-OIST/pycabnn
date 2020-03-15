@@ -61,7 +61,7 @@ class PointCloud(object):
         print("dim points = ", self.points.shape, end=", ")
         print("dim subgrids = ", cell_corners.shape)
 
-        ### Method 1
+        ### Method 1: should be more efficient though it is less straightforward
         # if nn is None:
         #     print('kd tree {}'.format(cell_corners.shape[0]), end="... ")
         #     nn2 = NearestNeighbors(algorithm='kd_tree')
@@ -94,7 +94,7 @@ class PointCloud(object):
         # # else:
         # #     print('cells_covered =', cells_covered)
 
-        ### Method 2
+        ### Method 2: straitforward, but a bit more computationally expensive
         nn3 = NearestNeighbors(algorithm="kd_tree")
         nn3.fit(self.points)
 
@@ -137,6 +137,7 @@ class PointCloud(object):
         if return_nn:
             return (~is_not_empty(ind1), nn3)
         else:
-            # return np.isin(range(cell_corners.shape[0]), cells_covered, invert=True) # For method 1
+            ### For method 1
+            # return np.isin(range(cell_corners.shape[0]), cells_covered, invert=True)
             return ~is_not_empty(ind1)
 
