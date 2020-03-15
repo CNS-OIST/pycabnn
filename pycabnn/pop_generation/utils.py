@@ -53,16 +53,22 @@ class PointCloud(object):
             return ~np.isin(range(points.shape[0]), inds)
 
     def test_cells(self, cell_corners, dgrid, nn=None, return_nn=False):
+        from functools import reduce
+        from joblib import Parallel, delayed
+        from tqdm.autonotebook import tqdm
 
+        print("Testing if subgrids are covered by given points", end="... ")
+        print("dim points = ", self.points.shape, end=", ")
+        print("dim subgrids = ", cell_corners.shape)
+
+        ### Method 1
         # if nn is None:
         #     print('kd tree {}'.format(cell_corners.shape[0]), end="... ")
-        #     nn2 = NearestNeighbors(algorithm='ball_tree', leaf_size=60)
+        #     nn2 = NearestNeighbors(algorithm='kd_tree')
         #     nn2.fit(cell_corners)
         # else:
         #     nn2 = nn
 
-        # # nn2 = KDTree(cell_corners)
-        # # inds = nn2.query_radius(self.points, r=self.r)
         # inds = nn2.radius_neighbors(self.points, radius=self.r, return_distance=False)
         # is_covering1 = is_not_empty(inds)
 
@@ -88,28 +94,26 @@ class PointCloud(object):
         # # else:
         # #     print('cells_covered =', cells_covered)
 
-        from functools import reduce
-        from joblib import Parallel, delayed
-        from tqdm import tqdm
-
-        print('pts = ', self.points.shape, end='... ')
-        print('cells = ', cell_corners.shape, end='...')
-
-        nn3 = NearestNeighbors(algorithm='kd_tree')
+        ### Method 2
+        nn3 = NearestNeighbors(algorithm="kd_tree")
         nn3.fit(self.points)
 
         def get_ind1_numpy(cell_corners_1):
-            inds = nn3.radius_neighbors(cell_corners_1, radius=self.r, return_distance=False)
+            inds = nn3.radius_neighbors(
+                cell_corners_1, radius=self.r, return_distance=False
+            )
 
             dlat = self.dlat * dgrid
 
             for dv in dlat:
-                inds = np.vstack([
+                inds = np.vstack(
+                    [
                         inds,
                         nn3.radius_neighbors(
                             cell_corners_1 + dv, radius=self.r, return_distance=False
-                        )
-                ])
+                        ),
+                    ]
+                )
 
             inds = inds.T
 
@@ -117,24 +121,22 @@ class PointCloud(object):
             ind1 = np.frompyfunc(ftest, 1, 1)(range(inds.shape[0]))
             return ind1
 
-        nsplit = cell_corners.shape[0]//10000
+        nsplit = cell_corners.shape[0] // 10000
 
-        if nsplit>1:
+        if nsplit > 1:
             cell_corners_list = np.array_split(cell_corners, nsplit)
             ind1 = Parallel(n_jobs=-1)(
                 delayed(get_ind1_numpy)(x) for x in tqdm(cell_corners_list)
             )
             ind1 = np.hstack(ind1)
-            # from IPython import embed
-            # embed()
         else:
             ind1 = get_ind1_numpy(cell_corners)
 
-        # cells_covered = np.arange(ind1.size)[is_not_empty(ind1)]
+        # cells_covered = np.arange(ind1.size)[is_not_empty(ind1)]  # Compare with with method 1
 
         if return_nn:
             return (~is_not_empty(ind1), nn3)
         else:
-            # return np.isin(range(cell_corners.shape[0]), cells_covered, invert=True)
+            # return np.isin(range(cell_corners.shape[0]), cells_covered, invert=True) # For method 1
             return ~is_not_empty(ind1)
 

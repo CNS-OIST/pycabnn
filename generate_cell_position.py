@@ -26,7 +26,7 @@ def load_input_data(args):
     from pathlib import Path
 
     print(args)
-    input_file = Path(args['--param_path']) / 'Parameters.hoc'
+    input_file = Path(args["--param_path"]) / "Parameters.hoc"
     h.load_file(str(input_file))
 
     # Limit the x-range to 700 um and add 50 um in all directions
@@ -35,9 +35,9 @@ def load_input_data(args):
     h.MFyrange += 50
     h.GLdepth += 50
 
-    fname = Path(args['--output_path'])
-    if fname.suffix != '.npz':
-        fname = fname.with_suffix('.npz')
+    fname = Path(args["--output_path"])
+    if fname.suffix != ".npz":
+        fname = fname.with_suffix(".npz")
 
     data = {"h": h, "fname": fname}
     print(data)
@@ -112,15 +112,15 @@ def make_goc(data):
         0, 1, size=(len(goc_points), 3)
     )  # Gaussian noise
 
-    data['goc_points'] = goc_points
-    np.savez(fname, mf=data['mf_points'], goc=goc_points)
+    data["goc_points"] = goc_points
+    np.savez(fname, mf=data["mf_points"], goc=goc_points)
 
     return data
 
 
 def make_glo(data):
-    h = data['h']
-    fname = data['fname']
+    h = data["h"]
+    fname = data["fname"]
 
     # (Billings et al., 2014) Since glomeruli is elipsoid shape, I recalculated based on the spatial occupancy of glomeruli and its density. Also, I subtract 1 cuz I will give Gaussian noise
     scale_factor = 1 / 3
@@ -137,11 +137,9 @@ def make_glo(data):
             y[:, 1] = y[:, 1] / scale_factor
             return super().test_cells(y, dgrid, nn=nn)
 
-
     d_goc_glo = 27 / 2 + spacing_glo / 2 - 1 + 1 / scale_factor
-    goc = GoC(data['goc_points'], d_goc_glo)
+    goc = GoC(data["goc_points"], d_goc_glo)
     goc.dlat[:, 1] = goc.dlat[:, 1] / scale_factor
-
 
     def compute_glo_params(h):
         Transverse_range = h.MFyrange
@@ -162,10 +160,13 @@ def make_glo(data):
         print("N of Glomeruli = {}".format(n_glo))
 
         return (
-            (Horizontal_range, int(Transverse_range * scale_factor + 0.5), Vertical_range),
+            (
+                Horizontal_range,
+                int(Transverse_range * scale_factor + 0.5),
+                Vertical_range,
+            ),
             n_glo,
         )
-
 
     # Glomerulus (Rosettes)
     globox, n_glo = compute_glo_params(h)
@@ -180,13 +181,10 @@ def make_glo(data):
     glo_points1 = glo_points1 + np.random.normal(0, 1, size=(len(glo_points1), 3))
     glo_points1[:, 1] = glo_points1[:, 1] / scale_factor
 
-    data['glo_points'] = glo_points1
+    data["glo_points"] = glo_points1
 
     np.savez(
-        fname,
-        mf =data['mf_points'],
-        goc=data['goc_points'],
-        glo=data['glo_points']
+        fname, mf=data["mf_points"], goc=data["goc_points"], glo=data["glo_points"]
     )
 
     return data
@@ -209,7 +207,9 @@ def main(args):
         else:
             data = eval("make_" + j)(data)
 
+
 if __name__ == "__main__":
     from docopt import docopt
+
     args = docopt(__doc__, version="0.7dev")
     main(args)
