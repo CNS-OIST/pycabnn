@@ -271,5 +271,5 @@ def main(args):
 
 
 if __name__ == "__main__":
-    args = docopt(__doc__, version="0.7dev")
+    args = docopt(__doc__, version=cbn.__version__)
     main(args)

@@ -1,5 +1,5 @@
 """
-pycabnn
+Pycabnn
 
 Finds distance-based connectivity between neurons with spatially extended
 dendritic and axonal morphology, mainly developed for a physiologically detailed
@@ -9,6 +9,7 @@ Written by Ines Wichert and Sungho Hong, Computational Neuroscience Unit,
 Okinawa Institute of Science and Technology
 
 """
+from .version import __version__
 from .connector import Connect_2D, Connect_3D
 
 def create_population(celltype, h):

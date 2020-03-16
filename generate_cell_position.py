@@ -18,6 +18,7 @@ Options:
 """
 
 import numpy as np
+import pycabnn
 from pycabnn.pop_generation.ebeida import ebeida_sampling
 from pycabnn.pop_generation.utils import PointCloud
 
@@ -255,5 +256,5 @@ def main(args):
 if __name__ == "__main__":
     from docopt import docopt
 
-    args = docopt(__doc__, version="0.7dev")
+    args = docopt(__doc__, version=pycabnn.__version__)
     main(args)

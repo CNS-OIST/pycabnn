@@ -17,7 +17,7 @@ import sqlite3
 from joblib import Parallel, delayed
 from pathlib import Path
 from tqdm import trange
-
+import pycabnn
 
 def main(db, nblocks, ntargets):
     # c = conn.cursor()
@@ -72,5 +72,5 @@ def main(db, nblocks, ntargets):
 
 
 if __name__ == "__main__":
-    args = docopt(__doc__)
+    args = docopt(__doc__, version=pycabnn.__version__)
     main(args["<database>"], int(args["<nblocks>"]), int(args["<ntargets>"]))
