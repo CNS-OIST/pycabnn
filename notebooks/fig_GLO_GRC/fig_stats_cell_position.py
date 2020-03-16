@@ -14,19 +14,26 @@
 #     name: python3
 # ---
 
-# # Glomerulus - GrC connectivity
+# # Statistical analysis of the generated cell positions
+
+# +
 import numpy as np
 from tqdm.autonotebook import tqdm
 import matplotlib.pyplot as plt
-from sklearn.neighbors import NearestNeighbors
 
-fname = "../fig_POPGEN/data/coords_20190626_1_6.npz"
+from sklearn.neighbors import NearestNeighbors
+# -
+
+# ## Load data
+
+fname = "../../test_data/generated_positions/coords_20190626_1_6.npz"
 f = np.load(fname)
-f['grc_nop'].shape
+f['grc_nop'].shape # grc_nop is grc positions without perturbation
 
 
 # +
 def limit_to_box(x, box):
+    """select only the points within a given box."""
     mf = x.copy()
     for i, t in enumerate(box):
         mf = mf[mf[:, i] >= t[0], :]
@@ -34,6 +41,7 @@ def limit_to_box(x, box):
     return mf
 
 def print_range(goc):
+    """prints the 3d range occupied by the cell population"""
     print(
         "Current range:\n",
         "x: [{}, {}]\n".format(goc[:, 0].min(), goc[:, 0].max()),
@@ -42,18 +50,138 @@ def print_range(goc):
     )
 
 def fix_coords(x, bbox):
+    """removes the cells in a 25 um-wide gutter."""
     y = x - 25
     y = limit_to_box(y, bbox)
     print_range(y)
     return y
 
 
+bbox = [[0, 700], [0, 700], [0, 200]]
+grc = fix_coords(f['grc_nop'], bbox) # here we use the unperturbed position
+glo = fix_coords(f['glo'], bbox)
+grx = grc + np.random.randn(*grc.shape)*0.2 # add perturbation of 0.2 um here
 # -
 
-bbox = [[0, 700], [0, 700], [0, 200]]
-grc = fix_coords(f['grc_nop'], bbox)
-glo = fix_coords(f['glo'], bbox)
-grx = grc + np.random.randn(*grc.shape)*0.2
+# ## GrC position analysis
+# ### Nearest neighbor histogram
+
+# +
+nn = NearestNeighbors()
+nn.fit(grx)
+dists, nnids = nn.kneighbors(grx, n_neighbors=2, return_distance=True)
+
+nn.fit(grc)
+dists_u, nnids = nn.kneighbors(grc, n_neighbors=2, return_distance=True)
+
+nnids = nnids[:,1]
+dists = dists[:,1]
+
+dists_u = dists_u[:,1]
+# -
+
+_, ax = plt.subplots(figsize=(8.9/2.54, 8.9/2.54*5/8))
+ax.hist(dists, 450, density=True, color='k')
+# _ = plt.hist(dists_u, 500)
+ax.set(
+    xlim=[5, 10],
+    xlabel='nearest neighbor distance (μm)',
+    ylabel='density'
+)
+plt.tight_layout()
+plt.savefig('nn_dist_hist.png', dpi=600)
+
+# ### Pair correlation function
+
+# +
+gry = limit_to_box(grx, [[30, 670], [30, 670], [30, 170]])
+
+nn = NearestNeighbors(n_jobs=-1)
+nn.fit(grx)
+
+mcounts = []
+sdcounts = []
+dists = np.linspace(0, 30, 240)
+for r in tqdm(dists):
+    count = np.frompyfunc(lambda x: x.size, 1, 1)(nn.radius_neighbors(
+        gry, radius=r, return_distance=False
+    )).astype(float) - 1
+    mcounts.append(count.mean())
+    sdcounts.append(count.std()/np.sqrt(count.size))
+
+# mcount = count.mean()
+# sdcount = count.std()
+# print('{} ± {}'.format(mcount, sdcount))
+
+# +
+cc2 = np.gradient(mcounts)/(dists**2)
+cc2_0 = cc2[-1]
+cc2 = cc2/cc2_0
+
+mcounts = np.array(mcounts)
+sdcounts = np.array(sdcounts)
+
+cc2_u = np.gradient(mcounts + 150*sdcounts)/(dists**2+0.001)/cc2_0
+cc2_d = np.gradient(mcounts - 150*sdcounts)/(dists**2+0.001)/cc2_0
+# plt.fill_between(dists, cc2_d, cc2_u)
+# plt.fill_between(dists, cc2_d, cc2_u, alpha=0.5)
+
+
+_, ax = plt.subplots(figsize=(8.9/2.54, 8.9/2.54*5/8))
+ax.plot(dists, cc2, 'k')
+ax.set(
+    ylim = [0, 3],
+    xlim = [0, 30],
+    xlabel='radial distance (μm)',
+    ylabel='pair correlation function'
+)
+plt.tight_layout()
+plt.savefig('cc2_grc.png', dpi=600)
+# -
+# ### Anglular distribution
+
+nn.fit(grx)
+gry = limit_to_box(grx, [[30, 670], [30, 670], [30, 170]])
+nnids = nn.kneighbors(gry, n_neighbors=2, return_distance=False)
+nnids = nnids[:,1]
+
+
+# +
+# print(grx.shape)
+# print(gry.shape)
+nn_gry = grx[nnids,:]
+dvec = nn_gry-gry
+dvec
+
+from numpy.linalg import norm
+dst_dvec = norm(dvec, axis=-1)
+dvec2 = dvec[:,0:2]
+l2_dvec2 = norm(dvec2, axis=-1)
+
+cos_theta = dvec2[:,0]/l2_dvec2
+sin_theta = dvec2[:,1]/l2_dvec2
+
+theta = np.arctan2(sin_theta, cos_theta)
+
+# +
+xx = np.linspace(-np.pi/2, np.pi/2, 21)
+n, x, _ = plt.hist((theta), xx)
+
+xtickloc = np.linspace(-np.pi/2, np.pi/2, 3)
+n = n/sum(n)*100
+_, ax = plt.subplots()
+# ax.bar(x[:-1], n)
+ax.step(x, np.hstack([n, n[0]]), 'k')
+# ax.set_ylim([2050, 2300])
+ax.set_xticks(xtickloc)
+ax.set_xticklabels([r'-$\pi$/2', '0', r'$\pi$/2'])
+ax.set_ylabel('fraction (%)')
+ax.set_xlabel('angle from sagittal')
+# -
+
+(n.max()-n.min())/n.min()
+
+# ## Simple distance-based GrC-Glomeruli connection
 
 # +
 grx = np.random.rand(*grx.shape)
@@ -136,120 +264,9 @@ sg_spread = np.array([z[:,1].max()-z[:,1].min() for z in dendvs])
 
 plt.hist(sg_spread,100)
 print('{}±{}'.format(sg_spread.mean(), sg_spread.std()))
-
-# +
-nn = NearestNeighbors()
-nn.fit(grx)
-dists, nnids = nn.kneighbors(grx, n_neighbors=2, return_distance=True)
-
-nn.fit(grc)
-dists_u, nnids = nn.kneighbors(grc, n_neighbors=2, return_distance=True)
-
-nnids = nnids[:,1]
-dists = dists[:,1]
-
-dists_u = dists_u[:,1]
 # -
 
-_, ax = plt.subplots(figsize=(8.9/2.54, 8.9/2.54*5/8))
-ax.hist(dists, 450, density=True, color='k')
-# _ = plt.hist(dists_u, 500)
-ax.set(
-    xlim=[5, 10],
-    xlabel='nearest neighbor distance (μm)',
-    ylabel='density'
-)
-plt.tight_layout()
-plt.savefig('nn_dist_hist.png', dpi=600)
-
-# +
-gry = limit_to_box(grx, [[30, 670], [30, 670], [30, 170]])
-
-nn = NearestNeighbors(n_jobs=-1)
-nn.fit(grx)
-
-from tqdm.autonotebook import tqdm
-
-mcounts = []
-sdcounts = []
-dists = np.linspace(0, 30, 240)
-for r in tqdm(dists):
-    count = np.frompyfunc(lambda x: x.size, 1, 1)(nn.radius_neighbors(
-        gry, radius=r, return_distance=False
-    )).astype(float) - 1
-    mcounts.append(count.mean())
-    sdcounts.append(count.std()/np.sqrt(count.size))
-# mcount = count.mean()
-# sdcount = count.std()
-# print('{} ± {}'.format(mcount, sdcount))
-
-# +
-cc2 = np.gradient(mcounts)/(dists**2)
-cc2_0 = cc2[-1]
-cc2 = cc2/cc2_0
-
-mcounts = np.array(mcounts)
-sdcounts = np.array(sdcounts)
-
-cc2_u = np.gradient(mcounts + 150*sdcounts)/(dists**2+0.001)/cc2_0
-cc2_d = np.gradient(mcounts - 150*sdcounts)/(dists**2+0.001)/cc2_0
-# plt.fill_between(dists, cc2_d, cc2_u)
-# plt.fill_between(dists, cc2_d, cc2_u, alpha=0.5)
-
-
-_, ax = plt.subplots(figsize=(8.9/2.54, 8.9/2.54*5/8))
-ax.plot(dists, cc2, 'k')
-ax.set(
-    ylim = [0, 3],
-    xlim = [0, 30],
-    xlabel='radial distance (μm)',
-    ylabel='pair correlation function'
-)
-plt.tight_layout()
-plt.savefig('cc2_grc.png', dpi=600)
-# -
-nn.fit(grx)
-gry = limit_to_box(grx, [[30, 670], [30, 670], [30, 170]])
-nnids = nn.kneighbors(gry, n_neighbors=2, return_distance=False)
-nnids = nnids[:,1]
-
-
-# +
-# print(grx.shape)
-# print(gry.shape)
-nn_gry = grx[nnids,:]
-dvec = nn_gry-gry
-dvec
-
-from numpy.linalg import norm
-dst_dvec = norm(dvec, axis=-1)
-dvec2 = dvec[:,0:2]
-l2_dvec2 = norm(dvec2, axis=-1)
-
-cos_theta = dvec2[:,0]/l2_dvec2
-sin_theta = dvec2[:,1]/l2_dvec2
-
-theta = np.arctan2(sin_theta, cos_theta)
-
-# +
-xx = np.linspace(-np.pi/2, np.pi/2, 21)
-n, x, _ = plt.hist((theta), xx)
-
-xtickloc = np.linspace(-np.pi/2, np.pi/2, 3)
-n = n/sum(n)*100
-_, ax = plt.subplots()
-# ax.bar(x[:-1], n)
-ax.step(x, np.hstack([n, n[0]]), 'k')
-# ax.set_ylim([2050, 2300])
-ax.set_xticks(xtickloc)
-ax.set_xticklabels([r'-$\pi$/2', '0', r'$\pi$/2'])
-ax.set_ylabel('fraction (%)')
-ax.set_xlabel('angle from sagittal')
-# -
-
-(n.max()-n.min())/n.min()
-
-#
+# ### Relative variability
 
 scale_factor = 1/4
 gry = limit_to_box(grx, [[40, 660], [40/scale_factor, 700-40/scale_factor], [0, 200]])
@@ -322,52 +339,3 @@ plt.savefig('var_conns.png', dpi=300)
 # plt.xlim([0, 60])
 
 # plt.ylim([-0.02, 0.02])
-
-# +
- _, ax = plt.subplots(figsize=(8.9/2.54, 8.9/2.54*5/8))
-#_, ax = plt.subplots()
-
-# ax.plot(
-#      mcounts, ((vcounts)/mcounts)/mcr, 'k',
-#      mcounts, mcr/mcr, '--g'
-# )
-
-
-ax.semilogy(
-    2.128*dists, mcounts, 'k'
-)
-
-
-
-# +
-print(2.128*dists[(((vcounts)/mcounts)/mcr).argmin()])
-print(mcounts[(((vcounts)/mcounts)/mcr).argmin()])
-print(mcounts[abs(dists-42/2.128).argmin()])
-# print(mcounts[abs(dists-40).argmin()])
-
-
-
-# -
-
-plt.semilogy(mcounts, (vcounts)/mcounts, 'k',
-         mcounts, (mcounts/86)**(4/3)+0.36)
-# plt.xlim([0, 80])
-
-plt.plot(mcounts, (vcounts)/mcounts, 'k',
-         mcounts, (mcounts/86)**(4/3)+0.36)
-plt.xlim([0, 20])
-plt.ylim([0.3, 0.5])
-
-plt.plot(dists, (vcounts)/mcounts)
-# plt.xlim([0, 20])
-
-plt.plot(dists, mcounts, 'o-')
-plt.ylim([0, 15])
-
-mcounts_r = mcounts.copy()
-vcounts_r = vcounts.copy()
-dists_r = dists.copy()
-
-plt.loglog(mcounts_r, (vcounts_r)/mcounts_r)
-
-
