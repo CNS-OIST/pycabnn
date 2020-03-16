@@ -31,7 +31,7 @@ def set_nDarts(nPts, n_pts_created, n_pts_newly_created, nEmptyGrid, dartFactor=
     return int(np.round(ndarts))
 
 
-def Bridson_sampling_1(
+def bridson_sampling(
     fgrid, sizeI, spacing, nPts, showIter, ftests=[], discount_factor=0.5
 ):
     count = 0
@@ -188,7 +188,7 @@ def Bridson_sampling_1(
     return pts
 
 
-Bridson_sampling_2d = partial(Bridson_sampling_1, make_2d_grid)
+Bridson_sampling_2d = partial(bridson_sampling, make_2d_grid)
 
-Bridson_sampling_3d = partial(Bridson_sampling_1, make_3d_grid)
+Bridson_sampling_3d = partial(bridson_sampling, make_3d_grid)
 

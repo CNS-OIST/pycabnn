@@ -114,3 +114,37 @@ ENV/
 
 # pycharm
 .idea/
+test_data/simulation_data/BREP
+test_data/simulation_data/Pycabnn/set3005
+test_data/simulation_data/Pycabnn
+test_data/simulation_data/BREP/set3005
+test_data/simulation_data/BREP/set3005/activeMfibres1.dat
+test_data/simulation_data/BREP/set3005/datasp.dat
+test_data/simulation_data/BREP/set3005/GLpoints.dat
+test_data/simulation_data/BREP/set3005/l.dat
+test_data/simulation_data/BREP/set3005/MFCr.dat
+test_data/simulation_data/BREP/set3005/Parameters.hoc
+test_data/simulation_data/BREP/AAtoGoCdelay.bin
+test_data/simulation_data/BREP/AxontoGoC.bin
+test_data/simulation_data/BREP/GoCcoordinates.sorted.dat
+test_data/simulation_data/BREP/GoCspiketime.bin
+test_data/simulation_data/BREP/GoCtoGC.bin
+test_data/simulation_data/BREP/GoCtoGCdelay.bin
+test_data/simulation_data/BREP/PFtoGoC.bin
+test_data/simulation_data/BREP/PFtoGoCdelay.bin
+test_data/simulation_data/Pycabnn/set3005/activeMfibres1.dat
+test_data/simulation_data/Pycabnn/set3005/datasp.dat
+test_data/simulation_data/Pycabnn/set3005/GLpoints.dat
+test_data/simulation_data/Pycabnn/set3005/l.dat
+test_data/simulation_data/Pycabnn/set3005/MFCr.dat
+test_data/simulation_data/Pycabnn/set3005/Parameters.hoc
+test_data/simulation_data/Pycabnn/AAtoGoCdelay.bin
+test_data/simulation_data/Pycabnn/AxontoGoC.bin
+test_data/simulation_data/Pycabnn/GoCcoordinates.sorted.dat
+test_data/simulation_data/Pycabnn/GoCspiketime.bin
+test_data/simulation_data/Pycabnn/GoCtoGC.bin
+test_data/simulation_data/Pycabnn/GoCtoGCdelay.bin
+test_data/simulation_data/Pycabnn/PFtoGoC.bin
+test_data/simulation_data/Pycabnn/PFtoGoCdelay.bin
+test_data/simulation_data/BREP.zip
+test_data/simulation_data/Pycabnn.zip
