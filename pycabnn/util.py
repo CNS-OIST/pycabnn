@@ -1,3 +1,13 @@
+"""Utility functions.
+
+Written by Ines Wichert and Sungho Hong
+Supervised by Erik De Schutter
+Computational Neuroscience Unit,
+Okinawa Institute of Science and Technology
+
+March, 2020
+"""
+
 import numpy as np
 
 def str_l(ar):

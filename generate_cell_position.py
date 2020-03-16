@@ -15,6 +15,12 @@ Options:
   -p PATH, --param_path=<param_dir>    Params path.
   -i PATH, --input_path=<input_path>   Input path.
 
+Written by Sanghun Jee and Sungho Hong
+Supervised by Erik De Schutter
+Computational Neuroscience Unit,
+Okinawa Institute of Science and Technology
+
+March, 2020
 """
 
 import numpy as np

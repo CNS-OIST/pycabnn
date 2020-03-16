@@ -1,5 +1,14 @@
-# References: Fast Poisson Disk Sampling in Arbitrary Dimensions
-#             Robert Bridson, SIGGRAPH, 2007
+"""Bridson sampling
+
+References: Robert Bridson, Fast Poisson Disk Sampling in Arbitrary Dimensions , SIGGRAPH, 2007
+
+Written by Sanghun Jee and Sungho Hong
+Supervised by Erik De Schutter
+Computational Neuroscience Unit,
+Okinawa Institute of Science and Technology
+
+March, 2020
+"""
 
 import numpy as np
 

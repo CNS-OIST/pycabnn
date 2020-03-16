@@ -1,10 +1,15 @@
 
-'''
-parallel_util.py
+"""parallel_util.py
 
-Contains functions that will be imported to each worker in the parallel version of pycabnn.
-Queries given points in a given tree, saves results.
-'''
+contains functions that will be imported to each worker in the parallel version of pycabnn. Queries given points in a given tree, saves results.
+
+Written by Ines Wichert and Sungho Hong
+Supervised by Erik De Schutter
+Computational Neuroscience Unit,
+Okinawa Institute of Science and Technology
+
+March, 2020
+"""
 
 import pandas as pd
 import sqlite3

@@ -16,6 +16,12 @@ Options:
   -p PATH, --param_path=<param_dir>    Params path.
   --parallel                           Run things in parallel (via ipyparallel)
 
+Written by Ines Wichert and Sungho Hong
+Supervised by Erik De Schutter
+Computational Neuroscience Unit,
+Okinawa Institute of Science and Technology
+
+March, 2020
 """
 
 from pathlib import Path

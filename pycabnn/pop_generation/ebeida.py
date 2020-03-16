@@ -1,5 +1,15 @@
-# References: Fast Poisson Disk Sampling in Arbitrary Dimensions
-#             Robert Ebeida, SIGGRAPH, 2007
+"""Maximal Poisson disk sampling
+
+Reference: Ebeida, Mohamed S., et al. "A simple algorithm for maximal Poisson‐disk sampling in high dimensions." Computer Graphics Forum. Vol. 31. No. 2pt4. Oxford, UK: Blackwell Publishing Ltd, 2012.
+
+Written by Sanghun Jee and Sungho Hong
+Supervised by Erik De Schutter
+Computational Neuroscience Unit,
+Okinawa Institute of Science and Technology
+
+March, 2020
+"""
+
 
 import numpy as np
 from functools import partial

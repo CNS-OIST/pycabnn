@@ -1,6 +1,12 @@
-####################################################################
-## CONNECTOR PART                                                 ##
-####################################################################
+"""Connector part
+
+Written by Ines Wichert, Sanghun Jee, and Sungho Hong
+Supervised by Erik De Schutter
+Computational Neuroscience Unit,
+Okinawa Institute of Science and Technology
+
+March, 2020
+"""
 
 import numpy as np
 import pandas as pd

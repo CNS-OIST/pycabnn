@@ -29,7 +29,7 @@ You will also need to install the followings to run example scripts:
 
 * Jupyter notebook (for reading notebooks)
 
-  
+
 
 ### Installation
 
@@ -61,9 +61,11 @@ We included some test data in the `test_data` directory: Use `test_data/cell_pos
 
 * [**Sanghun Jee**](https://github.com/Alexji9494) - *Cell position generation*
 
-* [**Sungho Hong**](http://shhong.github.io) - *Enjoyed working with two great interns!*
+* [**Sungho Hong**](http://shhong.github.io) - *Project conception and supervision*
 
-  
+* [**Erik De Schutter**](https://groups.oist.jp/cnu) - *Project supervision*
+
+
 
 ## License
 
@@ -73,7 +75,6 @@ This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.t
 
 ## Acknowledgments
 
-* Erik De Schutter
 * Ivan Raikov
 * Peter Bratby
 
@@ -84,3 +85,7 @@ This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.t
 1. Sudhakar, S.K., Hong, S., Raikov, I., Publio, R., Lang, C., Close, T., Guo, D., Negrello, M., and De Schutter, E. (2017). Spatiotemporal network coding of physiological mossy fiber inputs by the cerebellar granular layer. PLoS Comput. Biol. *13*, e1005754.
 2. Wichert I., Jee S., De Schutter, E., and Hong S. (2020) Pycabnn: Efficient and extensible software to construct an anatomical basis for a physiologically realistic neural network model. *In preparation*.
 
+---
+Written by Sungho Hong, Computational Neuroscience Unit, Okinawa Institute of Science Technology
+
+March, 2020
