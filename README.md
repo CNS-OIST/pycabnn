@@ -13,23 +13,17 @@ For a detailed explanation about algorithms used/implemented, please check out o
 Pycabnn is written in pure Python 3 and depends on the following packages:
 
 * numpy
-* scipy
 * scikit-learn
 * joblib
 * tqdm (for progress bars)
-* pytables (for saving results in HDF5 files)
-* ipyparallel (for utilizing multiple CPUs)
-* cloudpickle (when used with ipyparallel)
+* pandas and pytables (for saving results in HDF5 files)
+* ipyparallel and cloudpickle (for utilizing multiple CPUs)
 
 You will also need to install the followings to run example scripts:
 
 * matplotlib (for plotting)
-
 * NEURON (for reading a parameter file)
-
 * Jupyter notebook (for reading notebooks)
-
-
 
 ### Installation
 
