@@ -12,7 +12,6 @@ March, 2020
 
 import numpy as np
 
-# from scipy import spatial
 from functools import partial
 from tqdm.autonotebook import tqdm
 from sklearn.neighbors import KDTree, NearestNeighbors
