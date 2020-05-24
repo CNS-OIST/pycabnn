@@ -39,10 +39,9 @@ def load_input_data(args):
     h.load_file(str(param_file))
 
     # Limit the x-range to 700 um and add 50 um in all directions
-    h.MFxrange = 700
-    h.MFxrange += 50
-    h.MFyrange += 50
-    h.GLdepth += 50
+    h.MFxrange += h.range_margin
+    h.MFyrange += h.range_margin
+    h.GLdepth += h.range_margin
 
     foutname = Path(args["--output_path"])
     if foutname.suffix != ".npz":
@@ -70,9 +69,8 @@ def make_mf(data):
 
         MFdensity = h.MFdensity
 
-        box_fac = 2.5
-        Xinstantiate = 64 + 40  # 297+40
-        Yinstantiate = 84 + 40 * box_fac  # 474+40x*box_fac
+        Xinstantiate = h.MFxextent
+        Yinstantiate = h.MFyextent
 
         n_mf = int(
             (Transverse_range + (2 * Xinstantiate))
@@ -92,9 +90,7 @@ def make_mf(data):
 
     mf_box, n_mf = compute_mf_params()
 
-    spacing_mf = 20.9
-
-    mf_points = ebeida_sampling(mf_box, spacing_mf, n_mf, True)
+    mf_points = ebeida_sampling(mf_box, h.spacing_mf, n_mf, True)
 
     data["mf_points"] = mf_points
     np.savez(foutname, mf=mf_points)
@@ -109,7 +105,7 @@ def make_goc(data):
     def compute_goc_params():
         Transverse_range = h.MFyrange
         Horizontal_range = h.MFxrange
-        Vertical_range = h.GLdepth + 50
+        Vertical_range = h.GLdepth
 
         Volume = Transverse_range * Horizontal_range * Vertical_range
 
@@ -120,12 +116,13 @@ def make_goc(data):
 
     goc_box, n_goc = compute_goc_params()
 
-    spacing_goc = 45 - 1  # 40 (NH Barmack, V Yakhnitsa, 2008)
+    spacing_goc = h.spacing_goc - h.softness_margin_goc
 
     goc_points = ebeida_sampling(goc_box, spacing_goc, n_goc, True)
 
-    goc_points = goc_points + np.random.normal(
-        0, 1, size=(len(goc_points), 3)
+    goc_points = (
+        goc_points
+        + np.random.normal(0, 1, size=(len(goc_points), 3)) * h.softness_margin_goc
     )  # Gaussian noise
 
     data["goc_points"] = goc_points
@@ -139,10 +136,13 @@ def make_glo(data):
     foutname = data["foutname"]
     goc_points = data["goc_points"]
 
-    # (Billings et al., 2014) Since glomeruli is elipsoid shape, I recalculated based on the spatial occupancy of glomeruli and its density. Also, I subtract 1 cuz I will give Gaussian noise
-    scale_factor = 1 / 3
-    spacing_glo = 8.39 - 1
-    d_goc_glo = 27 / 2 + spacing_glo / 2 - 1 + 1 / scale_factor
+    scale_factor = h.scale_factor_glo
+    spacing_glo = h.diam_glo - h.softness_margin_glo
+
+    # minimal distance between GoCs and glomeruli
+    # softness margin is applied only to glo since only the glo coords will be
+    # perturbed
+    d_goc_glo = h.diam_goc / 2 + h.diam_glo / 2 - h.softness_margin_glo
 
     class GoC(PointCloud):
         def test_points(self, x):
@@ -164,9 +164,7 @@ def make_glo(data):
         Vertical_range = h.GLdepth
         Volume = Transverse_range * Horizontal_range * Vertical_range
 
-        d_grc = 1.9 * 1e6  # (Billings et al., 2014)
-        d_glo = d_grc * 0.3
-        #     d_glo = 6.6 * 1e5  # (Billings et al., 2014)
+        d_glo = h.density_glo
         n_glo = int(d_glo * Volume * 1e-9)
         print("Target # Glomeruli = {}".format(n_glo))
 
@@ -179,16 +177,17 @@ def make_glo(data):
             n_glo,
         )
 
-    # Glomerulus (Rosettes)
     globox, n_glo = compute_glo_params()
 
     glo_points = ebeida_sampling(globox, spacing_glo, n_glo, True, ftests=[goc])
 
-    # Since glomerulus is stretched in a sagittal direction, we will generate coordinates in small area at first, and then multiply it with 3. (Billings et al., 2014)
-    # glo_points[:, 1] = glo_points[:, 1] / scale_factor
-    # glo_points1 = glo_points.copy()
-    # glo_points1[:, 1] = glo_points1[:, 1] * scale_factor
-    glo_points1 = glo_points + np.random.normal(0, 1, size=glo_points.shape)
+    # Since the glomerulus distribution is stretched in a sagittal direction,
+    # we generate the coordinates in a scaled volume first, and then stretch
+    # the sagittal coordinate by 3
+    glo_points1 = (
+        glo_points
+        + np.random.normal(0, 1, size=glo_points.shape) * h.softness_margin_glo
+    )
     glo_points1[:, 1] = glo_points1[:, 1] / scale_factor
 
     data["glo_points"] = glo_points1
@@ -207,10 +206,12 @@ def make_grc(data):
     goc_points = data["goc_points"]
     glo_points = data["glo_points"]
 
-    d_goc_grc = 27 / 2 + 6.15 / 2
+    # minimal distance between gocs and grcs
+    d_goc_grc = h.diam_goc / 2 + h.diam_grc / 2 - h.softness_margin_grc
     goc = PointCloud(goc_points, d_goc_grc)
 
-    d_glo_grc = 8.39 / 2 + 6.15 / 2
+    # minimal distance between glomeruli and grcs
+    d_glo_grc = h.diam_glo / 2 + h.diam_grc / 2 - h.softness_margin_grc
     glo = PointCloud(glo_points, d_glo_grc)
 
     def compute_grc_params():
@@ -219,17 +220,19 @@ def make_grc(data):
         Vertical_range = h.GLdepth
         Volume = Transverse_range * Horizontal_range * Vertical_range
 
-        d_grc = 1.9 * 1e6  # (Billings et al., 2014)
+        d_grc = h.density_grc
         n_grc = int(d_grc * Volume * 1e-9)
 
         print("Target # GrCs = {}".format(n_grc))
 
         return ((Horizontal_range, Transverse_range, Vertical_range), n_grc)
 
-    spacing_grc = 6.15 - 0.2
+    spacing_grc = h.diam_grc - h.sofness_margin_grc
 
     grcbox, n_grc = compute_grc_params()
     grc_points = ebeida_sampling(grcbox, spacing_grc, n_grc, True, ftests=[glo, goc])
+
+    grc_points = np.random.normal(0, 1, size=grc_points.shape) * h.softness_margin_grc
 
     data["grc_points"] = grc_points
 
