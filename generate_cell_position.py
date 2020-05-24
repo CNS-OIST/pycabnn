@@ -24,7 +24,7 @@ March, 2020
 """
 
 import numpy as np
-import pycabnn
+from pycabnn.util import HocParameterParser
 from pycabnn.pop_generation.ebeida import ebeida_sampling
 from pycabnn.pop_generation.utils import PointCloud
 
@@ -36,6 +36,7 @@ def load_input_data(args):
     from pathlib import Path
 
     param_file = Path(args["--param_path"]) / "Parameters.hoc"
+    h = HocParameterParser()
     h.load_file(str(param_file))
 
     # Limit the x-range to 700 um and add 50 um in all directions

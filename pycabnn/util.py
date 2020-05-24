@@ -213,7 +213,7 @@ class Query_point(object):
 
 
 class HocParameterParser(object):
-    def __init__(self, hoc_file_path):
+    def load_file(self, hoc_file_path):
         with open(hoc_file_path) as f:
             for line in f.readlines():
                 non_comment = line.split("//")[0]
@@ -227,6 +227,7 @@ class HocParameterParser(object):
 
 
 if __name__ == "__main__":
-    h = HocParameterParser("../../test_data/params/Parameters.hoc")
+    h = HocParameterParser()
+    h.load_file("../test_data/params/Parameters.hoc")
     for k in h.__dict__:
         print(f"{k}: {h.__dict__[k]}")

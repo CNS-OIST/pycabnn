@@ -43,34 +43,23 @@ def load_input_data(args):
     t1 = time.time()
     print("Starting parallel process...")
 
-    # Read in the config file(or the pseudo-hoc, see pseudo-hoc class to find out how it is generated)
-    try:
-        from neuron import h
-
-        config_hoc = str(data["config_hoc"])
-        h.xopen(config_hoc)
-        print("Trying to read in hoc config object from ", config_hoc)
-    except ModuleNotFoundError:
-        # TODO: have to find a good way to deal with this
-        config_pseudo_hoc = Path.cwd() / "pseudo_hoc.pkl"
-        h = cbn.Pseudo_hoc(config_pseudo_hoc)
-        print("Trying to read in pseudo-hoc config object from ", config_pseudo_hoc)
-    finally:
-        # Just pick a random variable and check whether it is read
-        assert hasattr(
-            h, "GoC_Atheta_min"
-        ), "There might have been a problem reading in the parameters!"
-        print("Succesfully read in config file!")
+    # Read the config file
+    from pycabnn.util import HocParameterParser
+    h = HocParameterParser()
+    config_hoc = str(data["config_hoc"])
+    h.load_file(config_hoc)
 
     t2 = time.time()
     print("Import finished:", t2 - t1)
     data["t"] = t2
+    data["h"] = h
     return data
 
 
 def load_and_make_population(data, pops):
 
     output_path = data["output_path"]
+    h = data["h"]
 
     def make_glo(data):
         """sets up the Glomerulus population"""
@@ -130,6 +119,8 @@ def load_and_make_population(data, pops):
 
 
 def run_AAtoGoC(data):
+    h = data["h"]
+
     # you might want to change the radii
     c_rad_aa = h.AAtoGoCzone / 1.73
     print("R for AA: {}".format(c_rad_aa))
@@ -149,6 +140,8 @@ def run_AAtoGoC(data):
 
 
 def run_PFtoGoC(data):
+    h = data["h"]
+
     c_rad_pf = h.PFtoGoCzone / 1.113
     print("R for PF: {}".format(c_rad_pf))
 
