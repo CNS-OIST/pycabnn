@@ -9,6 +9,9 @@ March, 2020
 """
 
 import numpy as np
+from numpy import sqrt
+from numpy import pi as PI
+
 
 def str_l(ar):
     '''make a space-seperated string from all elements in a 1D-array'''
@@ -166,3 +169,22 @@ class Query_point(object):
     def linearize(self):
         pass
         #this function should linearize points when they are in a higher structure than nx3, and the IDs and
+
+
+class HocParameterParser(object):
+    def __init__(self, hoc_file_path):
+        with open(hoc_file_path) as f:
+            for line in f.readlines():
+                non_comment = line.split("//")[0]
+                if "=" in non_comment:
+                    # print(f"Found non-comment: {non_comment}")
+                    exec(non_comment)
+                    key = non_comment.split("=")[0].strip()
+                    exec(f"self.{key}={key}")
+                # if non_comment == "":
+                #     print(f"Whole comment: {line.strip()}")
+
+if __name__ == "__main__":
+    h = HocParameterParser("../../test_data/params/Parameters.hoc")
+    for k in h.__dict__:
+        print(f'{k}: {h.__dict__[k]}')
