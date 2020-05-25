@@ -93,6 +93,9 @@ def make_mf(data):
     mf_points = ebeida_sampling(mf_box, h.spacing_mf, n_mf, True)
 
     data["mf_points"] = mf_points
+
+    print("Final # MFs = {}".format(mf_points.shape[0]))
+
     np.savez(foutname, mf=mf_points)
     np.savetxt(data["output_path"] / "MFcoordinates.dat", data["mf_points"])
 
@@ -127,6 +130,9 @@ def make_goc(data):
     )  # Gaussian noise
 
     data["goc_points"] = goc_points
+
+    print("Final # GoCs = {}".format(goc_points.shape[0]))
+
     np.savez(foutname, mf=data["mf_points"], goc=goc_points)
     np.savetxt(data["output_path"] / "GoCcoordinates.dat", data["goc_points"])
 
@@ -194,6 +200,8 @@ def make_glo(data):
 
     data["glo_points"] = glo_points1
 
+    print("Final # Glos = {}".format(glo_points1.shape[0]))
+
     np.savez(
         foutname, mf=data["mf_points"], goc=data["goc_points"], glo=data["glo_points"]
     )
@@ -230,7 +238,7 @@ def make_grc(data):
 
         return ((Horizontal_range, Transverse_range, Vertical_range), n_grc)
 
-    spacing_grc = h.diam_grc - h.sofness_margin_grc
+    spacing_grc = h.diam_grc - h.softness_margin_grc
 
     grcbox, n_grc = compute_grc_params()
     grc_points = ebeida_sampling(grcbox, spacing_grc, n_grc, True, ftests=[glo, goc])
@@ -238,6 +246,8 @@ def make_grc(data):
     grc_points = np.random.normal(0, 1, size=grc_points.shape) * h.softness_margin_grc
 
     data["grc_points"] = grc_points
+
+    print("Final # GrCs = {}".format(grc_points.shape[0]))
 
     np.savez(
         foutname,
