@@ -9,11 +9,11 @@ Usage:
   generate_cell_position.py --version
 
 Options:
-  -h --help                            Show this screen.
-  --version                            Show version.
-  -o PATH, --output_path=<output_path> Output path.
-  -p PATH, --param_path=<param_dir>    Params path.
-  -i PATH, --input_path=<input_path>   Input path.
+  -h --help                               Show this screen
+  --version                               Show version
+  -o PATH, --output_path=<output_path>    Output path
+  -p PATH, --param_path=<param_dir>       Params path
+  -i PATH, --input_path=<input_path>      Input path
 
 Written by Sanghun Jee and Sungho Hong
 Supervised by Erik De Schutter
@@ -24,6 +24,7 @@ March, 2020
 """
 
 import numpy as np
+import pycabnn
 from pycabnn.util import HocParameterParser
 from pycabnn.pop_generation.ebeida import ebeida_sampling
 from pycabnn.pop_generation.utils import PointCloud
@@ -32,7 +33,6 @@ valid_job_list = ["mf", "goc", "glo", "grc"]
 
 
 def load_input_data(args):
-    from neuron import h
     from pathlib import Path
 
     param_file = Path(args["--param_path"]) / "Parameters.hoc"
@@ -44,11 +44,10 @@ def load_input_data(args):
     h.MFyrange += h.range_margin
     h.GLdepth += h.range_margin
 
-    foutname = Path(args["--output_path"])
-    if foutname.suffix != ".npz":
-        foutname = foutname.with_suffix(".npz")
+    output_path = Path(args["--output_path"])
+    foutname = output_path / "cell_positions.npz"
 
-    data = {"h": h, "foutname": foutname}
+    data = {"h": h, "foutname": foutname, "output_path": output_path}
 
     if args["--input_path"]:
         existing_data = np.load(args["--input_path"])
@@ -95,6 +94,7 @@ def make_mf(data):
 
     data["mf_points"] = mf_points
     np.savez(foutname, mf=mf_points)
+    np.savetxt(data["output_path"] / "MFcoordinates.dat", data["mf_points"])
 
     return data
 
@@ -128,6 +128,7 @@ def make_goc(data):
 
     data["goc_points"] = goc_points
     np.savez(foutname, mf=data["mf_points"], goc=goc_points)
+    np.savetxt(data["output_path"] / "GoCcoordinates.dat", data["goc_points"])
 
     return data
 
@@ -196,6 +197,7 @@ def make_glo(data):
     np.savez(
         foutname, mf=data["mf_points"], goc=data["goc_points"], glo=data["glo_points"]
     )
+    np.savetxt(data["output_path"] / "GLpoints.dat", data["glo_points"])
 
     return data
 
@@ -242,8 +244,9 @@ def make_grc(data):
         mf=data["mf_points"],
         goc=data["goc_points"],
         glo=data["glo_points"],
-        grc_nop=grc_points,
+        grc=data["grc_points"],
     )
+    np.savetxt(data["output_path"] / "GCcoordinates.dat", data["grc_points"])
 
     return data
 

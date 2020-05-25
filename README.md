@@ -32,10 +32,10 @@ We do not have proper setup.py for installation yet. For usage, please check out
 Run `generate_cell_position.py` as:
 
 ```shell
-python python generate_cell_position.py -p PARAM_PATH -o OUTPUT_FILE all
+python python generate_cell_position.py -p PARAM_PATH -o OUTPUT_PATH all
 ```
 
-We included some parameter data in `test_data/params` for `PARAM_PATH`. `OUTPUT_FILE` should be a [".npz" file](https://docs.scipy.org/doc/numpy/reference/generated/numpy.savez.html).
+We included some parameter data in `test_data/params` for `PARAM_PATH`. The results will be save in a [".npz" file](https://docs.scipy.org/doc/numpy/reference/generated/numpy.savez.html), `cell_positions.npz`, within `OUTPUT_PATH`, along with text files.
 
 #### 2. Connectivity generation
 
