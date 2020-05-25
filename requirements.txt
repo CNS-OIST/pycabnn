@@ -1,5 +1,7 @@
 numpy>=1.14
-pandas>=0.23
-docopt>=0.6
 scikit-learn>=0.18
+pandas>=0.23
 pytables>=3.5
+cloudpickle>=0.5.2
+ipyparallel>=6.2
+tqdm>=4.0

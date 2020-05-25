@@ -591,6 +591,10 @@ class MLI_pop(Cell_pop):
             segs += 1
         return coords, idx, segs
 
+class Glo_pop(Cell_pop):
+    def __init__(self, my_args):
+        Cell_pop.__init__(self, my_args)
+        self.mf_ind = None
 
 # class Map(dict):
 #     """
