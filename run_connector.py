@@ -218,7 +218,7 @@ def run_GoCtoGoC(data):
 
 
 def run_GoCtoGoCgap(data):
-
+    h = data["h"]
     gg = data["pops"]["goc"]
     dist = []
     src = []
