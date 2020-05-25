@@ -141,7 +141,9 @@ class Connect_2D(object):
         self.lin_is_src = qpts_src.lin
         self.c_rad = c_rad
 
-    def connections_parallel(self, deparallelize=False, serial_fallback='find_connections', req_lin_in_tree=[], nblocks=None, run_only=[], debug=False):
+    # def connections_parallel(self, deparallelize=False, serial_fallback='find_connections', req_lin_in_tree=[], nblocks=None, run_only=[], debug=False):
+    def connections_parallel(self, deparallelize=False, req_lin_in_tree=[], nblocks=None, run_only=[], debug=False):
+
         '''searches connections, per default in parallel. Workers will get a copy of the tree, query points etc.
         and perform the search independently, each saving the result themself.
         deparallelize: if set True, modules and functions tailored for a parallel process will be used,
@@ -161,11 +163,12 @@ class Connect_2D(object):
                     nblocks = len(self.rc.ids)
             except:
                 print('Parallel process could not be started!')
-                if serial_fallback:
-                    print('Will do it sequentially instead...')
-                    res, l_res = eval('self.{}()'.format(serial_fallback))
-                    self.save_results(res, l_res, self.prefix)
-                return
+                print('Will do it sequentially instead...')
+                # if serial_fallback:
+                #     res, l_res = eval('self.{}()'.format(serial_fallback))
+                #     self.save_result()
+                #     self.save_results(res, l_res, self.prefix)
+                # return
         else:
             if nblocks is None:
                 nblocks = 1

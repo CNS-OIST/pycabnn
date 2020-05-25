@@ -12,7 +12,6 @@ March, 2020
 """
 
 import pandas as pd
-import sqlite3
 from .util import str_l
 
 
