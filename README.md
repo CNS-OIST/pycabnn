@@ -69,7 +69,7 @@ This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.t
 ## References
 
 1. Sudhakar, S.K., Hong, S., Raikov, I., Publio, R., Lang, C., Close, T., Guo, D., Negrello, M., and De Schutter, E. (2017). Spatiotemporal network coding of physiological mossy fiber inputs by the cerebellar granular layer. PLoS Comput. Biol. _13_, e1005754.
-2. Wichert I., Jee S., De Schutter, E., and Hong S. (2020) Pycabnn: Efficient and extensible software to construct an anatomical basis for a physiologically realistic neural network model. _In preparation_.
+2. Wichert I., Jee S., De Schutter, E., and Hong S. (2020) Pycabnn: Efficient and extensible software to construct an anatomical basis for a physiologically realistic neural network model. Front. Neuroinform. _14_, 31.
 
 ---
 
