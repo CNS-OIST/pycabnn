@@ -39,7 +39,7 @@ class Connect_3D(object):
 
     def connections_parallel(
         self,
-        deparallelize=False,
+        parallel=False,
         src_in_tree=[],
         use_distance="add",
         avoid_self=True,
@@ -47,11 +47,11 @@ class Connect_3D(object):
         debug=False,
     ):
         """ Finds the connections in parallel, depending on a running IPython cluster.
-        The deparallelize option switches to a serial mode independent of the Ipython cluster.
+        The parallel option switches to a serial mode independent of the Ipython cluster.
         src_in_tree determines whether the source or target population will go into the tree.
         If ĺeft blank, the bigger point cloud will be used, as this is faster."""
 
-        if not deparallelize:
+        if parallel:
             try:
                 import ipyparallel as ipp
                 import os
@@ -83,7 +83,7 @@ class Connect_3D(object):
             kdt = KDTree(self.tpts.coo)
 
         # import methods to workers
-        if not deparallelize:
+        if parallel:
             self.dv.block = True
             with self.dv.sync_imports():
                 from . import parallel_util
@@ -109,7 +109,7 @@ class Connect_3D(object):
         else:
             nqpts = spts.npts
 
-        if not deparallelize:
+        if parallel:
             # chunk the query points so that each worker gets roughly the same amount of points to query in the KDTree
             # Only IDs are sent in order to speed it up by preallocating the coordinates and as much information as possible
             # to the workers.
@@ -156,10 +156,10 @@ class Connect_2D(object):
         self.lin_is_src = qpts_src.lin
         self.c_rad = c_rad
 
-    # def connections_parallel(self, deparallelize=False, serial_fallback='find_connections', req_lin_in_tree=[], nblocks=None, run_only=[], debug=False):
+    # def connections_parallel(self, parallel=False, serial_fallback='find_connections', req_lin_in_tree=[], nblocks=None, run_only=[], debug=False):
     def connections_parallel(
         self,
-        deparallelize=False,
+        parallel=False,
         req_lin_in_tree=[],
         nblocks=None,
         run_only=[],
@@ -168,13 +168,13 @@ class Connect_2D(object):
 
         """searches connections, per default in parallel. Workers will get a copy of the tree, query points etc.
         and perform the search independently, each saving the result themself.
-        deparallelize: if set True, modules and functions tailored for a parallel process will be used,
+        parallel: if set True, modules and functions tailored for a parallel process will be used,
         but all will be run in serial (no iPython cluster necessary)
         serial_fallback:  If set True, this function will call the older connect function
         nblocks: Number of blocks that the data should be partitioned into"""
 
-        # If not deparallelized, try to connect to the parallel cluster, fall back to serial if necessary
-        if not deparallelize:
+        # If parallel, try to connect to the parallel cluster, fall back to serial if necessary
+        if parallel:
             try:
                 import ipyparallel as ipp
 
@@ -227,7 +227,7 @@ class Connect_2D(object):
             id_ar = [(i, id_ar[i]) for i in range(nblocks)]
         # print(id_ar) # Check what is in id_ar
 
-        if not deparallelize:
+        if parallel:
             with self.dv.sync_imports():
                 from . import parallel_util
             s = list(self.lv.map(lam_qpt, id_ar, block=True))
