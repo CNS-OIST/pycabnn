@@ -3,7 +3,7 @@
 #SBATCH --job-name=ipcluster
 #SBATCH --partition=compute
 #SBATCH --mem-per-cpu=8g
-#SBATCH --ntasks=121
+#SBATCH --ntasks=41
 
 #SBATCH --mail-user=shhongoist.jp
 #SBATCH --mail-type=FAIL
