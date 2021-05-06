@@ -18,6 +18,7 @@ from sklearn.neighbors import KDTree, NearestNeighbors
 
 from .utils import PointCloud
 
+
 def make_2d_grid(sizeI, cellsize):
     return np.mgrid[0 : sizeI[0] : cellsize, 0 : sizeI[1] : cellsize]
 
@@ -34,13 +35,20 @@ def set_nDarts(nPts, n_pts_created, n_pts_newly_created, nEmptyGrid, dartFactor=
     #
     # else:
     #     ndarts = n_pts_newly_created*2
-    ndarts = np.min([nPts/dartFactor, nEmptyGrid/dartFactor])
+    ndarts = np.min([nPts / dartFactor, nEmptyGrid / dartFactor])
     # ndarts = np.max([n_to_create, nPts / dartFactor])
     return int(np.round(ndarts))
 
 
 def bridson_sampling(
-    fgrid, sizeI, spacing, nPts, showIter, ftests=[], discount_factor=0.5
+    fgrid,
+    sizeI,
+    spacing,
+    nPts,
+    showIter,
+    ftests=[],
+    discount_factor=0.5,
+    stopping_criterion="density",
 ):
     count = 0
     count_time = []
@@ -57,7 +65,7 @@ def bridson_sampling(
     sGrid_nd = fgrid(sizeI, cellsize)
 
     sGrid = np.array([sGrid_nd[i][:].flatten() for i in range(ndim)]).T
-    del(sGrid_nd)
+    del sGrid_nd
 
     # Thrown in a particular grid
     nEmptyGrid = nEmptyGrid0 = sGrid.shape[0]
@@ -77,22 +85,23 @@ def bridson_sampling(
     nn2 = NearestNeighbors(radius=spacing)
 
     if ftests != []:
-        print('Testing coverage of cells...')
+        print("Testing coverage of cells...")
         is_cell_uncovered = np.ones(sGrid.shape[0], dtype=bool)
         for ftest in ftests:
-            is_cell_uncovered = ftest.test_cells(
-                sGrid, dgrid
-            )
+            is_cell_uncovered = ftest.test_cells(sGrid, dgrid)
 
             sGrid = sGrid[is_cell_uncovered, :]
             scoreGrid = scoreGrid[is_cell_uncovered]
             nEmptyGrid = np.sum(sGrid.shape[0])
-            print('Uncovered cells: {}%\n'.format(nEmptyGrid/nEmptyGrid0*100))
+            print("Uncovered cells: {}%\n".format(nEmptyGrid / nEmptyGrid0 * 100))
 
     if showIter:
         pbar = tqdm(total=nPts)
         pbar_grid = tqdm(total=nEmptyGrid0)
-        pbar_grid.update(nEmptyGrid0-nEmptyGrid)
+        pbar_grid.update(nEmptyGrid0 - nEmptyGrid)
+
+    if stopping_criterion != 'density':
+        raise RuntimeError('Bridson sampling  allows only the density-based stopping criterion')
 
     while n_pts_created < nPts and nEmptyGrid > 0:
         # Thrown darts in eligible grids
@@ -199,4 +208,3 @@ def bridson_sampling(
 Bridson_sampling_2d = partial(bridson_sampling, make_2d_grid)
 
 Bridson_sampling_3d = partial(bridson_sampling, make_3d_grid)
-

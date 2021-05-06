@@ -249,7 +249,7 @@ class Golgi_pop(Cell_pop):
         prefix = Path(prefix)
 
         if hasattr(self, "a_dend"):
-            dend_file = prefix / "GoCadendcoordinates.dat"
+            dend_file = prefix / "GoCadendcoordinates.sorted.dat"
             with dend_file.open("w") as f_out:
                 for ad in self.a_dend:
                     flad = np.array([a for l in ad for a in l])
@@ -259,7 +259,7 @@ class Golgi_pop(Cell_pop):
             warnings.warn("Could not find apical dendrite")
 
         if hasattr(self, "b_dend"):
-            dend_file = prefix / "GoCbdendcoordinates.dat"
+            dend_file = prefix / "GoCbdendcoordinates.sorted.dat"
             with dend_file.open("w") as f_out:
                 for bd in self.b_dend:
                     flbd = [b for l in bd for b in l]

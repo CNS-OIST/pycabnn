@@ -18,6 +18,10 @@ from joblib import Parallel, delayed
 from pathlib import Path
 from tqdm import trange
 import pycabnn
+import ipyparallel as ipp
+
+ipp.register_joblib_backend()
+
 
 def main(db, nblocks, ntargets):
     # c = conn.cursor()

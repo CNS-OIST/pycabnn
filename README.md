@@ -32,7 +32,7 @@ We do not have proper setup.py for installation yet. For usage, please check out
 Run `generate_cell_position.py` as:
 
 ```shell
-python python generate_cell_position.py -p PARAM_PATH -o OUTPUT_PATH all
+python generate_cell_position.py -p PARAM_PATH -o OUTPUT_PATH all
 ```
 
 We included some parameter data in `test_data/params` for `PARAM_PATH`. The results will be save in a [".npz" file](https://docs.scipy.org/doc/numpy/reference/generated/numpy.savez.html), `cell_positions.npz`, within `OUTPUT_PATH`, along with text files.
@@ -68,8 +68,8 @@ This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.t
 
 ## References
 
-1. Sudhakar, S.K., Hong, S., Raikov, I., Publio, R., Lang, C., Close, T., Guo, D., Negrello, M., and De Schutter, E. (2017). Spatiotemporal network coding of physiological mossy fiber inputs by the cerebellar granular layer. PLoS Comput. Biol. _13_, e1005754.
-2. Wichert I., Jee S., De Schutter, E., and Hong S. (2020) Pycabnn: Efficient and extensible software to construct an anatomical basis for a physiologically realistic neural network model. _In preparation_.
+1. [Sudhakar, S.K., Hong, S., Raikov, I., Publio, R., Lang, C., Close, T., Guo, D., Negrello, M., and De Schutter, E. (2017). Spatiotemporal network coding of physiological mossy fiber inputs by the cerebellar granular layer. PLoS Comput. Biol. _13_, e1005754.](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005754)
+2. [Wichert I., Jee S., De Schutter, E., and Hong S. (2020) Pycabnn: Efficient and extensible software to construct an anatomical basis for a physiologically realistic neural network model. Front. Neuroinform. _14_, 31.](https://www.frontiersin.org/articles/10.3389/fninf.2020.00031/full)
 
 ---
 

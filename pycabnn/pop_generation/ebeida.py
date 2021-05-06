@@ -52,7 +52,15 @@ def set_nDarts(nPts, n_pts_created, n_pts_newly_created, n_empty_cells, dartFact
     return int(np.round(ndarts))
 
 
-def ebeida_sampling(sizeI, spacing, nPts, showIter, ftests=[], discount_factor=0.5):
+def ebeida_sampling(
+    sizeI,
+    spacing,
+    nPts,
+    showIter,
+    ftests=[],
+    discount_factor=0.5,
+    stop_method="density",
+):
 
     # Setting properties of iteration
     ndim = len(sizeI)
@@ -96,7 +104,14 @@ def ebeida_sampling(sizeI, spacing, nPts, showIter, ftests=[], discount_factor=0
     if showIter:
         pbar = tqdm(total=nPts)
 
-    while n_pts_created < nPts and n_empty_cells > 0:
+    if stop_method == 'density':
+        fcontinue_criterion = lambda n_pts, n_empty: n_pts < nPts and n_empty > 0
+    elif stop_method == 'maximal':
+        fcontinue_criterion = lambda n_pts, n_empty: n_empty > 0
+    else:
+        raise RuntimeError(f'Unknown stopping criterion: {stop_method}')
+
+    while fcontinue_criterion(n_pts_created, n_empty_cells):
         # Thrown darts in eligible grids
 
         ndarts = set_nDarts(nPts, n_pts_created, n_pts_newly_created, n_empty_cells)
@@ -203,7 +218,7 @@ def ebeida_sampling(sizeI, spacing, nPts, showIter, ftests=[], discount_factor=0
             n_empty_cells = n_empty_cells0 = np.sum(s_cell.shape[0])
 
     pts = pcl.points
-    if pts.shape[0] > nPts:
+    if stop_method == 'density' and pts.shape[0] > nPts:
         p = np.arange(pts.shape[0])
         p = np.random.choice(p, nPts, replace=False)
         pts = pts[p, :]

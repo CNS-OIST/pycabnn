@@ -41,7 +41,7 @@ def load_input_data(args):
             data[arg.replace("--", "")] = Path(args[arg]).resolve()
 
     data["config_hoc"] = data["param_path"] / "Parameters.hoc"
-    data["deparallelize"] = not args["--parallel"]
+    data["parallel"] = args["--parallel"]
 
     t1 = time.time()
     print("Starting parallel process...")
@@ -69,7 +69,7 @@ def load_and_make_population(data, pops):
         """sets up the Glomerulus population"""
         from pycabnn.cell_population import Glo_pop
 
-        glo_data = np.loadtxt(data["input_path"] / "GLpoints.dat")
+        glo_data = np.loadtxt(data["param_path"] / "GLpoints.dat")
 
         glo = Glo_pop(h)
         if glo_data.shape[1] == 4:
@@ -136,7 +136,7 @@ def run_AAtoGoC(data):
     cc = cbn.Connect_2D(gp.qpts_aa, gg.qpts, c_rad_aa)
     # TODO: adapt the following from command line options
     cc.connections_parallel(
-        deparallelize=data["deparallelize"], nblocks=120, debug=False
+        parallel=data["parallel"], nblocks=120, debug=False
     )
     cc.save_result(data["output_path"] / "AAtoGoC")
 
@@ -157,7 +157,7 @@ def run_PFtoGoC(data):
     gp, gg = data["pops"]["grc"], data["pops"]["goc"]
     cc = cbn.Connect_2D(gp.qpts_pf, gg.qpts, c_rad_pf)
     cc.connections_parallel(
-        deparallelize=data["deparallelize"], nblocks=120, debug=False
+        parallel=data["parallel"], nblocks=120, debug=False
     )
     cc.save_result(data["output_path"] / "PFtoGoC")
 
@@ -285,7 +285,7 @@ def main(args):
     data = load_and_make_population(data, ["glo", "grc", "goc"])
     print(data)
 
-    valid_job_list = ["AAtoGoC", "PFtoGoC", "GoCtoGoC", "GoCtoGoCgap", "GlotoGrC"]
+    valid_job_list = ["AAtoGoC", "PFtoGoC", "GoCtoGoC", "GoCtoGoCgap"]
 
     if args["all"]:
         args["<jobs>"] = valid_job_list

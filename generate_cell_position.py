@@ -4,7 +4,7 @@
 Jobs = mf, goc, glo, grc
 
 Usage:
-  generate_cell_position.py (-o PATH) (-p PATH) [-i PATH] (all | <jobs>...)
+  generate_cell_position.py (-o PATH) (-p PATH) [-i PATH] [--stop_method=<conditions>] (all | <jobs>...)
   generate_cell_position.py (-h | --help)
   generate_cell_position.py --version
 
@@ -14,6 +14,15 @@ Options:
   -o PATH, --output_path=<output_path>    Output path
   -p PATH, --param_path=<param_dir>       Params path
   -i PATH, --input_path=<input_path>      Input path
+  --stop_method=<conditions>              Stop method. See below.
+
+With <conditions>, you can specify how each job will stop. For example,
+
+    `--stop_method=grc:maximal,goc:density`
+
+will make the grc and goc generation use the maximal volume filling and density-based
+stopping criterion, respectively. The default is the density-based, e.g., the job will
+stop if the number of the cells reaches a target, computed from the given density.
 
 Written by Sanghun Jee and Sungho Hong
 Supervised by Erik De Schutter
@@ -60,6 +69,7 @@ def load_input_data(args):
 def make_mf(data):
     h = data["h"]
     foutname = data["foutname"]
+    stop_cond = data['stop_conds']['mf']
 
     def compute_mf_params():
         Transverse_range = h.MFyrange
@@ -89,8 +99,7 @@ def make_mf(data):
         )
 
     mf_box, n_mf = compute_mf_params()
-
-    mf_points = ebeida_sampling(mf_box, h.spacing_mf, n_mf, True)
+    mf_points = ebeida_sampling(mf_box, h.spacing_mf, n_mf, True, stop_method=stop_cond)
 
     data["mf_points"] = mf_points
 
@@ -105,6 +114,7 @@ def make_mf(data):
 def make_goc(data):
     h = data["h"]
     foutname = data["foutname"]
+    stop_cond = data['stop_conds']['goc']
 
     def compute_goc_params():
         Transverse_range = h.MFyrange
@@ -122,7 +132,7 @@ def make_goc(data):
 
     spacing_goc = h.spacing_goc - h.softness_margin_goc
 
-    goc_points = ebeida_sampling(goc_box, spacing_goc, n_goc, True)
+    goc_points = ebeida_sampling(goc_box, spacing_goc, n_goc, True, stop_method=stop_cond)
 
     goc_points = (
         goc_points
@@ -142,6 +152,7 @@ def make_goc(data):
 def make_glo(data):
     h = data["h"]
     foutname = data["foutname"]
+    stop_cond = data['stop_conds']['glo']
     goc_points = data["goc_points"]
 
     scale_factor = h.scale_factor_glo
@@ -187,7 +198,7 @@ def make_glo(data):
 
     globox, n_glo = compute_glo_params()
 
-    glo_points = ebeida_sampling(globox, spacing_glo, n_glo, True, ftests=[goc])
+    glo_points = ebeida_sampling(globox, spacing_glo, n_glo, True, ftests=[goc],stop_method=stop_cond)
 
     # Since the glomerulus distribution is stretched in a sagittal direction,
     # we generate the coordinates in a scaled volume first, and then stretch
@@ -213,6 +224,7 @@ def make_glo(data):
 def make_grc(data):
     h = data["h"]
     foutname = data["foutname"]
+    stop_cond = data['stop_conds']['grc']
 
     goc_points = data["goc_points"]
     glo_points = data["glo_points"]
@@ -241,7 +253,7 @@ def make_grc(data):
     spacing_grc = h.diam_grc - h.softness_margin_grc
 
     grcbox, n_grc = compute_grc_params()
-    grc_points = ebeida_sampling(grcbox, spacing_grc, n_grc, True, ftests=[glo, goc])
+    grc_points = ebeida_sampling(grcbox, spacing_grc, n_grc, True, ftests=[glo, goc],stop_method=stop_cond)
 
     grc_points = np.random.normal(0, 1, size=grc_points.shape) * h.softness_margin_grc
 
@@ -267,14 +279,23 @@ def main(args):
     if args["all"]:
         args["<jobs>"] = valid_job_list
 
+    if args['--stop_method']:
+        conds = args['--stop_method'].split(',')
+        conds = [c.split(':') for c in conds]
+        conds = [(x.strip(), y.strip()) for x, y in conds]
+        data['stop_conds'] = dict(conds)
+
     for j in args["<jobs>"]:
+
+        if j not in data['stop_conds']:
+            data['stop_conds'][j] = 'density'
+
         if j not in valid_job_list:
             raise RuntimeError(
                 "Job {} is not valid, not in {}".format(j, valid_job_list)
             )
         else:
             data = eval("make_" + j)(data)
-
 
 if __name__ == "__main__":
     from docopt import docopt
