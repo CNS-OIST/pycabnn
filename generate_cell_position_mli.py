@@ -275,7 +275,7 @@ def make_grc(data):
 def make_mli(data):
     h = data["h"]
     foutname = data["foutname"]
-    stop_cond = data['stop_conds']['goc']
+    stop_cond = data['stop_conds']['mli']
 
     def compute_mli_params():
         Transverse_range = h.MFyrange
