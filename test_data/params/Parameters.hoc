@@ -332,3 +332,7 @@ softness_margin_grc = 0.2
 
 density_grc = 1.9 * 1e6  // (Billings et al., 2014)
 density_glo = density_grc * 0.3
+
+mli_density = 1e5 // Peter Bratby's estimation
+spacing_mli = 12 // Peter's model
+softness_margin_mli = 1
