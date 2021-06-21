@@ -432,169 +432,142 @@ class MLI_pop(Cell_pop):
         """ Save the coordinates of the dendrites, BREP style
         -> each line of the output file corresponds to one cell, and contains all its dendrites sequentially"""
 
-        assert hasattr(self, "axon"), "Could not find axons, please generate them first"
+        raise NotImplementedError("This part is not implemented yet.")
 
-        prefix = Path(prefix)
-        axon_file = prefix / "MLIaxoncoordinates_test.dat"
-        with axon_file.open("w") as f_out:
-            for ax in self.axon:
-                flad = np.array([a for l in ax for a in l])
-                f_out.write(str_l(flad) + "\n")
-            print("Successfully wrote {}.".format(axon_file))
+        # assert hasattr(self, "axon"), "Could not find axons, please generate them first"
+
+        # prefix = Path(prefix)
+        # axon_file = prefix / "MLIaxoncoordinates_test.dat"
+        # with axon_file.open("w") as f_out:
+        #     for ax in self.axon:
+        #         flad = np.array([a for l in ax for a in l])
+        #         f_out.write(str_l(flad) + "\n")
+        #     print("Successfully wrote {}.".format(axon_file))
 
     def add_dendrites(self):
         coords, idx, segs = self.gen_dendrite()
         all_dends = coords
         all_idx = idx
         all_sgts = segs
-        self.qpts = Query_point(all_dends, all_idx, all_sgts)
+        self.dends = Query_point(all_dends, all_idx, all_sgts)
 
     def save_dend_coords(self, prefix=""):
         """ Save the coordinates of the dendrites, BREP style
         -> each line of the output file corresponds to one cell, and contains all its dendrites sequentially"""
 
-        assert hasattr(self, "dend", "Could not find any added dendrites")
+        raise NotImplementedError("This part is not implemented yet.")
 
-        prefix = Path(prefix)
+        # assert hasattr(self, "dends"), "Could not find any added dendrites")
 
-        dend_file = prefix / "MLIdendcoordinates.dat"
-        with dend_file.open("w") as f_out:
-            for ad in self.dend:
-                flad = np.array([a for l in ad for a in l])
-                f_out.write(str_l(flad) + "\n")
-        print("Successfully wrote {}.".format(dend_file))
+        # prefix = Path(prefix)
 
-    def gen_dendrite(self):
-        # TODO: read parameters from self.args
-        soma_xyz = self.som
+        # dend_file = prefix / "MLIdendcoordinates.dat"
+        # with dend_file.open("w") as f_out:
+        #     for ad in self.dend:
+        #         flad = np.array([a for l in ad for a in l])
+        #         f_out.write(str_l(flad) + "\n")
+        # print("Successfully wrote {}.".format(dend_file))
 
-        mid_temp = []
-        center_candi = soma_xyz
+    # TODO: input somas is only temporary and should replaced by self.som
+    def gen_dend_endpoints(self, somas):
 
-        def y_inters(z):  # To get the intersection between z axis and The y coordinate
-            result = np.sqrt(np.abs(max_length ** 2 - (z - center[2]) ** 2))
-            return [center[1] + result, center[1] + (-1) * result]
+        Ldend = self.args.MLI_dend_length
 
-        for cell_ind, center in tqdm(enumerate(center_candi)):
-            # Let's make angle and length
-            den_num = 4  # parameter
-            max_length = 100  # parameter: Maximum dendrite length
-            den_len = np.random.uniform(
-                low=70, high=max_length, size=4
-            )  # There is no reason for min length, parameter
-            seg_inval = 2  # parameter : Segment points interval length
-            seg_num = 10  # parameter : Segmentation number of each dendrite
-            angle_total = np.arange(0, 360, 1) * 180 / (2 * np.pi)
-            z_min = 0  # parameter
-            z_max = 200  # parameter
+        # generate end points in 2D
+        def make_random_dend_ends():
+            """ generates random end points in 2D. """
 
-            # Let's draw a circle
-            y_total = (
-                max_length * np.cos(angle_total) + center[1]
-            )  # To draw boarder line(circle)
-            z_total = max_length * np.sin(angle_total) + center[2]
-            no_point = []  # Let's check the angle we should avoid
+            angle0 = np.random.rand()*np.pi/2
 
-            for i in range(0, len(y_total)):
-                if not z_min <= z_total[i] <= z_max:
-                    if z_total[i] < z_min:
-                        no_point.append((y_inters(0)[0], 0))
-                        no_point.append((y_inters(0)[1], 0))
-                    if z_max < z_total[i]:
-                        no_point.append((y_inters(200)[0], 200))
-                        no_point.append((y_inters(200)[1], 200))
+            # first 3 angles between dends
+            angles3 = np.ones(3)*np.pi/2
+            angles = np.cumsum(angles3) 
+            angles = np.hstack([0, angles]) + angle0 
 
-            if len(no_point) != 0:
-                no_point = np.unique(np.reshape(no_point, (-1, 2)), axis=0)
-                if len(no_point) == 2:
-                    line_c = np.sqrt((no_point[0][0] - no_point[1][0]) ** 2)
-                    line_d = np.sqrt((no_point[0][1] - center[2]) ** 2)
+            # adding more variability for each point independent from the others
+            r=np.random.uniform(-0.5, 0.5,4)
+            angles=angles+r
 
-                    angle_a = np.arccos(
-                        1 - (line_c ** 2 / (2 * max_length ** 2))
-                    )  # Law of cosines
-                    angle_b = (np.pi - angle_a) / 2
-                    if no_point[0][1] == 0:
-                        angle_b = np.pi + angle_b
+            # produce x and y coordinates
+            return np.array([[Ldend*np.cos(a), Ldend*np.sin(a)] for a in angles]) # cos=x; sin=y
 
-            # Let's draw
-            angle_pre = np.arange(0, 2 * np.pi - 0.349, 0.349)
-            angle_candi = []
-            x_candi = np.arange(0, 0.349 * 2, 0.349 / 10) + np.pi / 2 - 0.349
-            x_candi = np.random.choice(x_candi, replace=False, size=4)
+        def fix_dend_ends_upper(point1_xz, soma, upperLimit, push_down=100):
+            """fixes end points lying beyond the boundaries."""
+            radius = self.args.MLI_dend_length
 
-            if len(no_point) == 2:
-                for i in range(0, len(angle_pre)):
-                    if not (angle_b < angle_pre[i] < (angle_a + angle_b)):
-                        angle_candi.append(angle_pre[i])
-            else:
-                angle_candi = angle_pre
+            d=abs(soma[1]-upperLimit)
+            
+            point1_xz_new = np.zeros_like(point1_xz)
+            for i in range(point1_xz.shape[0]):
+                x, y=point1_xz[i];
+                
+                #print(point1_xz[i]);
+                if y>soma[1]+d:
 
-            angle = np.random.choice(angle_candi, replace=False, size=4)
+                    if point1_xz[i,0]< soma[0]:       # make sure each dendrite goes to one one side
+                        y=soma[1]+d- np.random.uniform(0, push_down); #soma y coord. plus the distance to layer+ variability 
+                        point1_xz_new[i,1]=y
+                        phi=np.arcsin((y-soma[1])/radius) # calculate phi for new x
+                        x1=radius*np.cos(phi)+soma[0]     # new x coord. on layer
+                        point1_xz_new[i,0]=soma[0]-(x1-soma[0]) 
+                    else:
+                        y=soma[1]+d- np.random.uniform(0, push_down); #soma y coord. plus the distance to layer
+                        phi=np.arcsin((y-soma[1])/radius) # calculate phi for new x
+                        x1=radius*np.cos(phi)+soma[0]     # new x coord. on layer
+                        point1_xz_new[i,:]=[x1, y]
+                else:
+                    point1_xz_new[i,:]= [x, y]
 
-            x = den_len * np.cos(x_candi) + center[0]
-            y = den_len * np.sin(x_candi) * np.cos(angle) + center[1]
-            z = den_len * np.sin(x_candi) * np.sin(angle) + center[2]
+            return point1_xz_new
 
-            # Let's make output
-            """ We will make two files: coordinates and index. Each column of index file is dendrite index and segment index"""
-            x0 = []
-            y0 = []
-            z0 = []
-            seg = []
-            for i in range(0, den_num):
-                x0.append(
-                    np.arange(0, den_len[i], seg_inval) * np.cos(x_candi[i]) + center[0]
-                )
-                y0.append(
-                    np.arange(0, den_len[i], seg_inval)
-                    * np.sin(x_candi[i])
-                    * np.cos(angle[i])
-                    + center[1]
-                )
-                z0.append(
-                    np.arange(0, den_len[i], seg_inval)
-                    * np.sin(x_candi[i])
-                    * np.sin(angle[i])
-                    + center[2]
-                )
+        def gen_dend_endpoints_2d(somas):
+            """generates dendritic end points for somas."""
+            # z-coordinates will lie between 0 to MLdepth
+            upperLimit = self.args.MLdepth
+            lowerLimit = 0
+            
+            EpointDend=np.empty((0,2), dtype=object) #empty array for dendrites
 
-            for i in range(0, den_num):
-                temp = []
-                for j in range(0, len(x0[i])):
-                    temp.append(np.vstack((x0[i][j], y0[i][j], z0[i][j], i)))
-                temp = np.reshape(temp, (-1, 4))
-                seg.append(np.array_split(temp, seg_num))
+            for s in range(somas.shape[0]):
+                soma = somas[s,:2]
+                point1_xz = make_random_dend_ends() + soma
+                point1_xz_new = fix_dend_ends_upper(point1_xz, soma, upperLimit)
+                point1_xz_new = -fix_dend_ends_upper(-point1_xz_new, -soma, lowerLimit)
+                EpointDend = np.append(EpointDend, point1_xz_new, axis=0)
 
-            del temp
+            # print('EpointDend shape = ', EpointDend.shape)
+            return EpointDend
+        
+        # Add a missing 3D coordinate to 2d end points
+        def make_endpoint_3d(EpointDend, somas):
+            ep1_3d_All=np.empty((0,3), dtype=object) #empty array for dendrites
 
-            for i in range(0, den_num):
-                for j in range(0, seg_num):
-                    for k in range(0, len(seg[i][j])):
-                        mid_temp.append(
-                            np.hstack(
-                                (
-                                    seg[i][j][k],
-                                    j,
-                                    cell_ind,
-                                    center[0],
-                                    center[1],
-                                    center[2],
-                                )
-                            )
-                        )
-            final_temp = np.reshape(mid_temp, (-1, 9))
+            sigma = self.args.MLI_x_sigma
+            
+            for s in range(somas.shape[0]):
+                soma = somas[s,:]
 
-            coords = final_temp[:, 0:3]
-            idx = final_temp[:, 5]
-            segs = final_temp[:, [4, 3]]
-            segs += 1
-        return coords, idx, segs
+                ep1 = EpointDend[(s*4):((s+1)*4),:] - somas[s,:2]
+                ep1_3d = np.zeros((4,3))
+                ep1_3d[:,:2] = ep1
+                ep1_3d[:, 2] = np.random.randn(4)*sigma
 
-class Glo_pop(Cell_pop):
-    def __init__(self, my_args):
-        Cell_pop.__init__(self, my_args)
-        self.mf_ind = None
+                #print(ep1_3d)
+
+                for i in range(4):
+                    norm = np.sqrt(ep1_3d[i,0]**2 + ep1_3d[i,1]**2 + ep1_3d[i,2]**2)
+                    ep1_3d[i,:] = ep1_3d[i,:]/norm*Ldend
+                ep1_3d = ep1_3d + somas[s,:]
+                ep1_3d_All=np.append(ep1_3d_All, ep1_3d, axis=0)
+                    #print(EpointDend[(s*4):((s+1)*4),:])
+            return ep1_3d_All
+
+        EpointDend = gen_dend_endpoints_2d(somas)
+        ep1_3d_All = make_endpoint_3d(EpointDend, somas)
+
+        # TODO: for the time being the function returns the end points, not dendritic points
+        return ep1_3d_All
+
 
 # class Map(dict):
 #     """

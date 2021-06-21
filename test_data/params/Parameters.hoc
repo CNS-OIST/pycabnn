@@ -336,3 +336,6 @@ density_glo = density_grc * 0.3
 mli_density = 1e5 // Peter Bratby's estimation
 spacing_mli = 12 // Peter's model
 softness_margin_mli = 1
+
+MLI_dend_length = 180 //Peter's model
+MLI_x_sigma = 24
