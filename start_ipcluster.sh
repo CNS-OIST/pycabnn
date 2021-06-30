@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 #SBATCH --job-name=ipcluster
 #SBATCH --partition=compute
