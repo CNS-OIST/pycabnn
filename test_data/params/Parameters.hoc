@@ -62,7 +62,7 @@ BCtoGoCratio = 6   // default 6 (Palay, 1972 for cats)
 //SPATIAL DIMENSIONS OF VARIOUS PARAMETERS
 //spatial dimensions of the GoC population in um
 //GoCxrange = bandwidth*nband
-GoCxrange = 700 //bandwidth*nband*Scale_factor
+GoCxrange = 1500 //bandwidth*nband*Scale_factor
 GoCyrange = 1000*Scale_factor
 GoCzrange = GLdepth
 

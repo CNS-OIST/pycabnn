@@ -48,11 +48,6 @@ def load_input_data(args):
     h = HocParameterParser()
     h.load_file(str(param_file))
 
-    # Limit the x-range to 700 um and add 50 um in all directions
-    h.MFxrange += h.range_margin
-    h.MFyrange += h.range_margin
-    h.GLdepth += h.range_margin
-
     output_path = Path(args["--output_path"])
     foutname = output_path / "cell_positions.npz"
 
@@ -278,9 +273,11 @@ def make_mli(data):
     stop_cond = data['stop_conds']['mli']
 
     def compute_mli_params():
-        Transverse_range = h.MFyrange
-        Horizontal_range = h.MFxrange
-        Vertical_range = h.MLdepth
+        # Add 50 um in all directions
+
+        Transverse_range = h.MFyrange + h.range_margin
+        Horizontal_range = h.MFxrange + h.range_margin
+        Vertical_range = h.MLdepth + h.range_margin
 
         Volume = Transverse_range * Horizontal_range * Vertical_range
 
@@ -300,9 +297,25 @@ def make_mli(data):
         + np.random.normal(0, 1, size=(len(mli_points), 3)) * h.softness_margin_mli
     )  # Gaussian noise
 
-    data["mli_points"] = mli_points
-
     print("Final # MLIs = {}".format(mli_points.shape[0]))
+
+    # Shift all the coordinates by range_margin/2
+    for i in range(3):
+        mli_points[:, i] -= h.range_margin/2
+
+    # Select only the cells with in the range
+    mli_points = mli_points[mli_points[:,0]>0,:]        
+    mli_points = mli_points[mli_points[:,0]<h.MFxrange,:]        
+    mli_points = mli_points[mli_points[:,1]>0,:]        
+    mli_points = mli_points[mli_points[:,1]<h.MFyrange,:]        
+    mli_points = mli_points[mli_points[:,2]>0,:]        
+    mli_points = mli_points[mli_points[:,2]<h.MLdepth,:] 
+
+    mli_points[:,2] += h.GLdepth + h.PCLdepth
+
+    print("# MLIs after pruning = {}".format(mli_points.shape[0]))
+
+    data["mli_points"] = mli_points
 
     np.savez(foutname, mli=mli_points)
     np.savetxt(data["output_path"] / "MLIcoordinates.dat", data["mli_points"])

@@ -12,7 +12,7 @@ import numpy as np
 from pathlib import Path
 import csv
 from .util import str_l, Query_point
-from tqdm import tqdm
+from tqdm import tqdm, trange
 
 
 class Cell_pop(object):
@@ -445,7 +445,7 @@ class MLI_pop(Cell_pop):
         #     print("Successfully wrote {}.".format(axon_file))
 
     def add_dendrites(self):
-        coords, idx, segs = self.gen_dendrite()
+        coords, idx, segs = self.gen_dendrite(self.som)
         all_dends = coords
         all_idx = idx
         all_sgts = segs
@@ -469,10 +469,14 @@ class MLI_pop(Cell_pop):
         # print("Successfully wrote {}.".format(dend_file))
 
     # TODO: input somas is only temporary and should replaced by self.som
-    def gen_dend_endpoints(self, somas):
+    def gen_dendrite(self, return_end_points=False):
+
+        somas = self.som*1.0
+        MLzbegin = self.args.GLdepth + self.args.PCLdepth
+        somas[:, 2] -= MLzbegin ## Shift from the top of PCL and GL layer to zero (z axis)
 
         Ldend = self.args.MLI_dend_length
-
+ 
         # generate end points in 2D
         def make_random_dend_ends():
             """ generates random end points in 2D. """
@@ -491,7 +495,7 @@ class MLI_pop(Cell_pop):
             # produce x and y coordinates
             return np.array([[Ldend*np.cos(a), Ldend*np.sin(a)] for a in angles]) # cos=x; sin=y
 
-        def fix_dend_ends_upper(point1_xz, soma, upperLimit, push_down=100):
+        def fix_dend_ends_upper(point1_xz, soma, upperLimit=self.args.MLdepth, push_down=100):
             """fixes end points lying beyond the boundaries."""
             radius = self.args.MLI_dend_length
 
@@ -541,6 +545,7 @@ class MLI_pop(Cell_pop):
         # Add a missing 3D coordinate to 2d end points
         def make_endpoint_3d(EpointDend, somas):
             ep1_3d_All=np.empty((0,3), dtype=object) #empty array for dendrites
+            endpt_ids = np.empty(0, dtype=int) #empty array for dendrites
 
             sigma = self.args.MLI_x_sigma
             
@@ -557,16 +562,56 @@ class MLI_pop(Cell_pop):
                 for i in range(4):
                     norm = np.sqrt(ep1_3d[i,0]**2 + ep1_3d[i,1]**2 + ep1_3d[i,2]**2)
                     ep1_3d[i,:] = ep1_3d[i,:]/norm*Ldend
+
                 ep1_3d = ep1_3d + somas[s,:]
                 ep1_3d_All=np.append(ep1_3d_All, ep1_3d, axis=0)
                     #print(EpointDend[(s*4):((s+1)*4),:])
-            return ep1_3d_All
+                endpt_ids = np.concatenate((endpt_ids, np.zeros(4, dtype=int)+s))
+
+            return ep1_3d_All, endpt_ids
 
         EpointDend = gen_dend_endpoints_2d(somas)
-        ep1_3d_All = make_endpoint_3d(EpointDend, somas)
+        ep1_3d_All, endpt_ids = make_endpoint_3d(EpointDend, somas)
 
-        # TODO: for the time being the function returns the end points, not dendritic points
-        return ep1_3d_All
+        def generate_DendPoint_3d(soma, ep1_3d, endpt_ids, nPoint=90):
+            """Generate Dendrititc Points between Soma and respective Endpoints
+                In total 90 points are generated"""
+
+            DendPointAll= np.empty((0,3),dtype=object)
+            dendpt_ids = np.empty(0,dtype=int)
+            segs = np.empty((0,2),dtype=int)
+
+            for i in range(ep1_3d.shape[0]):
+                VectorSoEp= ep1_3d[i]-soma #calculate the vector from soma to endpoint
+                for s in range(1, nPoint+1):
+                    DendPoint= np.array(soma + VectorSoEp/nPoint*s) # vector soma + vectorsomaendpoint shortened
+                    DendPointAll = np.vstack((DendPointAll,DendPoint))
+                    segs = np.vstack((segs, [i+1, int((s-1)/9)]))
+
+                dendpt_ids = np.concatenate((dendpt_ids, np.zeros(nPoint, dtype=int)+endpt_ids[i]))
+
+            return DendPointAll, dendpt_ids, segs
+        
+        ##generate endpoints around respective somas
+        DendPointAllAll = np.empty((0,3), dtype=object) #empty array for dendrites
+        dendpt_ids_all = np.empty((0,1), dtype=int) #empty array for dendrite ids
+        segs_all = np.empty((0,2), dtype=int) #empty array for dendrite ids
+
+        for s in trange(somas.shape[0]):
+            soma = somas[s]
+            DendPointAll, dendpt_ids, segs = generate_DendPoint_3d(soma, ep1_3d_All[s*4:(s+1)*4], endpt_ids[s*4:(s+1)*4])
+    
+            DendPointAllAll = np.vstack((DendPointAllAll, DendPointAll))
+            dendpt_ids_all = np.append(dendpt_ids_all, dendpt_ids)
+            segs_all = np.vstack((segs_all, segs))
+
+        DendPointAllAll[:, 2] += MLzbegin # Put every point above the PCL
+
+        if return_end_points:
+            return DendPointAllAll, dendpt_ids_all, segs_all, ep1_3d_All
+        else:
+            return DendPointAllAll, dendpt_ids_all, segs_all
+
 
 
 # class Map(dict):
