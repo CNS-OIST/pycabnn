@@ -468,7 +468,6 @@ class MLI_pop(Cell_pop):
         #         f_out.write(str_l(flad) + "\n")
         # print("Successfully wrote {}.".format(dend_file))
 
-    # TODO: input somas is only temporary and should replaced by self.som
     def gen_dendrite(self, return_end_points=False):
 
         somas = self.som*1.0
@@ -606,11 +605,31 @@ class MLI_pop(Cell_pop):
             segs_all = np.vstack((segs_all, segs))
 
         DendPointAllAll[:, 2] += MLzbegin # Put every point above the PCL
+        
+        self.qpts = Query_point(DendPointAllAll, dendpt_ids_all, segs_all)
 
         if return_end_points:
-            return DendPointAllAll, dendpt_ids_all, segs_all, ep1_3d_All
-        else:
-            return DendPointAllAll, dendpt_ids_all, segs_all
+            return ep1_3d_All
+
+
+    def save_data(self, filename):
+        np.savez_compressed(
+            filename, 
+            dendpoints=self.qpts.coo,
+            segments=self.qpts.seg,
+            ids=self.qpts.idx
+        )
+
+
+    def load_data(self, filename_in_npz):
+        MLI_data = np.load(filename_in_npz)
+
+        DendPointAllAll= MLI_data["dendpoints"]
+        segs_all= MLI_data["segments"]
+        dendpt_ids_all= MLI_data["ids"]
+
+        self.qpts = Query_point(DendPointAllAll, dendpt_ids_all, segs_all)
+
 
 
 
