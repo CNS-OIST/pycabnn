@@ -424,6 +424,62 @@ class MLI_pop(Cell_pop):
 
     def __init__(self, my_args):
         Cell_pop.__init__(self, my_args)
+    
+    def gen_axon(self):
+        n_axonterm = 100
+        sigma_transv = 15
+        somas = self.som*1.0
+        def axon_generation(somas):
+        
+            AxonsAll=np.empty((0,3), dtype=object) #empty array for axons
+            for i in range(somas.shape[0]):
+                center=somas[i]
+                axons = np.zeros((100,3))
+
+                axons = np.array([np.random.uniform((center-200),(center+200),3) for i in axons]) # cos=x; sin=y
+
+                axons[:,0] = np.random.randn(n_axonterm)*sigma_transv + center[0]
+                axons[:,1] =np.random.randn(n_axonterm)*sigma_transv + center[1]
+                axons[:,2] = np.random.randn(n_axonterm)*sigma_transv + center[2]
+
+                AxonsAll = np.append(AxonsAll, axons, axis=0)
+            
+            return(AxonsAll)
+
+        #check if out of Layer Plus correction (z-Axis) PLUS correction
+        def axon_correct(somas, AxonsAll):
+            outPlus=[]
+            outMinus=[]
+            upperLimit=max(somas[:,2])+10
+            lowerLimit=min(somas[:,2])-10
+            AxonsAllNew=np.zeros_like(AxonsAll)
+            AxonsAllNew[:,0:3]=AxonsAll[:,0:3]
+            for i in range(AxonsAll.shape[0]):
+            
+                if AxonsAll[i,2]>upperLimit:
+                    outPlus.append(i)
+                    AxonsAllNew[i,2]= upperLimit-np.random.uniform(0,(max(somas[:,2])-min(somas[:,2])))
+                            
+                elif AxonsAll[i,2]< lowerLimit:
+                    outMinus.append(i)
+                    AxonsAllNew[i,2]= lowerLimit+np.random.uniform(0, (max(somas[:,2])-min(somas[:,2])))
+                    
+            return(AxonsAllNew, outPlus, outMinus)
+
+        def outlier_coordinates(AxonsAll,outPlus, outMinus):
+            AxOutCoordAll=np.empty((0,3), dtype=object)
+            for i in range(len(outPlus)):
+                AxOutCoord = AxonsAll[outPlus[i]]
+                AxOutCoordAll = np.vstack((AxOutCoordAll, AxOutCoord))
+                
+                
+            for i in range(len(outMinus)):
+                AxOutCoord = AxonsAll[outMinus[i]]
+                AxOutCoordAll = np.vstack((AxOutCoordAll, AxOutCoord))
+
+            return(AxOutCoordAll)     
+        
+        
 
     def add_axon(self):
         raise NotImplementedError("This part is not implemented yet.")
