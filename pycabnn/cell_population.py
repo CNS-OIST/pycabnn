@@ -426,44 +426,50 @@ class MLI_pop(Cell_pop):
         Cell_pop.__init__(self, my_args)
     
     def gen_axon(self):
-        n_axonterm = 100
+        #from Peters manuscript
         sigma_transv = 15
+        sigma_vert = 20
+        sigma_sag = 70
         somas = self.som*1.0
-        def axon_generation(somas):
+
+        MLzbegin = self.args.GLdepth + self.args.PCLdepth #for later correction
+
+        def axon_generation(somas, n_axonterm = 100):
         
             AxonsAll=np.empty((0,3), dtype=object) #empty array for axons
             for i in range(somas.shape[0]):
                 center=somas[i]
-                axons = np.zeros((100,3))
+                axons = np.zeros((n_axonterm,3))
 
                 axons = np.array([np.random.uniform((center-200),(center+200),3) for i in axons]) # cos=x; sin=y
 
                 axons[:,0] = np.random.randn(n_axonterm)*sigma_transv + center[0]
-                axons[:,1] =np.random.randn(n_axonterm)*sigma_transv + center[1]
-                axons[:,2] = np.random.randn(n_axonterm)*sigma_transv + center[2]
+                axons[:,1] =np.random.randn(n_axonterm)*sigma_sag + center[1]
+                axons[:,2] = np.random.randn(n_axonterm)*sigma_vert + center[2]
 
                 AxonsAll = np.append(AxonsAll, axons, axis=0)
             
             return(AxonsAll)
 
         #check if out of Layer Plus correction (z-Axis) PLUS correction
-        def axon_correct(somas, AxonsAll):
+        def axon_correct(somas, AxonsAll, upperLimit=self.args.MLdepth, lowerLimit=0 ):
             outPlus=[]
             outMinus=[]
-            upperLimit=max(somas[:,2])+10
-            lowerLimit=min(somas[:,2])-10
+           
             AxonsAllNew=np.zeros_like(AxonsAll)
             AxonsAllNew[:,0:3]=AxonsAll[:,0:3]
             for i in range(AxonsAll.shape[0]):
             
                 if AxonsAll[i,2]>upperLimit:
                     outPlus.append(i)
-                    AxonsAllNew[i,2]= upperLimit-np.random.uniform(0,(max(somas[:,2])-min(somas[:,2])))
+                    AxonsAllNew[i,2]=upperLimit-np.random.uniform(0,sigma_vert)
                             
                 elif AxonsAll[i,2]< lowerLimit:
                     outMinus.append(i)
-                    AxonsAllNew[i,2]= lowerLimit+np.random.uniform(0, (max(somas[:,2])-min(somas[:,2])))
-                    
+                    AxonsAllNew[i,2]= lowerLimit+np.random.uniform(0,sigma_vert)
+
+            AxonsAllNew[:, 2] += MLzbegin # Put every point above the PCL
+
             return(AxonsAllNew, outPlus, outMinus)
 
         def outlier_coordinates(AxonsAll,outPlus, outMinus):
@@ -476,6 +482,8 @@ class MLI_pop(Cell_pop):
             for i in range(len(outMinus)):
                 AxOutCoord = AxonsAll[outMinus[i]]
                 AxOutCoordAll = np.vstack((AxOutCoordAll, AxOutCoord))
+
+            AxOutCoordAll[:, 2] += MLzbegin # Put every point above the PCL
 
             return(AxOutCoordAll)     
         
