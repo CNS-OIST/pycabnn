@@ -434,25 +434,29 @@ class MLI_pop(Cell_pop):
 
         MLzbegin = self.args.GLdepth + self.args.PCLdepth #for later correction
 
-        def axon_generation(somas, n_axonterm = 100):
+        def make_axon_points(somas, n_axonterm = 100):
         
             AxonsAll=np.empty((0,3), dtype=object) #empty array for axons
+            ID_axon=np.zeros((somas.shape[0]*n_axonterm)) #empty array for axon ID
             for i in range(somas.shape[0]):
                 center=somas[i]
                 axons = np.zeros((n_axonterm,3))
-
-                axons = np.array([np.random.uniform((center-200),(center+200),3) for i in axons]) # cos=x; sin=y
-
                 axons[:,0] = np.random.randn(n_axonterm)*sigma_transv + center[0]
                 axons[:,1] =np.random.randn(n_axonterm)*sigma_sag + center[1]
                 axons[:,2] = np.random.randn(n_axonterm)*sigma_vert + center[2]
 
                 AxonsAll = np.append(AxonsAll, axons, axis=0)
+
+                #ID: to which soma does each axon belong                            
+                if i==0:
+                    ID_axon[0:n_axonterm]=i
+                else:
+                    ID_axon[i*n_axonterm:(i+1)*n_axonterm]=i
             
-            return(AxonsAll)
+            return(AxonsAll, ID_axon)
 
         #check if out of Layer Plus correction (z-Axis) PLUS correction
-        def axon_correct(somas, AxonsAll, upperLimit=self.args.MLdepth, lowerLimit=0 ):
+        def axon_correct(somas, AxonsAll, ID_axon, upperLimit=self.args.MLdepth, lowerLimit=0):
             outPlus=[]
             outMinus=[]
            
@@ -469,8 +473,10 @@ class MLI_pop(Cell_pop):
                     AxonsAllNew[i,2]= lowerLimit+np.random.uniform(0,sigma_vert)
 
             AxonsAllNew[:, 2] += MLzbegin # Put every point above the PCL
+            
+            self.qpts = Query_point(AxonsAllNew, ID_axon)
 
-            return(AxonsAllNew, outPlus, outMinus)
+            return(AxonsAllNew, outPlus, outMinus, ID_axon)
 
         def outlier_coordinates(AxonsAll,outPlus, outMinus):
             AxOutCoordAll=np.empty((0,3), dtype=object)
@@ -484,15 +490,34 @@ class MLI_pop(Cell_pop):
                 AxOutCoordAll = np.vstack((AxOutCoordAll, AxOutCoord))
 
             AxOutCoordAll[:, 2] += MLzbegin # Put every point above the PCL
+                                                
+            return(AxOutCoordAll) 
 
-            return(AxOutCoordAll)     
+        
+    def save_data(self, filename):
+        np.savez_compressed(
+        filename, 
+        axonpoints=self.qpts.coo,
+        ids=self.qpts.idx)
+
+
+    def load_data(self, filename_in_npz):
+        MLI_data = np.load(filename_in_npz)
+
+        axonpoints= MLI_data["axonpoints"]
+        axon_ids= MLI_data["ids"]
+
+        self.qpts = Query_point(axonpoints, axon_ids)
+        
+
+           
         
         
 
     def add_axon(self):
         raise NotImplementedError("This part is not implemented yet.")
 
-    def save_axon_coords(self, prefix=""):
+    #def save_axon_coords(self, prefix=""):
         """ Save the coordinates of the dendrites, BREP style
         -> each line of the output file corresponds to one cell, and contains all its dendrites sequentially"""
 
