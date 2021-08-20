@@ -593,19 +593,19 @@ class MLI_pop(Cell_pop):
             # produce x and y coordinates
             return np.array([[Ldend*np.cos(a), Ldend*np.sin(a)] for a in angles]) # cos=x; sin=y
 
-        def fix_dend_ends_upper(point1_xz, soma, upperLimit=self.args.MLdepth, push_down=100):
+        def fix_dend_ends_upper(point1_xz, soma, upperLimit, push_down=100):
             """fixes end points lying beyond the boundaries."""
             radius = self.args.MLI_dend_length
-
+            
             d=abs(soma[1]-upperLimit)
+            #if d<180:
+             #   print("distance",d)
             
             point1_xz_new = np.zeros_like(point1_xz)
             for i in range(point1_xz.shape[0]):
                 x, y=point1_xz[i];
                 
-                #print(point1_xz[i]);
                 if y>soma[1]+d:
-
                     if point1_xz[i,0]< soma[0]:       # make sure each dendrite goes to one one side
                         y=soma[1]+d- np.random.uniform(0, push_down); #soma y coord. plus the distance to layer+ variability 
                         point1_xz_new[i,1]=y
@@ -625,7 +625,7 @@ class MLI_pop(Cell_pop):
         def gen_dend_endpoints_2d(somas):
             """generates dendritic end points for somas."""
             # z-coordinates will lie between 0 to MLdepth
-            upperLimit = self.args.MLdepth
+            upperLimit = self.args.MLdepth 
             lowerLimit = 0
             
             EpointDend=np.empty((0,2), dtype=object) #empty array for dendrites
@@ -633,6 +633,7 @@ class MLI_pop(Cell_pop):
             for s in range(somas.shape[0]):
                 soma = somas[s, 1:]
                 point1_xz = make_random_dend_ends() + soma
+
                 point1_xz_new = fix_dend_ends_upper(point1_xz, soma, upperLimit)
                 point1_xz_new = -fix_dend_ends_upper(-point1_xz_new, -soma, lowerLimit)
                 EpointDend = np.append(EpointDend, point1_xz_new, axis=0)
@@ -641,6 +642,13 @@ class MLI_pop(Cell_pop):
             print(f'Epoint z mid = {EpointDend[:,1].mean()}')
             print(f'Epoint z min = {EpointDend[:,1].min()}')
             print(f'Epoint z max = {EpointDend[:,1].max()}')
+            print(f'Soma z mid = {somas[:,2].mean()}')
+            print(f'Soma z min = {somas[:,2].min()}')
+            print(f'Soma z max = {somas[:,2].max()}')
+            print("lower",lowerLimit)
+            print("upper",upperLimit)
+
+
             return EpointDend
         
         # Add a missing 3D coordinate to 2d end points
@@ -653,12 +661,11 @@ class MLI_pop(Cell_pop):
             for s in range(somas.shape[0]):
                 soma = somas[s,:]
 
-                ep1 = EpointDend[(s*4):((s+1)*4),:] - somas[s,:2]
+                ep1 = EpointDend[(s*4):((s+1)*4),:] - somas[s,1:] #as this will be y and z soma y and z need to be subtracted
                 ep1_3d = np.zeros((4,3))
-                ep1_3d[:, 1:] = ep1
-                ep1_3d[:, 0] = np.random.randn(4)*sigma
+                ep1_3d[:, 1:] = ep1 # = y and z valyes
+                ep1_3d[:, 0] = np.random.randn(4)*sigma # x value
 
-                #print(ep1_3d)
 
                 for i in range(4):
                     norm = np.sqrt(ep1_3d[i,0]**2 + ep1_3d[i,1]**2 + ep1_3d[i,2]**2)
