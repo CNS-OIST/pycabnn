@@ -424,6 +424,12 @@ class MLI_pop(Cell_pop):
 
     def __init__(self, my_args):
         Cell_pop.__init__(self, my_args)
+
+    def add_axons(self):
+        coords, idx = self.gen_axon(self.som)
+        all_axon = coords
+        ID_axon = idx
+        self.dends = Query_point(all_axon, ID_axon)
     
     def gen_axon(self):
         #from Peters manuscript
@@ -474,8 +480,6 @@ class MLI_pop(Cell_pop):
 
             AxonsAllNew[:, 2] += MLzbegin # Put every point above the PCL
             
-            self.qpts = Query_point(AxonsAllNew, ID_axon)
-
             return(AxonsAllNew, outPlus, outMinus, ID_axon)
 
         def outlier_coordinates(AxonsAll,outPlus, outMinus):
@@ -492,6 +496,12 @@ class MLI_pop(Cell_pop):
             AxOutCoordAll[:, 2] += MLzbegin # Put every point above the PCL
                                                 
             return(AxOutCoordAll) 
+
+        AxonsAll,ID_axon= make_axon_points(somas)
+        AxonsAllNew, outPlus, outMinus, ID_axon = axon_correct(somas, AxonsAll, ID_axon)
+        self.qpts = Query_point(AxonsAllNew, ID_axon)
+
+
 
         
     def save_data(self, filename):
@@ -621,13 +631,16 @@ class MLI_pop(Cell_pop):
             EpointDend=np.empty((0,2), dtype=object) #empty array for dendrites
 
             for s in range(somas.shape[0]):
-                soma = somas[s,:2]
+                soma = somas[s, 1:]
                 point1_xz = make_random_dend_ends() + soma
                 point1_xz_new = fix_dend_ends_upper(point1_xz, soma, upperLimit)
                 point1_xz_new = -fix_dend_ends_upper(-point1_xz_new, -soma, lowerLimit)
                 EpointDend = np.append(EpointDend, point1_xz_new, axis=0)
 
             # print('EpointDend shape = ', EpointDend.shape)
+            print(f'Epoint z mid = {EpointDend[:,1].mean()}')
+            print(f'Epoint z min = {EpointDend[:,1].min()}')
+            print(f'Epoint z max = {EpointDend[:,1].max()}')
             return EpointDend
         
         # Add a missing 3D coordinate to 2d end points
@@ -642,8 +655,8 @@ class MLI_pop(Cell_pop):
 
                 ep1 = EpointDend[(s*4):((s+1)*4),:] - somas[s,:2]
                 ep1_3d = np.zeros((4,3))
-                ep1_3d[:,:2] = ep1
-                ep1_3d[:, 2] = np.random.randn(4)*sigma
+                ep1_3d[:, 1:] = ep1
+                ep1_3d[:, 0] = np.random.randn(4)*sigma
 
                 #print(ep1_3d)
 
@@ -694,11 +707,13 @@ class MLI_pop(Cell_pop):
             segs_all = np.vstack((segs_all, segs))
 
         DendPointAllAll[:, 2] += MLzbegin # Put every point above the PCL
+    
         
-        self.qpts = Query_point(DendPointAllAll, dendpt_ids_all, segs_all)
+        return DendPointAllAll, dendpt_ids_all, segs_all, EpointDend
+        #self.qpts = Query_point(DendPointAllAll, dendpt_ids_all, segs_all)
 
-        if return_end_points:
-            return ep1_3d_All
+       # if return_end_points:
+        #    return ep1_3d_All
 
 
     def save_data(self, filename):
