@@ -5,7 +5,7 @@
 #SBATCH --mem-per-cpu=8g
 #SBATCH --ntasks=81
 
-#SBATCH --mail-user=shhong@oist.jp
+#SBATCH --mail-user=j-reuschenbach@oist.jp
 #SBATCH --mail-type=FAIL
 
 #SBATCH --output=%j.out.log
