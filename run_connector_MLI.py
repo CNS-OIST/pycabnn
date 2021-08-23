@@ -192,7 +192,7 @@ def run_AAtoMLI(data):
     print("R for AA: {}".format(c_rad_aa))
 
     gp, mli = data["pops"]["grc"], data["pops"]["MLI"]
-    cc = cbn.Connect_2D(gp.qpts_aa, mli.qpts, c_rad_aa)
+    cc = cbn.Connect_2D(gp.qpts_aa, mli.dends, c_rad_aa) #mli.qpts
     # TODO: adapt the following from command line options
     cc.connections_parallel(
         parallel=data["parallel"], nblocks=120, debug=False
@@ -204,7 +204,6 @@ def run_AAtoMLI(data):
     print("AA: Found and saved after", t5 - t4)
     print(" ")
     data["t"] = t5
-    return data
 
 
 def run_PFtoMLI(data):
@@ -214,7 +213,7 @@ def run_PFtoMLI(data):
     print("R for PF: {}".format(c_rad_pf))
 
     gp, mli = data["pops"]["grc"], data["pops"]["MLI"]
-    cc = cbn.Connect_2D(gp.qpts_pf, mli.qpts, c_rad_pf)
+    cc = cbn.Connect_2D(gp.qpts_pf, mli.dends, c_rad_pf) #mli.qpts
     cc.connections_parallel(
         parallel=data["parallel"], nblocks=120, debug=False
     )
