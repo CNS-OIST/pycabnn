@@ -431,6 +431,7 @@ class MLI_pop(Cell_pop):
         ID_axon = idx
         self.dends = Query_point(all_axon, ID_axon)
     
+
     def gen_axon(self):
         #from Peters manuscript
         sigma_transv = 15
@@ -499,17 +500,14 @@ class MLI_pop(Cell_pop):
 
         AxonsAll,ID_axon= make_axon_points(somas)
         AxonsAllNew, outPlus, outMinus, ID_axon = axon_correct(somas, AxonsAll, ID_axon)
-        self.qpts = Query_point(AxonsAllNew, ID_axon)
+        self.axons = Query_point(AxonsAllNew, ID_axon)
 
 
-
-        
     def save_data(self, filename):
         np.savez_compressed(
         filename, 
-        axonpoints=self.qpts.coo,
-        ids=self.qpts.idx)
-
+        axonpoints=self.axons.coo,
+        ids=self.axons.idx)
 
     def load_data(self, filename_in_npz):
         MLI_data = np.load(filename_in_npz)
@@ -517,17 +515,14 @@ class MLI_pop(Cell_pop):
         axonpoints= MLI_data["axonpoints"]
         axon_ids= MLI_data["ids"]
 
-        self.qpts = Query_point(axonpoints, axon_ids)
-        
+        self.axons = Query_point(axonpoints, axon_ids)
 
-           
-        
-        
 
     def add_axon(self):
         raise NotImplementedError("This part is not implemented yet.")
 
-    #def save_axon_coords(self, prefix=""):
+
+    def save_axon_coords(self, prefix=""):
         """ Save the coordinates of the dendrites, BREP style
         -> each line of the output file corresponds to one cell, and contains all its dendrites sequentially"""
 
@@ -543,12 +538,10 @@ class MLI_pop(Cell_pop):
         #         f_out.write(str_l(flad) + "\n")
         #     print("Successfully wrote {}.".format(axon_file))
 
+
     def add_dendrites(self):
-        coords, idx, segs = self.gen_dendrite(self.som)
-        all_dends = coords
-        all_idx = idx
-        all_sgts = segs
-        self.dends = Query_point(all_dends, all_idx, all_sgts)
+        coords, idx, segs = self.gen_dendrite() #self.som)
+        self.dends = Query_point(coords, IDs=idx, segs=segs)
 
     def save_dend_coords(self, prefix=""):
         """ Save the coordinates of the dendrites, BREP style
@@ -566,6 +559,7 @@ class MLI_pop(Cell_pop):
         #         flad = np.array([a for l in ad for a in l])
         #         f_out.write(str_l(flad) + "\n")
         # print("Successfully wrote {}.".format(dend_file))
+
 
     def gen_dendrite(self, return_end_points=False):
 
@@ -678,9 +672,6 @@ class MLI_pop(Cell_pop):
 
             return ep1_3d_All, endpt_ids
 
-        EpointDend = gen_dend_endpoints_2d(somas)
-        ep1_3d_All, endpt_ids = make_endpoint_3d(EpointDend, somas)
-
         def generate_DendPoint_3d(soma, ep1_3d, endpt_ids, nPoint=90):
             """Generate Dendrititc Points between Soma and respective Endpoints
                 In total 90 points are generated"""
@@ -700,6 +691,9 @@ class MLI_pop(Cell_pop):
 
             return DendPointAll, dendpt_ids, segs
         
+        EpointDend = gen_dend_endpoints_2d(somas)
+        ep1_3d_All, endpt_ids = make_endpoint_3d(EpointDend, somas)
+
         ##generate endpoints around respective somas
         DendPointAllAll = np.empty((0,3), dtype=object) #empty array for dendrites
         dendpt_ids_all = np.empty((0,1), dtype=int) #empty array for dendrite ids
@@ -714,34 +708,35 @@ class MLI_pop(Cell_pop):
             segs_all = np.vstack((segs_all, segs))
 
         DendPointAllAll[:, 2] += MLzbegin # Put every point above the PCL
-    
-        
-        return DendPointAllAll, dendpt_ids_all, segs_all, EpointDend
-        #self.qpts = Query_point(DendPointAllAll, dendpt_ids_all, segs_all)
 
-       # if return_end_points:
-        #    return ep1_3d_All
+        DendPointAllAll = DendPointAllAll.astype('double')
+
+        # if return_end_points=True:
+        #     print("Test", ep1_3d_All)
+
+        return DendPointAllAll, dendpt_ids_all, segs_all #, EpointDend
 
 
     def save_data(self, filename):
         np.savez_compressed(
             filename, 
-            dendpoints=self.qpts.coo,
-            segments=self.qpts.seg,
-            ids=self.qpts.idx
+            dendpoints=self.dends.coo,
+            segments=self.dends.seg,
+            ids=self.dends.idx
         )
 
 
-    def load_data(self, filename_in_npz):
+    def load_data(self, filename_in_npz, return_data=False):
         MLI_data = np.load(filename_in_npz)
 
         DendPointAllAll= MLI_data["dendpoints"]
         segs_all= MLI_data["segments"]
         dendpt_ids_all= MLI_data["ids"]
 
-        self.qpts = Query_point(DendPointAllAll, dendpt_ids_all, segs_all)
-
-
+        self.dends = Query_point(DendPointAllAll, IDs=dendpt_ids_all, segs=segs_all)
+        
+        if return_data:
+            return DendPointAllAll, segs_all, dendpt_ids_all
 
 
 # class Map(dict):
