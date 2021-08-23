@@ -121,7 +121,7 @@ def load_and_make_population(data, pops):
         mli = cbn.create_population("MLI", h)
         mli.load_somata(mli_in)
 
-        mli.load_data(data["input_path"] / "MLIdata.npz")
+        mli.load_data(data["input_path"] / "MLIDendData.npz")
         # mli.add_axon()
         mli.save_somata(output_path, "MLIcoordinates.sorted.dat")
 
