@@ -340,5 +340,5 @@ softness_margin_mli = 1
 MLI_dend_length = 180 //Peter's model
 MLI_x_sigma = 24
 
-AAtoMLI_cdist = 1.0
-PFtoMLI_cdist = 1.0
+AAtoMLI_cdist = 0.5
+PFtoMLI_cdist = 0.5
