@@ -433,8 +433,9 @@ class MLI_pop(Cell_pop):
     def gen_axon(self):
         #from Peters manuscript
         sigma_transv = 15
-        sigma_vert = 20
         sigma_sag = 70
+        sigma_vert = 20
+     
         somas = self.som*1.0
 
         MLzbegin = self.args.GLdepth + self.args.PCLdepth #for later correction
@@ -471,10 +472,10 @@ class MLI_pop(Cell_pop):
             for i in range(AxonsAll.shape[0]):
                 if AxonsAllNew[i,2]>upperLimit:
                     outPlus.append(i)
-                    AxonsAllNew[i, 2] = upperLimit - np.random.uniform(0,sigma_vert) 
+                    AxonsAllNew[i, 2] = upperLimit - np.random.uniform(0,sigma_vert*2.5) 
                 elif AxonsAllNew[i,2]<lowerLimit:
                     outMinus.append(i)
-                    AxonsAllNew[i, 2] = lowerLimit + np.random.uniform(0,sigma_vert)
+                    AxonsAllNew[i, 2] = lowerLimit + np.random.uniform(0, sigma_vert*2.5)
 
             AxonsAllNew[:, 2] += MLzbegin # Put every point above the PCL
             AxonsAllNew = AxonsAllNew.astype('double')
