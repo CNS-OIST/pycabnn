@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """generate_cell_position.py
 
-Jobs = mf, goc, glo, grc
+Jobs = mf, goc, glo, grc, mli
 
 Usage:
   generate_cell_position.py (-o PATH) (-p PATH) [-i PATH] [--stop_method=<conditions>] (all | <jobs>...)
@@ -99,7 +99,7 @@ def make_mf(data):
     data["mf_points"] = mf_points
 
     print("Final # MFs = {}".format(mf_points.shape[0]))
-    
+
     np.savez(foutname, mf=mf_points)
     np.savetxt(data["output_path"] / "MFcoordinates.dat", data["mf_points"])
 
@@ -304,12 +304,12 @@ def make_mli(data):
         mli_points[:, i] -= h.range_margin/2
 
     # Select only the cells with in the range
-    mli_points = mli_points[mli_points[:,0]>0,:]        
-    mli_points = mli_points[mli_points[:,0]<h.MFxrange,:]        
-    mli_points = mli_points[mli_points[:,1]>0,:]        
-    mli_points = mli_points[mli_points[:,1]<h.MFyrange,:]        
-    mli_points = mli_points[mli_points[:,2]>0,:]        
-    mli_points = mli_points[mli_points[:,2]<h.MLdepth,:] 
+    mli_points = mli_points[mli_points[:,0]>0,:]
+    mli_points = mli_points[mli_points[:,0]<h.MFxrange,:]
+    mli_points = mli_points[mli_points[:,1]>0,:]
+    mli_points = mli_points[mli_points[:,1]<h.MFyrange,:]
+    mli_points = mli_points[mli_points[:,2]>0,:]
+    mli_points = mli_points[mli_points[:,2]<h.MLdepth,:]
 
     mli_points[:,2] += h.GLdepth + h.PCLdepth
 
@@ -325,7 +325,7 @@ def make_mli(data):
 
 def main(args):
     data = load_input_data(args)
-    
+
     if args["all"]:
         args["<jobs>"] = valid_job_list
 

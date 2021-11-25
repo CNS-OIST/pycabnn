@@ -3,8 +3,8 @@
 from neuron import h
 import pycabnn.cell_population as pop
 
-soma_file = 'test_data/MLI_20000/MLIcoordinates.dat'
-dend_file = 'test_data/MLI_20000/MLI_dend_data_20210823.npz'
+soma_file = 'test_data/cell_position/MLIcoordinates.dat'
+dend_file = 'test_data/MLI_dend_data_20211111.npz'
 
 h.load_file('test_data/params/Parameters.hoc')
 mlipop = pop.MLI_pop(h)
