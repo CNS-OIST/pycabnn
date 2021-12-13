@@ -538,7 +538,7 @@ class MLI_pop(Cell_pop):
         #     print("Successfully wrote {}.".format(axon_file))
 
     def add_dendrites(self):
-        coords, idx, segs = self.gen_dendrite()  # self.som)
+        coords, idx, segs = self.gen_dendrite()
         self.dends = Query_point(coords, IDs=idx, segs=segs)
 
     def save_dend_coords(self, prefix=""):
@@ -779,7 +779,7 @@ class MLI_pop(Cell_pop):
         )
 
         dendpoints = dendpoints.reshape((-1, 3))
-        dendpoints[:,2] = dendpoints[:,2] + MLzbegin
+        dendpoints[:, 2] = dendpoints[:, 2] + MLzbegin
         cell_ids = cell_ids.reshape((-1))
         dend_ids = dend_ids.reshape((-1))
         segs = segs.reshape((-1))
@@ -863,6 +863,7 @@ class MLI_pop(Cell_pop):
 #         super(Map, self).__delitem__(key)
 #         del self.__dict__[key]
 #
+
 if __name__ == "__main__":
     # TODO: old script for test runs
     a = Cell_pop(3)
