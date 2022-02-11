@@ -8,6 +8,7 @@ Okinawa Institute of Science and Technology
 March, 2020
 """
 
+from re import U
 import numpy as np
 from pathlib import Path
 import csv
@@ -426,11 +427,12 @@ class MLI_pop(Cell_pop):
     def __init__(self, my_args):
         Cell_pop.__init__(self, my_args)
 
-    def add_axons(self):
-        coords, idx = self.gen_axon()  # self.som)
+    def add_axon(self):
+        coords, idx = self.gen_axon()
         self.axons = Query_point(coords, IDs=idx)
 
     def gen_axon(self):
+
         # from Peters manuscript
         sigma_transv = 15
         sigma_sag = 70
@@ -440,72 +442,103 @@ class MLI_pop(Cell_pop):
 
         MLzbegin = self.args.GLdepth + self.args.PCLdepth  # for later correction
 
-        def make_axon_points(somas, n_axonterm=100):
+        def make_axon_points(somas, sigmas, n_axonterm=100):
 
-            AxonsAll = np.empty((0, 3), dtype=object)  # empty array for axons
-            ID_axon = np.zeros((somas.shape[0] * n_axonterm))  # empty array for axon ID
-            for i in range(somas.shape[0]):
-                center = somas[i]
-                axons = np.zeros((n_axonterm, 3))
-                axons[:, 0] = np.random.randn(n_axonterm) * sigma_transv + center[0]
-                axons[:, 1] = np.random.randn(n_axonterm) * sigma_sag + center[1]
-                axons[:, 2] = np.random.randn(n_axonterm) * sigma_vert + center[2]
+            axons = np.random.randn(somas.shape[0], n_axonterm, somas.shape[-1])
+            for i in range(somas.shape[-1]):
+                axons[:, :, i] *= sigmas[i]
 
-                AxonsAll = np.append(AxonsAll, axons, axis=0)
+            axons += somas[:, np.newaxis, :]
 
-                # ID: to which soma does each axon belong
-                if i == 0:
-                    ID_axon[0:n_axonterm] = i
-                else:
-                    ID_axon[i * n_axonterm : (i + 1) * n_axonterm] = i
+            id_axons = (
+                np.zeros((somas.shape[0], n_axonterm), dtype="int")
+                + np.arange(somas.shape[0])[:, np.newaxis]
+            )
 
-            return (AxonsAll, ID_axon)
+            return (axons, id_axons)
+            # AxonsAll = np.empty((0, 3), dtype=object)  # empty array for axons
+            # ID_axon = np.zeros((somas.shape[0] * n_axonterm))  # empty array for axon ID
+            # for i in range(somas.shape[0]):
+            #     center = somas[i]
+            #     axons = np.zeros((n_axonterm, 3))
+            #     axons[:, 0] = np.random.randn(n_axonterm) * sigma_transv + center[0]
+            #     axons[:, 1] = np.random.randn(n_axonterm) * sigma_sag + center[1]
+            #     axons[:, 2] = np.random.randn(n_axonterm) * sigma_vert + center[2]
 
-        # check if out of Layer Plus correction (z-Axis) PLUS correction
-        def axon_correct(
-            somas, AxonsAll, ID_axon, upperLimit=self.args.MLdepth, lowerLimit=0
+            #     AxonsAll = np.append(AxonsAll, axons, axis=0)
+
+            #     # ID: to which soma does each axon belong
+            #     if i == 0:
+            #         ID_axon[0:n_axonterm] = i
+            #     else:
+            #         ID_axon[i * n_axonterm : (i + 1) * n_axonterm] = i
+
+        def correct_axons(
+            axons, upperLimit=self.args.MLdepth, lowerLimit=0, scale=sigma_vert / 2.5
         ):
-            outPlus = []
-            outMinus = []
 
-            AxonsAllNew = np.zeros_like(AxonsAll)
-            AxonsAllNew[:, 0:3] = AxonsAll[:, 0:3]
-            AxonsAllNew[:, 2] -= MLzbegin
-            for i in range(AxonsAll.shape[0]):
-                if AxonsAllNew[i, 2] > upperLimit:
-                    outPlus.append(i)
-                    AxonsAllNew[i, 2] = upperLimit - np.random.uniform(
-                        0, sigma_vert * 2.5
-                    )
-                elif AxonsAllNew[i, 2] < lowerLimit:
-                    outMinus.append(i)
-                    AxonsAllNew[i, 2] = lowerLimit + np.random.uniform(
-                        0, sigma_vert * 2.5
-                    )
+            axons_new = axons.copy()
+            axons_new[:, :, 2] -= MLzbegin
 
-            AxonsAllNew[:, 2] += MLzbegin  # Put every point above the PCL
-            AxonsAllNew = AxonsAllNew.astype("double")
+            axont1 = axons_new.reshape(-1, 3)
 
-            return (AxonsAllNew, outPlus, outMinus, ID_axon)
+            ii = axont1[:, 2] > upperLimit
+            axont1[ii, 2] = upperLimit - np.random.gamma(2, scale=scale, size=ii.sum())
 
-        def outlier_coordinates(AxonsAll, outPlus, outMinus):
-            AxOutCoordAll = np.empty((0, 3), dtype=object)
-            for i in range(len(outPlus)):
-                AxOutCoord = AxonsAll[outPlus[i]]
-                AxOutCoordAll = np.vstack((AxOutCoordAll, AxOutCoord))
+            ii = axont1[:, 2] < lowerLimit
+            axont1[ii, 2] = lowerLimit + np.random.gamma(2, scale=scale, size=ii.sum())
 
-            for i in range(len(outMinus)):
-                AxOutCoord = AxonsAll[outMinus[i]]
-                AxOutCoordAll = np.vstack((AxOutCoordAll, AxOutCoord))
+            axons_new = axont1
+            axons_new[:, 2] += MLzbegin
+            return axons_new
 
-            AxOutCoordAll[:, 2] += MLzbegin  # Put every point above the PCL
+        axons, id_axons = make_axon_points(
+            self.som * 1.0, sigmas=[sigma_transv, sigma_sag, sigma_vert]
+        )
+        axons = correct_axons(axons)
+        id_axons = id_axons.reshape(-1)
 
-            return AxOutCoordAll
+        return axons, id_axons
+        #     outPlus = []
+        #     outMinus = []
 
-        AxonsAll, ID_axon = make_axon_points(somas)
-        AxonsAllNew, outPlus, outMinus, ID_axon = axon_correct(somas, AxonsAll, ID_axon)
-        self.axons = Query_point(AxonsAllNew, ID_axon)
-        return (AxonsAllNew, ID_axon)
+        #     AxonsAllNew = np.zeros_like(AxonsAll)
+        #     AxonsAllNew[:, 0:3] = AxonsAll[:, 0:3]
+        #     AxonsAllNew[:, 2] -= MLzbegin
+        #     for i in range(AxonsAll.shape[0]):
+        #         if AxonsAllNew[i, 2] > upperLimit:
+        #             outPlus.append(i)
+        #             AxonsAllNew[i, 2] = upperLimit - np.random.uniform(
+        #                 0, sigma_vert * 2.5
+        #             )
+        #         elif AxonsAllNew[i, 2] < lowerLimit:
+        #             outMinus.append(i)
+        #             AxonsAllNew[i, 2] = lowerLimit + np.random.uniform(
+        #                 0, sigma_vert * 2.5
+        #             )
+
+        #     AxonsAllNew[:, 2] += MLzbegin  # Put every point above the PCL
+        #     AxonsAllNew = AxonsAllNew.astype("double")
+
+        #     return (AxonsAllNew, outPlus, outMinus, ID_axon)
+
+        # def outlier_coordinates(AxonsAll, outPlus, outMinus):
+        #     AxOutCoordAll = np.empty((0, 3), dtype=object)
+        #     for i in range(len(outPlus)):
+        #         AxOutCoord = AxonsAll[outPlus[i]]
+        #         AxOutCoordAll = np.vstack((AxOutCoordAll, AxOutCoord))
+
+        #     for i in range(len(outMinus)):
+        #         AxOutCoord = AxonsAll[outMinus[i]]
+        #         AxOutCoordAll = np.vstack((AxOutCoordAll, AxOutCoord))
+
+        #     AxOutCoordAll[:, 2] += MLzbegin  # Put every point above the PCL
+
+        #     return AxOutCoordAll
+
+        # AxonsAll, ID_axon = make_axon_points(somas)
+        # AxonsAllNew, outPlus, outMinus, ID_axon = axon_correct(somas, AxonsAll, ID_axon)
+        # self.axons = Query_point(AxonsAllNew, ID_axon)
 
     def save_data_axon(self, filename):
         np.savez_compressed(filename, axonpoints=self.axons.coo, ids=self.axons.idx)
@@ -517,9 +550,6 @@ class MLI_pop(Cell_pop):
         axon_ids = MLI_data["ids"]
 
         self.axons = Query_point(axonpoints, axon_ids)
-
-    def add_axon(self):
-        raise NotImplementedError("This part is not implemented yet.")
 
     def save_axon_coords(self, prefix=""):
         """ Save the coordinates of the dendrites, BREP style
