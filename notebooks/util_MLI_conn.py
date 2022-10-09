@@ -57,6 +57,10 @@ def pdata_syn_xy(x):
     return f_xy(x, 33, 1.65e-4, 0.2)
 
 
+def p_syn_xy(x):
+    return pdata_syn_xy(x) / pprior_xy(x) / (1 + np.exp((x - 150) / 7))
+
+
 ## Fitted distribution for the z distance
 def f_z(x, mu, a, N):
     return N * np.exp(-a * (x - mu) * (x - mu))
@@ -76,9 +80,9 @@ def p_gap_z(x):
 
 def pdata_syn_z(x):
     """Computes the p_data(x) for given z distance x and synnaptic connection"""
-    return f_z(x, 13, 2.642e-3, .2337)
+    return f_z(x, 13, 2.642e-3, 0.2337)
 
 
 def p_syn_z(x):
-    return pdata_syn_z(x) / pprior_z
+    return pdata_syn_z(x) / pprior_z / (1 + np.exp((x - 45)/5))
 
